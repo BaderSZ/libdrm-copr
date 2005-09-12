@@ -62,6 +62,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 %dir %{_includedir}
 %dir %{_includedir}/drm
+# NOTE: Headers are listed explicitly, so we can monitor additions/removals.
 %{_includedir}/drm/drm.h
 %{_includedir}/drm/drm_sarea.h
 %{_includedir}/drm/i915_drm.h
