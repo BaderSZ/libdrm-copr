@@ -1,10 +1,10 @@
 Summary: Digital Rights Managment library
 Name: libdrm
 Version: 1.0.3
-Release: 1
+Release: 2
 License: MIT/X11
 Group: System Environment/Libraries
-URL: http://www.x.org
+URL: http://dri.sourceforge.net
 # No .bz2 avail upstream
 Source0: http://dri.freedesktop.org/libdrm/%{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
@@ -12,7 +12,6 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 #BuildRequires: xorg-x11-proto-devel
 #BuildRequires: xorg-x11-xtrans-devel
 
-#Provides: %{name}
 Conflicts: XFree86-libs, xorg-x11-libs
 
 %description
@@ -23,7 +22,6 @@ Summary: libdrm-devel
 Group: Development/Libraries
 Requires: %{name} = %{version}-%{release}
 
-#Provides: %{name}-devel
 Conflicts: XFree86-devel, xorg-x11-devel
 
 %description devel
@@ -54,7 +52,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
-%doc
+%doc README
 %{_libdir}/libdrm.so.1
 %{_libdir}/libdrm.so.1.0.0
 
@@ -99,5 +97,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Thu Sep 29 2005 Mike A. Harris <mharris@redhat.com> 1.0.3-2
+- Add missing documentation to doc macro
+- Fix spec file project URL
+
 * Sat Sep 3 2005 Mike A. Harris <mharris@redhat.com> 1.0.3-1
 - Initial build.
