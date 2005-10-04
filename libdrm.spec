@@ -1,16 +1,19 @@
 Summary: Digital Rights Managment library
 Name: libdrm
 Version: 1.0.3
-Release: 2
+Release: 3
 License: MIT/X11
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
 # No .bz2 avail upstream
 Source0: http://dri.freedesktop.org/libdrm/%{name}-%{version}.tar.gz
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 #BuildRequires: xorg-x11-proto-devel
 #BuildRequires: xorg-x11-xtrans-devel
+
+BuildRequires: pkgconfig
+BuildRequires: libX11-devel
 
 Conflicts: XFree86-libs, xorg-x11-libs
 
@@ -97,6 +100,10 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Tue Oct 4 2005 Mike A. Harris <mharris@redhat.com> 1.0.3-3
+- Update BuildRoot to use Fedora Packaging Guidelines.
+- Add missing "BuildRequires: libX11-devel, pkgconfig"
+
 * Thu Sep 29 2005 Mike A. Harris <mharris@redhat.com> 1.0.3-2
 - Add missing documentation to doc macro
 - Fix spec file project URL
