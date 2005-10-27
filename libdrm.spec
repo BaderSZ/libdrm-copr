@@ -1,7 +1,7 @@
 Summary: Digital Rights Managment library
 Name: libdrm
-Version: 1.0.3
-Release: 3
+Version: 1.0.4
+Release: 1
 License: MIT/X11
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -67,30 +67,15 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/drm/drm.h
 %{_includedir}/drm/drm_sarea.h
 %{_includedir}/drm/i915_drm.h
-%{_includedir}/drm/i915_drv.h
-%{_includedir}/drm/imagine_drv.h
 %{_includedir}/drm/mach64_drm.h
-%{_includedir}/drm/mach64_drv.h
 %{_includedir}/drm/mga_drm.h
-%{_includedir}/drm/mga_drv.h
-%{_includedir}/drm/mga_ucode.h
 %{_includedir}/drm/r128_drm.h
-%{_includedir}/drm/r128_drv.h
 %{_includedir}/drm/r300_reg.h
 %{_includedir}/drm/radeon_drm.h
-%{_includedir}/drm/radeon_drv.h
 %{_includedir}/drm/savage_drm.h
-%{_includedir}/drm/savage_drv.h
 %{_includedir}/drm/sis_drm.h
-%{_includedir}/drm/sis_drv.h
-%{_includedir}/drm/sis_ds.h
-%{_includedir}/drm/tdfx_drv.h
 %{_includedir}/drm/via_3d_reg.h
 %{_includedir}/drm/via_drm.h
-%{_includedir}/drm/via_drv.h
-%{_includedir}/drm/via_ds.h
-%{_includedir}/drm/via_mm.h
-%{_includedir}/drm/via_verifier.h
 %{_includedir}/xf86drm.h
 %dir %{_libdir}
 # NOTE: We don't want to ship static libs.
@@ -100,6 +85,12 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Mon Oct 24 2005 Mike A. Harris <mharris@redhat.com> 1.0.4-1
+- Updated libdrm to version 1.0.4 from X11R7 RC1
+- Remove i915_drv.h, imagine_drv.h, mach64_drv.h, mga_drv.h, mga_ucode.h,
+  r128_drv.h, radeon_drv.h, savage_drv.h, sis_drv.h, sis_ds.h, tdfx_drv.h,
+  via_drv.h, via_ds.h, via_mm.h, via_verifier.h from file manifest.
+
 * Tue Oct 4 2005 Mike A. Harris <mharris@redhat.com> 1.0.3-3
 - Update BuildRoot to use Fedora Packaging Guidelines.
 - Add missing "BuildRequires: libX11-devel, pkgconfig"
