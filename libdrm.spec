@@ -1,6 +1,6 @@
 Summary: Digital Rights Managment library
 Name: libdrm
-Version: 1.0.4
+Version: 1.0.5
 Release: 1
 License: MIT/X11
 Group: System Environment/Libraries
@@ -85,6 +85,10 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Tue Nov  1 2005 Mike A. Harris <mharris@redhat.com> 1.0.5-1
+- Updated libdrm to version 1.0.5 from dri.sf.net upstream to work around
+  mesa unichrome dri driver compile failure.
+
 * Mon Oct 24 2005 Mike A. Harris <mharris@redhat.com> 1.0.4-1
 - Updated libdrm to version 1.0.4 from X11R7 RC1
 - Remove i915_drv.h, imagine_drv.h, mach64_drv.h, mga_drv.h, mga_ucode.h,
