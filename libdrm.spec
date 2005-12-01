@@ -1,6 +1,6 @@
 Summary: Digital Rights Managment library
 Name: libdrm
-Version: 1.0.5
+Version: 2.0
 Release: 1
 License: MIT/X11
 Group: System Environment/Libraries
@@ -15,7 +15,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: pkgconfig
 BuildRequires: libX11-devel
 
-Conflicts: XFree86-libs, xorg-x11-libs
+Obsoletes: XFree86-libs, xorg-x11-libs
 
 %description
 Digital Rights Management runtime library
@@ -25,7 +25,7 @@ Summary: libdrm-devel
 Group: Development/Libraries
 Requires: %{name} = %{version}-%{release}
 
-Conflicts: XFree86-devel, xorg-x11-devel
+Obsoletes: XFree86-devel, xorg-x11-devel
 
 %description devel
 Digital Rights Management development package
@@ -56,8 +56,10 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root,-)
 %doc README
-%{_libdir}/libdrm.so.1
-%{_libdir}/libdrm.so.1.0.0
+#%{_libdir}/libdrm.so.1
+#%{_libdir}/libdrm.so.1.0.0
+%{_libdir}/libdrm.so.2
+%{_libdir}/libdrm.so.2.0.0
 
 %files devel
 %defattr(-,root,root,-)
@@ -85,6 +87,10 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Wed Nov 30 2005 Mike A. Harris <mharris@redhat.com> 2.0-1
+- Updated libdrm to version 2.0 from dri.sf.net.  This is an ABI incompatible
+  release, meaning everything linked to it needs to be recompiled.
+
 * Tue Nov  1 2005 Mike A. Harris <mharris@redhat.com> 1.0.5-1
 - Updated libdrm to version 1.0.5 from dri.sf.net upstream to work around
   mesa unichrome dri driver compile failure.
