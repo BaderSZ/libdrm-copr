@@ -1,7 +1,7 @@
-Summary: Digital Rights Managment library
+Summary: libdrm Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.0
-Release: 1
+Release: 2
 License: MIT/X11
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -18,7 +18,7 @@ BuildRequires: libX11-devel
 Obsoletes: XFree86-libs, xorg-x11-libs
 
 %description
-Digital Rights Management runtime library
+libdrm Direct Rendering Manager runtime library
 
 %package devel
 Summary: libdrm-devel
@@ -28,7 +28,7 @@ Requires: %{name} = %{version}-%{release}
 Obsoletes: XFree86-devel, xorg-x11-devel
 
 %description devel
-Digital Rights Management development package
+libdrm Direct Rendering Manager development package
 
 %prep
 %setup -q 
@@ -87,6 +87,12 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Wed Jan 11 2006 Mike A. Harris <mharris@redhat.com> 2.0-2
+- Replaced the temporary tongue-in-cheek humourous package summary and
+  description with the proper package descriptions, as many people didn't get
+  the joke, while others felt it was getting old.  Ah well, I had my fun for
+  a while anyway.  ;o)
+
 * Wed Nov 30 2005 Mike A. Harris <mharris@redhat.com> 2.0-1
 - Updated libdrm to version 2.0 from dri.sf.net.  This is an ABI incompatible
   release, meaning everything linked to it needs to be recompiled.
