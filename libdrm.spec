@@ -1,15 +1,12 @@
 Summary: libdrm Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.0.1
-Release: 2
+Release: 3
 License: MIT/X11
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
 Source0: http://dri.freedesktop.org/libdrm/%{name}-%{version}.tar.bz2
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-
-#BuildRequires: xorg-x11-proto-devel
-#BuildRequires: xorg-x11-xtrans-devel
 
 BuildRequires: pkgconfig
 BuildRequires: libX11-devel
@@ -39,8 +36,6 @@ make
 
 %install
 rm -rf $RPM_BUILD_ROOT
-# FIXME: makeinstall doesn't work due to upstream bug
-#%%makeinstall DESTDIR=$RPM_BUILD_ROOT
 make install DESTDIR=$RPM_BUILD_ROOT
 
 # We intentionally don't ship *.la files
@@ -55,14 +50,11 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root,-)
 %doc README
-#%{_libdir}/libdrm.so.1
-#%{_libdir}/libdrm.so.1.0.0
 %{_libdir}/libdrm.so.2
 %{_libdir}/libdrm.so.2.0.0
 
 %files devel
 %defattr(-,root,root,-)
-%dir %{_includedir}
 %dir %{_includedir}/drm
 # NOTE: Headers are listed explicitly, so we can monitor additions/removals.
 %{_includedir}/drm/drm.h
@@ -78,14 +70,15 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/drm/via_3d_reg.h
 %{_includedir}/drm/via_drm.h
 %{_includedir}/xf86drm.h
-%dir %{_libdir}
 # NOTE: We don't want to ship static libs.
 #%{_libdir}/libdrm.a
 %{_libdir}/libdrm.so
-%dir %{_libdir}/pkgconfig
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Thu Jun 08 2006 Mike A. Harris <mharris@redhat.com> 2.0.1-3
+- Remove package ownership of mandir/libdir/etc.
+
 * Mon Apr 10 2006 Kristian Høgsberg <krh@redhat.com> 2.0.1-2
 - Bump for fc5 build.
 
