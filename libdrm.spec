@@ -1,12 +1,14 @@
 Summary: libdrm Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.0.1
-Release: 3
+Release: 4
 License: MIT/X11
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
 Source0: http://dri.freedesktop.org/libdrm/%{name}-%{version}.tar.bz2
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+
+ExclusiveArch: %{ix86} x86_64 ia64 ppc alpha sparc sparc64
 
 BuildRequires: pkgconfig
 BuildRequires: libX11-devel
@@ -38,8 +40,8 @@ make
 rm -rf $RPM_BUILD_ROOT
 make install DESTDIR=$RPM_BUILD_ROOT
 
-# We intentionally don't ship *.la files
-rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
+# NOTE: We intentionally don't ship *.la files
+find $RPM_BUILD_ROOT -type f -name '*.la' | xargs rm -f -- || :
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -76,19 +78,23 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Mon Jun 09 2006 Mike A. Harris <mharris@redhat.com> 2.0.1-4
+- Added "Exclusivearch: ix86, x86_64, ia64, ppc, alpha, sparc, sparc64" to
+  restrict build to DRI-enabled architectures.
+
 * Thu Jun 08 2006 Mike A. Harris <mharris@redhat.com> 2.0.1-3
 - Remove package ownership of mandir/libdir/etc.
 
 * Mon Apr 10 2006 Kristian Høgsberg <krh@redhat.com> 2.0.1-2
 - Bump for fc5 build.
 
-* Thu Mar 30 2006 Adam Jackson <ajackson@redhat.com> - 2.0.1-1
+* Thu Mar 30 2006 Adam Jackson <ajackson@redhat.com> 2.0.1-1
 - Bump to libdrm 2.0.1 from upstream.
 
-* Fri Feb 10 2006 Jesse Keating <jkeating@redhat.com> - 2.0-2.2
+* Fri Feb 10 2006 Jesse Keating <jkeating@redhat.com> 2.0-2.2
 - bump again for double-long bug on ppc(64)
 
-* Tue Feb 07 2006 Jesse Keating <jkeating@redhat.com> - 2.0-2.1
+* Tue Feb 07 2006 Jesse Keating <jkeating@redhat.com> 2.0-2.1
 - rebuilt for new gcc4.1 snapshot and glibc changes
 
 * Wed Jan 11 2006 Mike A. Harris <mharris@redhat.com> 2.0-2
@@ -101,7 +107,7 @@ rm -rf $RPM_BUILD_ROOT
 - Updated libdrm to version 2.0 from dri.sf.net.  This is an ABI incompatible
   release, meaning everything linked to it needs to be recompiled.
 
-* Tue Nov  1 2005 Mike A. Harris <mharris@redhat.com> 1.0.5-1
+* Tue Nov 01 2005 Mike A. Harris <mharris@redhat.com> 1.0.5-1
 - Updated libdrm to version 1.0.5 from dri.sf.net upstream to work around
   mesa unichrome dri driver compile failure.
 
@@ -111,7 +117,7 @@ rm -rf $RPM_BUILD_ROOT
   r128_drv.h, radeon_drv.h, savage_drv.h, sis_drv.h, sis_ds.h, tdfx_drv.h,
   via_drv.h, via_ds.h, via_mm.h, via_verifier.h from file manifest.
 
-* Tue Oct 4 2005 Mike A. Harris <mharris@redhat.com> 1.0.3-3
+* Tue Oct 04 2005 Mike A. Harris <mharris@redhat.com> 1.0.3-3
 - Update BuildRoot to use Fedora Packaging Guidelines.
 - Add missing "BuildRequires: libX11-devel, pkgconfig"
 
@@ -119,5 +125,5 @@ rm -rf $RPM_BUILD_ROOT
 - Add missing documentation to doc macro
 - Fix spec file project URL
 
-* Sat Sep 3 2005 Mike A. Harris <mharris@redhat.com> 1.0.3-1
+* Sat Sep 03 2005 Mike A. Harris <mharris@redhat.com> 1.0.3-1
 - Initial build.
