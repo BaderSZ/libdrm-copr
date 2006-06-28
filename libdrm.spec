@@ -1,7 +1,7 @@
 Summary: libdrm Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.0.1
-Release: 4
+Version: 2.0.2
+Release: 1
 License: MIT/X11
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -11,7 +11,6 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 ExclusiveArch: %{ix86} x86_64 ia64 ppc alpha sparc sparc64
 
 BuildRequires: pkgconfig
-BuildRequires: libX11-devel
 
 Obsoletes: XFree86-libs, xorg-x11-libs
 
@@ -32,8 +31,7 @@ libdrm Direct Rendering Manager development package
 %setup -q 
 
 %build
-# NOTE: We don't want to ship static libs.
-%configure --disable-static
+%configure
 make
 
 %install
@@ -72,12 +70,13 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/drm/via_3d_reg.h
 %{_includedir}/drm/via_drm.h
 %{_includedir}/xf86drm.h
-# NOTE: We don't want to ship static libs.
-#%{_libdir}/libdrm.a
 %{_libdir}/libdrm.so
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Tue Jun 27 2006 Adam Jackson <ajackson@redhat.com> 2.0.2-2
+- Bump to 2.0.2 for header updates.  Fix BuildRequires.  Minor spec cleanups. 
+
 * Mon Jun 09 2006 Mike A. Harris <mharris@redhat.com> 2.0.1-4
 - Added "Exclusivearch: ix86, x86_64, ia64, ppc, alpha, sparc, sparc64" to
   restrict build to DRI-enabled architectures.
