@@ -1,7 +1,7 @@
 Summary: libdrm Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.0.2
-Release: 1.1
+Release: 2.fc5.aiglx
 License: MIT/X11
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -74,7 +74,10 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
-* Wed Jul 12 2006 Jesse Keating <jkeating@redhat.com> - sh: line 0: fg: no job control
+* Wed Jul 26 2006 Kristian Høgsberg <krh@redhat.com> - 2.0.2-2.fc5.aiglx
+- Build for fc5 aiglx repo.
+
+* Wed Jul 12 2006 Jesse Keating <jkeating@redhat.com> 2.0.2-2.1
 - rebuild
 
 * Tue Jun 27 2006 Adam Jackson <ajackson@redhat.com> 2.0.2-2
