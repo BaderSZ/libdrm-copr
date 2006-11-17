@@ -1,7 +1,7 @@
 Summary: libdrm Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.0.2
-Release: 3%{?dist}
+Version: 2.3.0
+Release: 1%{?dist}
 License: MIT/X11
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -13,6 +13,8 @@ ExclusiveArch: %{ix86} x86_64 ia64 ppc alpha sparc sparc64
 BuildRequires: pkgconfig
 
 Obsoletes: XFree86-libs, xorg-x11-libs
+
+Patch0: nouveau-20061117.patch
 
 %description
 libdrm Direct Rendering Manager runtime library
@@ -29,6 +31,7 @@ libdrm Direct Rendering Manager development package
 
 %prep
 %setup -q 
+%patch0 -p1 -b .nouveau
 
 %build
 %configure
@@ -51,7 +54,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 %doc README
 %{_libdir}/libdrm.so.2
-%{_libdir}/libdrm.so.2.0.0
+%{_libdir}/libdrm.so.2.3.0
 
 %files devel
 %defattr(-,root,root,-)
@@ -60,6 +63,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/drm/drm.h
 %{_includedir}/drm/drm_sarea.h
 %{_includedir}/drm/i915_drm.h
+%{_includedir}/drm/nouveau_drm.h
 %{_includedir}/drm/mach64_drm.h
 %{_includedir}/drm/mga_drm.h
 %{_includedir}/drm/r128_drm.h
@@ -69,11 +73,17 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/drm/sis_drm.h
 %{_includedir}/drm/via_3d_reg.h
 %{_includedir}/drm/via_drm.h
+# FIXME should be in drm/ too
 %{_includedir}/xf86drm.h
+%{_includedir}/xf86mm.h
 %{_libdir}/libdrm.so
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Fri Nov 17 2006 Adam Jackson <ajax@redhat.com> 2.3.0-1.fc7
+- Update to 2.3.0 from upstream.
+- Add nouveau userspace header.
+
 * Wed Jul 26 2006 Kristian Høgsberg <krh@redhat.com> - 2.0.2-3.fc6
 - Build for rawhide.
 
