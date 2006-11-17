@@ -34,6 +34,7 @@ libdrm Direct Rendering Manager development package
 %patch0 -p1 -b .nouveau
 
 %build
+aclocal ; automake ; autoconf
 %configure
 make
 
