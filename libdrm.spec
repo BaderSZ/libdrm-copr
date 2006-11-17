@@ -10,7 +10,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 ExclusiveArch: %{ix86} x86_64 ia64 ppc alpha sparc sparc64
 
-BuildRequires: pkgconfig
+BuildRequires: pkgconfig automake autoconf libtool
 
 Obsoletes: XFree86-libs, xorg-x11-libs
 
