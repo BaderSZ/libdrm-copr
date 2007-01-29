@@ -1,7 +1,7 @@
 Summary: libdrm Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.3.0
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: MIT/X11
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -15,6 +15,7 @@ BuildRequires: pkgconfig automake autoconf libtool
 Obsoletes: XFree86-libs, xorg-x11-libs
 
 Patch0: nouveau-20061117.patch
+Patch1: libdrm-2.3.0-default-mode.patch
 
 %description
 libdrm Direct Rendering Manager runtime library
@@ -32,6 +33,7 @@ libdrm Direct Rendering Manager development package
 %prep
 %setup -q 
 %patch0 -p1 -b .nouveau
+%patch1 -p1 -b .666
 
 %build
 aclocal ; automake ; autoconf
@@ -81,6 +83,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Mon Jan 29 2007 Adam Jackson <ajax@redhat.com> 2.3.0-2
+- Change default device mode to 0666. (#221545)
+
 * Fri Nov 17 2006 Adam Jackson <ajax@redhat.com> 2.3.0-1.fc7
 - Update to 2.3.0 from upstream.
 - Add nouveau userspace header.
