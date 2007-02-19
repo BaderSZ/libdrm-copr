@@ -1,8 +1,8 @@
-Summary: libdrm Direct Rendering Manager runtime library
+Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.3.0
-Release: 3%{?dist}
-License: MIT/X11
+Release: 4%{?dist}
+License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
 Source0: http://dri.freedesktop.org/libdrm/%{name}-%{version}.tar.bz2
@@ -10,23 +10,19 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires: pkgconfig automake autoconf libtool
 
-Obsoletes: XFree86-libs, xorg-x11-libs
-
-Patch0: nouveau-20061117.patch
+Patch0: nouveau.patch
 Patch1: libdrm-2.3.0-default-mode.patch
 
 %description
-libdrm Direct Rendering Manager runtime library
+Direct Rendering Manager runtime library
 
 %package devel
-Summary: libdrm-devel
+Summary: Direct Rendering Manager development package
 Group: Development/Libraries
 Requires: %{name} = %{version}-%{release}
 
-Obsoletes: XFree86-devel, xorg-x11-devel
-
 %description devel
-libdrm Direct Rendering Manager development package
+Direct Rendering Manager development package
 
 %prep
 %setup -q 
@@ -81,6 +77,10 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Tue Feb 19 2007 Adam Jackson <ajax@redhat.com> 2.3.0-4
+- Update nouveau patch
+- Fix License tag and other rpmlint noise
+
 * Fri Feb 02 2007 Adam Jackson <ajax@redhat.com> 2.3.0-3
 - Remove ExclusiveArch.
 
