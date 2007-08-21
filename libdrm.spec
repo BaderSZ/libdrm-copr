@@ -1,7 +1,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.3.0
-Release: 5%{?dist}
+Release: 6%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -77,6 +77,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Tue Aug 21 2007 Adam Jackson <ajax@redhat.com> - 2.3.0-6
+- Rebuild for build id
+
 * Fri Mar 30 2007 Kristian Høgsberg <krh@redhat.com> - 2.3.0-5
 - Update nouveau patch.
 
