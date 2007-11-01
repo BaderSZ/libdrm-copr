@@ -1,7 +1,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.3.0
-Release: 7%{?dist}
+Version: 2.4.0
+Release: 0%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -10,7 +10,6 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires: pkgconfig automake autoconf libtool
 
-Patch0: nouveau.patch
 Patch1: libdrm-2.3.0-default-mode.patch
 
 %description
@@ -26,7 +25,6 @@ Direct Rendering Manager development package
 
 %prep
 %setup -q 
-%patch0 -p1 -b .nouveau
 %patch1 -p1 -b .666
 
 %build
@@ -70,6 +68,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/drm/sis_drm.h
 %{_includedir}/drm/via_3d_reg.h
 %{_includedir}/drm/via_drm.h
+%{_includedir}/drm/xgi_drm.h
 # FIXME should be in drm/ too
 %{_includedir}/xf86drm.h
 %{_includedir}/xf86mm.h
@@ -77,6 +76,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Thu Nov 01 2007 Dave Airlie <airlied@redhat.com> - 2.4.0-1
+- Import a snapshot of what will be 2.4 upstream
+
 * Thu Sep 20 2007 Dave Airlie <airlied@redhat.com> - 2.3.0-7
 - Update nouveau patch.
 
