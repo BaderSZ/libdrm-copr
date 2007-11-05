@@ -76,7 +76,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
-* Thu Nov 01 2007 Dave Airlie <airlied@redhat.com> - 2.4.0-1
+* Thu Nov 01 2007 Dave Airlie <airlied@redhat.com> - 2.4.0-0
 - Import a snapshot of what will be 2.4 upstream
 
 * Thu Sep 20 2007 Dave Airlie <airlied@redhat.com> - 2.3.0-7
