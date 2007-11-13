@@ -1,7 +1,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.0
-Release: 0%{?dist}
+Release: 0.1%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -10,7 +10,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires: pkgconfig automake autoconf libtool
 
-Patch1: libdrm-2.3.0-default-mode.patch
+Patch2: libdrm-2.4.0-no-freaking-mknod.patch
 
 %description
 Direct Rendering Manager runtime library
@@ -25,7 +25,7 @@ Direct Rendering Manager development package
 
 %prep
 %setup -q 
-%patch1 -p1 -b .666
+%patch2 -p1 -b .mknod
 
 %build
 aclocal ; automake ; autoconf
@@ -76,6 +76,10 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Mon Nov 12 2007 Adam Jackson <ajax@redhat.com> 2.4.0-0.1
+- libdrm-2.4.0-no-freaking-mknod.patch: Don't magically mknod the device
+  file, that's what udev is for.
+
 * Thu Nov 01 2007 Dave Airlie <airlied@redhat.com> - 2.4.0-0
 - Import a snapshot of what will be 2.4 upstream
 
