@@ -1,7 +1,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.0
-Release: 0.2%{?dist}
+Release: 0.3%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -26,7 +26,7 @@ Direct Rendering Manager development package
 
 %prep
 %setup -q 
-%patch2 -p1 -b .mknod
+#patch2 -p1 -b .mknod
 
 %build
 aclocal ; automake ; autoconf
@@ -77,6 +77,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Mon Jan 21 2008 Adam Jackson <ajax@redhat.com> 2.4.0-0.3
+- libdrm-2.4.0-no-freaking-mknod.patch: Disable.  Deep voodoo.
+
 * Thu Nov 30 2007 Dave Airlie <airlied@redhat.com> - 2.4.0-0.2
 - Update to a newer upstream snapshot
 
