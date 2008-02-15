@@ -1,12 +1,15 @@
+%define gitdate 20080215
+
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.0
-Release: 0.3%{?dist}
+Release: 0.4%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
 #Source0: http://dri.freedesktop.org/libdrm/%{name}-%{version}.tar.bz2
-Source0: libdrm-20071130.tar.bz2
+Source0: %{name}-%{gitdate}.tar.bz2
+Source1: make-git-snapshot.sh
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires: pkgconfig automake autoconf libtool
@@ -25,11 +28,11 @@ Requires: %{name} = %{version}-%{release}
 Direct Rendering Manager development package
 
 %prep
-%setup -q 
+%setup -q -n %{name}-%{gitdate}
 #patch2 -p1 -b .mknod
 
 %build
-aclocal ; automake ; autoconf
+autoreconf -v --install || exit 1
 %configure
 make
 
@@ -77,6 +80,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Fri Feb 15 2008 Adam Jackson <ajax@redhat.com> 2.4.0-0.4
+- Today's git snapshot for updated headers.
+
 * Mon Jan 21 2008 Adam Jackson <ajax@redhat.com> 2.4.0-0.3
 - libdrm-2.4.0-no-freaking-mknod.patch: Disable.  Deep voodoo.
 
