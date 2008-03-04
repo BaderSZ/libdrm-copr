@@ -1,9 +1,9 @@
-%define gitdate 20080215
+%define gitdate 20080303
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.0
-Release: 0.4%{?dist}
+Release: 0.5%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -80,6 +80,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Mon Mar  3 2008 Kristian Høgsberg <krh@redhat.com> - 2.4.0-0.5
+- What he said.
+
 * Fri Feb 15 2008 Adam Jackson <ajax@redhat.com> 2.4.0-0.4
 - Today's git snapshot for updated headers.
 
