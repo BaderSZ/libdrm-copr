@@ -1,0 +1,1274 @@
+diff --git a/libdrm/Makefile.am b/libdrm/Makefile.am
+index e7e07e4..24c3203 100644
+--- a/libdrm/Makefile.am
++++ b/libdrm/Makefile.am
+@@ -23,9 +23,9 @@ libdrm_ladir = $(libdir)
+ libdrm_la_LDFLAGS = -version-number 2:3:0 -no-undefined
+ 
+ AM_CFLAGS = -I$(top_srcdir)/shared-core
+-libdrm_la_SOURCES = xf86drm.c xf86drmHash.c xf86drmRandom.c xf86drmSL.c
++libdrm_la_SOURCES = xf86drm.c xf86drmHash.c xf86drmRandom.c xf86drmSL.c xf86drmMode.c
+ 
+ libdrmincludedir = ${includedir}
+-libdrminclude_HEADERS = xf86drm.h xf86mm.h
++libdrminclude_HEADERS = xf86drm.h xf86mm.h xf86drmMode.h
+ 
+ EXTRA_DIST = ChangeLog TODO
+diff --git a/libdrm/xf86drm.c b/libdrm/xf86drm.c
+index fb8f1c6..bcf562d 100644
+--- a/libdrm/xf86drm.c
++++ b/libdrm/xf86drm.c
+@@ -87,6 +87,9 @@
+ 
+ #define DRM_MSG_VERBOSITY 3
+ 
++#define DRM_NODE_CONTROL 0
++#define DRM_NODE_RENDER 1
++
+ static drmServerInfoPtr drm_server_info;
+ 
+ void drmSetServerInfo(drmServerInfoPtr info)
+@@ -264,7 +267,7 @@ static int drmMatchBusID(const char *id1, const char *id2)
+  * special file node with the major and minor numbers specified by \p dev and
+  * parent directory if necessary and was called by root.
+  */
+-static int drmOpenDevice(long dev, int minor)
++static int drmOpenDevice(long dev, int minor, int type)
+ {
+     stat_t          st;
+     char            buf[64];
+@@ -274,7 +277,7 @@ static int drmOpenDevice(long dev, int minor)
+     uid_t           user    = DRM_DEV_UID;
+     gid_t           group   = DRM_DEV_GID, serv_group;
+     
+-    sprintf(buf, DRM_DEV_NAME, DRM_DIR_NAME, minor);
++    sprintf(buf, type ? DRM_DEV_NAME : DRM_CONTROL_DEV_NAME, DRM_DIR_NAME, minor);
+     drmMsg("drmOpenDevice: node name is %s\n", buf);
+ 
+     if (drm_server_info) {
+@@ -348,15 +351,15 @@ static int drmOpenDevice(long dev, int minor)
+  * Calls drmOpenDevice() if \p create is set, otherwise assembles the device
+  * name from \p minor and opens it.
+  */
+-static int drmOpenMinor(int minor, int create)
++static int drmOpenMinor(int minor, int create, int type)
+ {
+     int  fd;
+     char buf[64];
+     
+     if (create)
+-	return drmOpenDevice(makedev(DRM_MAJOR, minor), minor);
++      return drmOpenDevice(makedev(DRM_MAJOR, minor), minor, type);
+     
+-    sprintf(buf, DRM_DEV_NAME, DRM_DIR_NAME, minor);
++    sprintf(buf, type ? DRM_DEV_NAME : DRM_CONTROL_DEV_NAME, DRM_DIR_NAME, minor);
+     if ((fd = open(buf, O_RDWR, 0)) >= 0)
+ 	return fd;
+     return -errno;
+@@ -379,7 +382,7 @@ int drmAvailable(void)
+     int           retval = 0;
+     int           fd;
+ 
+-    if ((fd = drmOpenMinor(0, 1)) < 0) {
++    if ((fd = drmOpenMinor(0, 1, DRM_NODE_RENDER)) < 0) {
+ #ifdef __linux__
+ 	/* Try proc for backward Linux compatibility */
+ 	if (!access("/proc/dri/0", R_OK))
+@@ -420,7 +423,7 @@ static int drmOpenByBusid(const char *busid)
+ 
+     drmMsg("drmOpenByBusid: Searching for BusID %s\n", busid);
+     for (i = 0; i < DRM_MAX_MINOR; i++) {
+-	fd = drmOpenMinor(i, 1);
++	fd = drmOpenMinor(i, 1, DRM_NODE_RENDER);
+ 	drmMsg("drmOpenByBusid: drmOpenMinor returns %d\n", fd);
+ 	if (fd >= 0) {
+ 	    sv.drm_di_major = 1;
+@@ -482,7 +485,7 @@ static int drmOpenByName(const char *name)
+      * already in use.  If it's in use it will have a busid assigned already.
+      */
+     for (i = 0; i < DRM_MAX_MINOR; i++) {
+-	if ((fd = drmOpenMinor(i, 1)) >= 0) {
++	if ((fd = drmOpenMinor(i, 1, DRM_NODE_RENDER)) >= 0) {
+ 	    if ((version = drmGetVersion(fd))) {
+ 		if (!strcmp(version->name, name)) {
+ 		    drmFreeVersion(version);
+@@ -526,7 +529,7 @@ static int drmOpenByName(const char *name)
+ 			if (*pt) { /* Found busid */
+ 			    return drmOpenByBusid(++pt);
+ 			} else { /* No busid */
+-			    return drmOpenDevice(strtol(devstring, NULL, 0),i);
++			    return drmOpenDevice(strtol(devstring, NULL, 0),i, DRM_NODE_RENDER);
+ 			}
+ 		    }
+ 		}
+@@ -576,6 +579,10 @@ int drmOpen(const char *name, const char *busid)
+     return -1;
+ }
+ 
++int drmOpenControl(int minor)
++{
++    return drmOpenMinor(minor, 0, DRM_NODE_CONTROL);
++}
+ 
+ /**
+  * Free the version information returned by drmGetVersion().
+@@ -2871,6 +2878,21 @@ int drmMMUnlock(int fd, unsigned memType, int unlockBM)
+     return drmIoctlTimeout(fd, DRM_IOCTL_MM_UNLOCK, &arg);
+ }
+ 
++int drmMMInfo(int fd, unsigned memType, uint64_t *size)
++{
++    struct drm_mm_info_arg arg;
++
++    memset(&arg, 0, sizeof(arg));
++    
++    arg.mem_type = memType;
++
++    if (ioctl(fd, DRM_IOCTL_MM_INFO, &arg))
++	return -errno;
++
++    *size = arg.p_size;
++    return 0;
++}
++
+ int drmBOVersion(int fd, unsigned int *major,
+ 		 unsigned int *minor,
+ 		 unsigned int *patchlevel)
+diff --git a/libdrm/xf86drm.h b/libdrm/xf86drm.h
+index 230f54c..7b41860 100644
+--- a/libdrm/xf86drm.h
++++ b/libdrm/xf86drm.h
+@@ -49,6 +49,7 @@
+ 
+ #define DRM_DIR_NAME  "/dev/dri"
+ #define DRM_DEV_NAME  "%s/card%d"
++#define DRM_CONTROL_DEV_NAME  "%s/controlD%d"
+ #define DRM_PROC_NAME "/proc/dri/" /* For backward Linux compatibility */
+ 
+ #define DRM_ERR_NO_DEVICE  (-1001)
+@@ -508,6 +509,7 @@ do {	register unsigned int __old __asm("o0");		\
+ /* General user-level programmer's API: unprivileged */
+ extern int           drmAvailable(void);
+ extern int           drmOpen(const char *name, const char *busid);
++extern int drmOpenControl(int minor);
+ extern int           drmClose(int fd);
+ extern drmVersionPtr drmGetVersion(int fd);
+ extern drmVersionPtr drmGetLibVersion(int fd);
+diff --git a/libdrm/xf86drmMode.c b/libdrm/xf86drmMode.c
+new file mode 100644
+index 0000000..07b14db
+--- /dev/null
++++ b/libdrm/xf86drmMode.c
+@@ -0,0 +1,594 @@
++/*
++ * \file xf86drmMode.c
++ * Header for DRM modesetting interface.
++ *
++ * \author Jakob Bornecrantz <wallbraker@gmail.com>
++ *
++ * \par Acknowledgements:
++ * Feb 2007, Dave Airlie <airlied@linux.ie>
++ */
++
++/*
++ * Copyright (c) <year> <copyright holders>
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a
++ * copy of this software and associated documentation files (the "Software"),
++ * to deal in the Software without restriction, including without limitation
++ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
++ * and/or sell copies of the Software, and to permit persons to whom the
++ * Software is furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
++ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
++ * IN THE SOFTWARE.
++ *
++ */
++
++/*
++ * TODO the types we are after are defined in diffrent headers on diffrent
++ * platforms find which headers to include to get uint32_t
++ */
++#include <stdint.h>
++#include <sys/ioctl.h>
++#include <stdio.h>
++
++#include "xf86drmMode.h"
++#include "xf86drm.h"
++#include <drm.h>
++#include <string.h>
++#include <dirent.h>
++#include <errno.h>
++
++#define U642VOID(x) ((void *)(unsigned long)(x))
++#define VOID2U64(x) ((uint64_t)(unsigned long)(x))
++
++/*
++ * Util functions
++ */
++
++void* drmAllocCpy(void *array, int count, int entry_size)
++{
++	char *r;
++	int i;
++
++	if (!count || !array || !entry_size)
++		return 0;
++
++	if (!(r = drmMalloc(count*entry_size)))
++		return 0;
++
++	for (i = 0; i < count; i++)
++		memcpy(r+(entry_size*i), array+(entry_size*i), entry_size);
++
++	return r;
++}
++
++/*
++ * A couple of free functions.
++ */
++
++void drmModeFreeModeInfo(struct drm_mode_modeinfo *ptr)
++{
++	if (!ptr)
++		return;
++
++	drmFree(ptr);
++}
++
++void drmModeFreeResources(drmModeResPtr ptr)
++{
++	if (!ptr)
++		return;
++
++	drmFree(ptr);
++
++}
++
++void drmModeFreeFB(drmModeFBPtr ptr)
++{
++	if (!ptr)
++		return;
++
++	/* we might add more frees later. */
++	drmFree(ptr);
++}
++
++void drmModeFreeCrtc(drmModeCrtcPtr ptr)
++{
++	if (!ptr)
++		return;
++
++	drmFree(ptr);
++
++}
++
++void drmModeFreeOutput(drmModeOutputPtr ptr)
++{
++	if (!ptr)
++		return;
++
++	drmFree(ptr->modes);
++	drmFree(ptr);
++
++}
++
++/*
++ * ModeSetting functions.
++ */
++
++drmModeResPtr drmModeGetResources(int fd)
++{
++	struct drm_mode_card_res res;
++	drmModeResPtr r = 0;
++
++	memset(&res, 0, sizeof(struct drm_mode_card_res));
++
++	if (ioctl(fd, DRM_IOCTL_MODE_GETRESOURCES, &res))
++		return 0;
++
++	if (res.count_fbs)
++		res.fb_id_ptr = VOID2U64(drmMalloc(res.count_fbs*sizeof(uint32_t)));
++	if (res.count_crtcs)
++		res.crtc_id_ptr = VOID2U64(drmMalloc(res.count_crtcs*sizeof(uint32_t)));
++	if (res.count_outputs)
++		res.output_id_ptr = VOID2U64(drmMalloc(res.count_outputs*sizeof(uint32_t)));
++
++	if (ioctl(fd, DRM_IOCTL_MODE_GETRESOURCES, &res)) {
++		r = NULL;
++		goto err_allocs;
++	}
++
++	/*
++	 * return
++	 */
++
++
++	if (!(r = drmMalloc(sizeof(*r))))
++		return 0;
++
++	r->min_width     = res.min_width;
++	r->max_width     = res.max_width;
++	r->min_height    = res.min_height;
++	r->max_height    = res.max_height;
++	r->count_fbs     = res.count_fbs;
++	r->count_crtcs   = res.count_crtcs;
++	r->count_outputs = res.count_outputs;
++	/* TODO we realy should test if these allocs fails. */
++	r->fbs           = drmAllocCpy(U642VOID(res.fb_id_ptr), res.count_fbs, sizeof(uint32_t));
++	r->crtcs         = drmAllocCpy(U642VOID(res.crtc_id_ptr), res.count_crtcs, sizeof(uint32_t));
++	r->outputs       = drmAllocCpy(U642VOID(res.output_id_ptr), res.count_outputs, sizeof(uint32_t));
++
++err_allocs:
++	drmFree(U642VOID(res.fb_id_ptr));
++	drmFree(U642VOID(res.crtc_id_ptr));
++	drmFree(U642VOID(res.output_id_ptr));
++
++	return r;
++}
++
++uint32_t drmModeGetHotplug(int fd)
++{
++	struct drm_mode_hotplug arg;
++	arg.counter = 0;
++
++	ioctl(fd, DRM_IOCTL_MODE_HOTPLUG, &arg);
++	return arg.counter;
++}
++
++int drmModeAddFB(int fd, uint32_t width, uint32_t height, uint8_t depth,
++                 uint8_t bpp, uint32_t pitch, uint32_t bo_handle,
++		 uint32_t *buf_id)
++{
++	struct drm_mode_fb_cmd f;
++	int ret;
++
++	f.width  = width;
++	f.height = height;
++	f.pitch  = pitch;
++	f.bpp    = bpp;
++	f.depth  = depth;
++	f.handle = bo_handle;
++
++	if ((ret = ioctl(fd, DRM_IOCTL_MODE_ADDFB, &f)))
++		return ret;
++
++	*buf_id = f.buffer_id;
++	return 0;
++}
++
++int drmModeRmFB(int fd, uint32_t bufferId)
++{
++	return ioctl(fd, DRM_IOCTL_MODE_RMFB, &bufferId);
++
++
++}
++
++drmModeFBPtr drmModeGetFB(int fd, uint32_t buf)
++{
++	struct drm_mode_fb_cmd info;
++	drmModeFBPtr r;
++
++	info.buffer_id = buf;
++
++	if (ioctl(fd, DRM_IOCTL_MODE_GETFB, &info))
++		return NULL;
++
++	if (!(r = drmMalloc(sizeof(*r))))
++		return NULL;
++
++	r->buffer_id = info.buffer_id;
++	r->width = info.width;
++	r->height = info.height;
++	r->pitch = info.pitch;
++	r->bpp = info.bpp;
++	r->handle = info.handle;
++	r->depth = info.depth;
++
++	return r;
++}
++
++
++/*
++ * Crtc functions
++ */
++
++drmModeCrtcPtr drmModeGetCrtc(int fd, uint32_t crtcId)
++{
++	struct drm_mode_crtc crtc;
++	drmModeCrtcPtr r;
++
++	crtc.count_outputs   = 0;
++	crtc.outputs         = 0;
++	crtc.count_possibles = 0;
++	crtc.possibles       = 0;
++	crtc.crtc_id = crtcId;
++
++	if (ioctl(fd, DRM_IOCTL_MODE_GETCRTC, &crtc))
++		return 0;
++
++	/*
++	 * return
++	 */
++
++	if (!(r = drmMalloc(sizeof(*r))))
++		return 0;
++	
++	r->crtc_id         = crtc.crtc_id;
++	r->x               = crtc.x;
++	r->y               = crtc.y;
++	r->mode_valid      = crtc.mode_valid;
++	if (r->mode_valid)
++		memcpy(&r->mode, &crtc.mode, sizeof(struct drm_mode_modeinfo));
++	r->buffer_id       = crtc.fb_id;
++	r->gamma_size      = crtc.gamma_size;
++	r->count_outputs   = crtc.count_outputs;
++	r->count_possibles = crtc.count_possibles;
++	/* TODO we realy should test if these alloc & cpy fails. */
++	r->outputs         = crtc.outputs;
++	r->possibles       = crtc.possibles;
++
++	return r;
++}
++
++
++int drmModeSetCrtc(int fd, uint32_t crtcId, uint32_t bufferId,
++                   uint32_t x, uint32_t y, uint32_t *outputs, int count,
++		   struct drm_mode_modeinfo *mode)
++{
++	struct drm_mode_crtc crtc;
++
++	crtc.count_outputs   = 0;
++	crtc.outputs         = 0;
++	crtc.count_possibles = 0;
++	crtc.possibles       = 0;
++
++	crtc.x             = x;
++	crtc.y             = y;
++	crtc.crtc_id       = crtcId;
++	crtc.fb_id         = bufferId;
++	crtc.set_outputs_ptr = VOID2U64(outputs);
++	crtc.count_outputs = count;
++	if (mode) {
++	  memcpy(&crtc.mode, mode, sizeof(struct drm_mode_modeinfo));
++	  crtc.mode_valid = 1;
++	} else
++	  crtc.mode_valid = 0;
++
++	return ioctl(fd, DRM_IOCTL_MODE_SETCRTC, &crtc);
++}
++
++/*
++ * Cursor manipulation
++ */
++
++int drmModeSetCursor(int fd, uint32_t crtcId, drmBO *bo, uint32_t width, uint32_t height)
++{
++	struct drm_mode_cursor arg;
++
++	arg.flags = DRM_MODE_CURSOR_BO;
++	arg.crtc = crtcId;
++	arg.width = width;
++	arg.height = height;
++	if (bo)
++		arg.handle = bo->handle;
++	else
++		arg.handle = 0;
++
++	return ioctl(fd, DRM_IOCTL_MODE_CURSOR, &arg);
++}
++
++int drmModeMoveCursor(int fd, uint32_t crtcId, int x, int y)
++{
++	struct drm_mode_cursor arg;
++
++	arg.flags = DRM_MODE_CURSOR_MOVE;
++	arg.crtc = crtcId;
++	arg.x = x;
++	arg.y = y;
++
++	return ioctl(fd, DRM_IOCTL_MODE_CURSOR, &arg);
++}
++
++/*
++ * Output manipulation
++ */
++
++drmModeOutputPtr drmModeGetOutput(int fd, uint32_t output_id)
++{
++	struct drm_mode_get_output out;
++	drmModeOutputPtr r = NULL;
++
++	out.output = output_id;
++	out.output_type_id = 0;
++	out.output_type  = 0;
++	out.count_crtcs  = 0;
++	out.crtcs        = 0;
++	out.count_clones = 0;
++	out.clones       = 0;
++	out.count_modes  = 0;
++	out.modes_ptr    = 0;
++	out.count_props  = 0;
++	out.props_ptr    = 0;
++	out.prop_values_ptr = 0;
++
++	if (ioctl(fd, DRM_IOCTL_MODE_GETOUTPUT, &out))
++		return 0;
++
++	if (out.count_props) {
++		out.props_ptr = VOID2U64(drmMalloc(out.count_props*sizeof(uint32_t)));
++		out.prop_values_ptr = VOID2U64(drmMalloc(out.count_props*sizeof(uint64_t)));
++	}
++
++	if (out.count_modes)
++		out.modes_ptr = VOID2U64(drmMalloc(out.count_modes*sizeof(struct drm_mode_modeinfo)));
++
++	if (ioctl(fd, DRM_IOCTL_MODE_GETOUTPUT, &out))
++		goto err_allocs;
++
++	if(!(r = drmMalloc(sizeof(*r)))) {
++		goto err_allocs;
++	}
++
++	r->output_id = out.output;
++	r->crtc = out.crtc;
++	r->connection   = out.connection;
++	r->mmWidth      = out.mm_width;
++	r->mmHeight     = out.mm_height;
++	r->subpixel     = out.subpixel;
++	r->count_crtcs  = out.count_crtcs;
++	r->count_clones = out.count_clones;
++	r->count_modes  = out.count_modes;
++	/* TODO we should test if these alloc & cpy fails. */
++	r->crtcs        = out.crtcs;
++	r->clones       = out.clones;
++	r->count_props  = out.count_props;
++	r->props        = drmAllocCpy(U642VOID(out.props_ptr), out.count_props, sizeof(uint32_t));
++	r->prop_values  = drmAllocCpy(U642VOID(out.prop_values_ptr), out.count_props, sizeof(uint64_t));
++	r->modes        = drmAllocCpy(U642VOID(out.modes_ptr), out.count_modes, sizeof(struct drm_mode_modeinfo));
++	r->output_type  = out.output_type;
++	r->output_type_id = out.output_type_id;
++
++err_allocs:
++	drmFree(U642VOID(out.prop_values_ptr));
++	drmFree(U642VOID(out.props_ptr));
++	drmFree(U642VOID(out.modes_ptr));
++
++	return r;
++}
++
++int drmModeAttachMode(int fd, uint32_t output_id, struct drm_mode_modeinfo *mode_info)
++{
++	struct drm_mode_mode_cmd res;
++
++	memcpy(&res.mode, mode_info, sizeof(struct drm_mode_modeinfo));
++	res.output_id = output_id;
++
++	return ioctl(fd, DRM_IOCTL_MODE_ATTACHMODE, &res);
++}
++
++int drmModeDetachMode(int fd, uint32_t output_id, struct drm_mode_modeinfo *mode_info)
++{
++	struct drm_mode_mode_cmd res;
++
++	memcpy(&res.mode, mode_info, sizeof(struct drm_mode_modeinfo));
++	res.output_id = output_id;
++
++	return ioctl(fd, DRM_IOCTL_MODE_DETACHMODE, &res);
++}
++
++
++drmModePropertyPtr drmModeGetProperty(int fd, uint32_t property_id)
++{
++	struct drm_mode_get_property prop;
++	drmModePropertyPtr r;
++
++	prop.prop_id = property_id;
++	prop.count_enum_blobs = 0;
++	prop.count_values = 0;
++	prop.flags = 0;
++	prop.enum_blob_ptr = 0;
++	prop.values_ptr = 0;
++
++	if (ioctl(fd, DRM_IOCTL_MODE_GETPROPERTY, &prop))
++		return 0;
++
++	if (prop.count_values)
++		prop.values_ptr = VOID2U64(drmMalloc(prop.count_values * sizeof(uint64_t)));
++
++	if (prop.count_enum_blobs && (prop.flags & DRM_MODE_PROP_ENUM))
++		prop.enum_blob_ptr = VOID2U64(drmMalloc(prop.count_enum_blobs * sizeof(struct drm_mode_property_enum)));
++
++	if (prop.count_enum_blobs && (prop.flags & DRM_MODE_PROP_BLOB)) {
++		prop.values_ptr = VOID2U64(drmMalloc(prop.count_enum_blobs * sizeof(uint32_t)));
++		prop.enum_blob_ptr = VOID2U64(drmMalloc(prop.count_enum_blobs * sizeof(uint32_t)));
++	}
++
++	if (ioctl(fd, DRM_IOCTL_MODE_GETPROPERTY, &prop)) {
++		r = NULL;
++		goto err_allocs;
++	}
++
++	if (!(r = drmMalloc(sizeof(*r))))
++		return NULL;
++	
++	r->prop_id = prop.prop_id;
++	r->count_values = prop.count_values;
++	
++	r->flags = prop.flags;
++	if (prop.count_values)
++		r->values = drmAllocCpy(U642VOID(prop.values_ptr), prop.count_values, sizeof(uint64_t));
++	if (prop.flags & DRM_MODE_PROP_ENUM) {
++		r->count_enums = prop.count_enum_blobs;
++		r->enums = drmAllocCpy(U642VOID(prop.enum_blob_ptr), prop.count_enum_blobs, sizeof(struct drm_mode_property_enum));
++	} else	if (prop.flags & DRM_MODE_PROP_ENUM) {
++		r->values = drmAllocCpy(U642VOID(prop.values_ptr), prop.count_enum_blobs, sizeof(uint32_t));
++		r->blob_ids = drmAllocCpy(U642VOID(prop.enum_blob_ptr), prop.count_enum_blobs, sizeof(uint32_t));
++		r->count_blobs = prop.count_enum_blobs;
++	}
++	strncpy(r->name, prop.name, DRM_PROP_NAME_LEN);
++	r->name[DRM_PROP_NAME_LEN-1] = 0;
++
++err_allocs:
++	drmFree(U642VOID(prop.values_ptr));
++	drmFree(U642VOID(prop.enum_blob_ptr));
++
++	return r;
++}
++
++void drmModeFreeProperty(drmModePropertyPtr ptr)
++{
++	if (!ptr)
++		return;
++
++	drmFree(ptr->values);
++	drmFree(ptr->enums);
++	drmFree(ptr);
++}
++
++drmModePropertyBlobPtr drmModeGetPropertyBlob(int fd, uint32_t blob_id)
++{
++	struct drm_mode_get_blob blob;
++	drmModePropertyBlobPtr r;
++
++	blob.length = 0;
++	blob.data = 0;
++	blob.blob_id = blob_id;
++
++	if (ioctl(fd, DRM_IOCTL_MODE_GETPROPBLOB, &blob))
++		return NULL;
++
++	if (blob.length)
++		blob.data = VOID2U64(drmMalloc(blob.length));
++
++	if (ioctl(fd, DRM_IOCTL_MODE_GETPROPBLOB, &blob)) {
++		r = NULL;
++		goto err_allocs;
++	}
++
++	if (!(r = drmMalloc(sizeof(*r))))
++		return NULL;
++
++	r->id = blob.blob_id;
++	r->length = blob.length;
++	r->data = drmAllocCpy(U642VOID(blob.data), 1, blob.length);
++
++err_allocs:
++	drmFree(U642VOID(blob.data));
++	return r;
++}
++
++void drmModeFreePropertyBlob(drmModePropertyBlobPtr ptr)
++{
++	if (!ptr)
++		return;
++
++	drmFree(ptr->data);
++	drmFree(ptr);
++}
++
++int drmModeOutputSetProperty(int fd, uint32_t output_id, uint32_t property_id,
++			     uint64_t value)
++{
++	struct drm_mode_output_set_property osp;
++	int ret;
++
++	osp.output_id = output_id;
++	osp.prop_id = property_id;
++	osp.value = value;
++
++	if ((ret = ioctl(fd, DRM_IOCTL_MODE_SETPROPERTY, &osp)))
++		return ret;
++
++	return 0;
++}
++
++/*
++ * checks if a modesetting capable driver has attached to the pci id
++ * returns 0 if modesetting supported.
++ *  -EINVAL or invalid bus id
++ *  -ENOSYS if no modesetting support
++*/
++int drmCheckModesettingSupported(const char *busid)
++{
++#ifdef __linux__
++	char pci_dev_dir[1024];
++	int domain, bus, dev, func;
++	DIR *sysdir;
++	struct dirent *dent;
++	int found = 0, ret;
++
++	ret = sscanf(busid, "pci:%04x:%02x:%02x.%d", &domain, &bus, &dev, &func);
++	if (ret != 4)
++		return -EINVAL;
++
++	sprintf(pci_dev_dir, "/sys/bus/pci/devices/%04x:%02x:%02x.%d/",
++		domain, bus, dev, func);
++
++	sysdir = opendir(pci_dev_dir);
++	if (!sysdir)
++		return -EINVAL;
++
++	dent = readdir(sysdir);
++	while (dent) {
++		if (!strncmp(dent->d_name, "drm:controlD", 12)) {
++			found = 1;
++			break;
++		}
++		
++		dent = readdir(sysdir);
++	}
++			
++	closedir(sysdir);
++	if (found)
++		return 0;
++#endif
++	return -ENOSYS;
++
++}
+diff --git a/libdrm/xf86drmMode.h b/libdrm/xf86drmMode.h
+new file mode 100644
+index 0000000..edf9efe
+--- /dev/null
++++ b/libdrm/xf86drmMode.h
+@@ -0,0 +1,246 @@
++/*
++ * \file xf86drmMode.h
++ * Header for DRM modesetting interface.
++ *
++ * \author Jakob Bornecrantz <wallbraker@gmail.com>
++ *
++ * \par Acknowledgements:
++ * Feb 2007, Dave Airlie <airlied@linux.ie>
++ */
++
++/*
++ * Copyright (c) <year> <copyright holders>
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a
++ * copy of this software and associated documentation files (the "Software"),
++ * to deal in the Software without restriction, including without limitation
++ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
++ * and/or sell copies of the Software, and to permit persons to whom the
++ * Software is furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
++ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
++ * IN THE SOFTWARE.
++ *
++ */
++
++#include <drm.h>
++#include "xf86mm.h"
++
++/*
++ * This is the interface for modesetting for drm.
++ *
++ * In order to use this interface you must include either <stdint.h> or another
++ * header defining uint32_t, int32_t and uint16_t.
++ *
++ * It aims to provide a randr1.2 compatible interface for modesettings in the
++ * kernel, the interface is also ment to be used by libraries like EGL.
++ *
++ * More information can be found in randrproto.txt which can be found here:
++ * http://gitweb.freedesktop.org/?p=xorg/proto/randrproto.git
++ *
++ * There are some major diffrences to be noted. Unlike the randr1.2 proto you
++ * need to create the memory object of the framebuffer yourself with the ttm
++ * buffer object interface. This object needs to be pinned.
++ */
++
++
++typedef struct _drmModeRes {
++
++	int count_fbs;
++	uint32_t *fbs;
++
++	int count_crtcs;
++	uint32_t *crtcs;
++
++	int count_outputs;
++	uint32_t *outputs;
++
++	uint32_t min_width, max_width;
++	uint32_t min_height, max_height;
++} drmModeRes, *drmModeResPtr;
++
++typedef struct drm_mode_fb_cmd drmModeFB, *drmModeFBPtr;
++
++typedef struct _drmModePropertyBlob {
++	uint32_t id;
++	uint32_t length;
++	void *data;
++} drmModePropertyBlobRes, *drmModePropertyBlobPtr;
++
++typedef struct _drmModeProperty {
++	unsigned int prop_id;
++	unsigned int flags;
++	char name[DRM_PROP_NAME_LEN];
++	int count_values;
++	uint64_t *values; // store the blob lengths
++	int count_enums;
++	struct drm_mode_property_enum *enums;
++	int count_blobs;
++	uint32_t *blob_ids; // store the blob IDs
++} drmModePropertyRes, *drmModePropertyPtr;
++
++typedef struct _drmModeCrtc {
++	unsigned int crtc_id;
++	unsigned int buffer_id; /**< FB id to connect to 0 = disconnect*/
++
++	uint32_t x, y; /**< Position on the frameuffer */
++	uint32_t width, height;
++	int mode_valid;
++	struct drm_mode_modeinfo mode;
++
++	int count_outputs;
++	uint32_t outputs; /**< Outputs that are connected */
++
++	int count_possibles;
++	uint32_t possibles; /**< Outputs that can be connected */
++
++	int gamma_size; /**< Number of gamma stops */
++
++} drmModeCrtc, *drmModeCrtcPtr;
++
++typedef enum {
++	DRM_MODE_CONNECTED         = 1,
++	DRM_MODE_DISCONNECTED      = 2,
++	DRM_MODE_UNKNOWNCONNECTION = 3
++} drmModeConnection;
++
++typedef enum {
++	DRM_MODE_SUBPIXEL_UNKNOWN        = 1,
++	DRM_MODE_SUBPIXEL_HORIZONTAL_RGB = 2,
++	DRM_MODE_SUBPIXEL_HORIZONTAL_BGR = 3,
++	DRM_MODE_SUBPIXEL_VERTICAL_RGB   = 4,
++	DRM_MODE_SUBPIXEL_VERTICAL_BGR   = 5,
++	DRM_MODE_SUBPIXEL_NONE           = 6
++} drmModeSubPixel;
++
++typedef struct _drmModeOutput {
++	unsigned int output_id;
++
++	unsigned int crtc; /**< Crtc currently connected to */
++	unsigned int output_type;
++	unsigned int output_type_id;
++	drmModeConnection connection;
++	uint32_t mmWidth, mmHeight; /**< HxW in millimeters */
++	drmModeSubPixel subpixel;
++
++	int count_crtcs;
++	uint32_t crtcs; /**< Possible crtc to connect to */
++
++	int count_clones;
++	uint32_t clones; /**< Mask of clones */
++
++	int count_modes;
++	struct drm_mode_modeinfo *modes;
++
++	int count_props;
++	uint32_t *props; /**< List of property ids */
++	uint64_t *prop_values; /**< List of property values */
++
++} drmModeOutput, *drmModeOutputPtr;
++
++
++
++extern void drmModeFreeModeInfo( struct drm_mode_modeinfo *ptr );
++extern void drmModeFreeResources( drmModeResPtr ptr );
++extern void drmModeFreeFB( drmModeFBPtr ptr );
++extern void drmModeFreeCrtc( drmModeCrtcPtr ptr );
++extern void drmModeFreeOutput( drmModeOutputPtr ptr );
++
++/**
++ * Retrives all of the resources associated with a card.
++ */
++extern drmModeResPtr drmModeGetResources(int fd);
++
++/**
++ * Retrives the hotplug counter
++ */
++extern uint32_t drmModeGetHotplug(int fd);
++
++/*
++ * FrameBuffer manipulation.
++ */
++
++/**
++ * Retrive information about framebuffer bufferId
++ */
++extern drmModeFBPtr drmModeGetFB(int fd, uint32_t bufferId);
++
++/**
++ * Creates a new framebuffer with an buffer object as its scanout buffer.
++ */
++extern int drmModeAddFB(int fd, uint32_t width, uint32_t height, uint8_t depth,
++			uint8_t bpp, uint32_t pitch, uint32_t bo_handle,
++			uint32_t *buf_id);
++/**
++ * Destroies the given framebuffer.
++ */
++extern int drmModeRmFB(int fd, uint32_t bufferId);
++
++
++/*
++ * Crtc functions
++ */
++
++/**
++ * Retrive information about the ctrt crtcId
++ */
++extern drmModeCrtcPtr drmModeGetCrtc(int fd, uint32_t crtcId);
++
++/**
++ * Set the mode on a crtc crtcId with the given mode modeId.
++ */
++int drmModeSetCrtc(int fd, uint32_t crtcId, uint32_t bufferId,
++                   uint32_t x, uint32_t y, uint32_t *outputs, int count,
++		   struct drm_mode_modeinfo *mode);
++
++/*
++ * Cursor functions
++ */
++
++/**
++ * Set the cursor on crtc
++ */
++int drmModeSetCursor(int fd, uint32_t crtcId, drmBO *bo, uint32_t width, uint32_t height);
++
++/**
++ * Move the cursor on crtc
++ */
++int drmModeMoveCursor(int fd, uint32_t crtcId, int x, int y);
++
++/*
++ * Output manipulation
++ */
++
++/**
++ * Retrive information about the output outputId.
++ */
++extern drmModeOutputPtr drmModeGetOutput(int fd,
++		uint32_t outputId);
++
++/**
++ * Attaches the given mode to an output.
++ */
++extern int drmModeAttachMode(int fd, uint32_t outputId, struct drm_mode_modeinfo *mode_info);
++
++/**
++ * Detaches a mode from the output
++ * must be unused, by the given mode.
++ */
++extern int drmModeDetachMode(int fd, uint32_t outputId, struct drm_mode_modeinfo *mode_info);
++
++extern drmModePropertyPtr drmModeGetProperty(int fd, uint32_t propertyId);
++extern void drmModeFreeProperty(drmModePropertyPtr ptr);
++
++extern drmModePropertyBlobPtr drmModeGetPropertyBlob(int fd, uint32_t blob_id);
++extern void drmModeFreePropertyBlob(drmModePropertyBlobPtr ptr);
++extern int drmModeOutputSetProperty(int fd, uint32_t output_id, uint32_t property_id,
++				    uint64_t value);
++extern int drmCheckModesettingSupported(const char *busid);
+diff --git a/libdrm/xf86mm.h b/libdrm/xf86mm.h
+index c80288a..bb57340 100644
+--- a/libdrm/xf86mm.h
++++ b/libdrm/xf86mm.h
+@@ -172,6 +172,7 @@ extern int drmMMInit(int fd, unsigned long pOffset, unsigned long pSize,
+ extern int drmMMTakedown(int fd, unsigned memType);
+ extern int drmMMLock(int fd, unsigned memType, int lockBM, int ignoreNoEvict);
+ extern int drmMMUnlock(int fd, unsigned memType, int unlockBM);
++extern int drmMMInfo(int fd, unsigned memType, uint64_t *size);
+ extern int drmBOSetStatus(int fd, drmBO *buf, 
+ 			  uint64_t flags, uint64_t mask,
+ 			  unsigned int hint, 
+diff --git a/shared-core/drm.h b/shared-core/drm.h
+index 663696c..cbe83fd 100644
+--- a/shared-core/drm.h
++++ b/shared-core/drm.h
+@@ -955,6 +950,180 @@ struct drm_mm_init_arg {
+ 	uint64_t p_size;
+ };
+ 
++struct drm_mm_info_arg {
++	unsigned int mem_type;
++	uint64_t p_size;
++};
++
++
++/*
++ * Drm mode setting
++ */
++#define DRM_DISPLAY_INFO_LEN 32
++#define DRM_OUTPUT_NAME_LEN 32
++#define DRM_DISPLAY_MODE_LEN 32
++#define DRM_PROP_NAME_LEN 32
++
++#define DRM_MODE_TYPE_BUILTIN	(1<<0)
++#define DRM_MODE_TYPE_CLOCK_C	((1<<1) | DRM_MODE_TYPE_BUILTIN)
++#define DRM_MODE_TYPE_CRTC_C	((1<<2) | DRM_MODE_TYPE_BUILTIN)
++#define DRM_MODE_TYPE_PREFERRED	(1<<3)
++#define DRM_MODE_TYPE_DEFAULT	(1<<4)
++#define DRM_MODE_TYPE_USERDEF	(1<<5)
++#define DRM_MODE_TYPE_DRIVER	(1<<6)
++
++struct drm_mode_modeinfo {
++	unsigned int clock;
++	unsigned short hdisplay, hsync_start, hsync_end, htotal, hskew;
++	unsigned short vdisplay, vsync_start, vsync_end, vtotal, vscan;
++
++	unsigned int vrefresh; /* vertical refresh * 1000 */
++
++	unsigned int flags;
++	unsigned int type;
++	char name[DRM_DISPLAY_MODE_LEN];
++};
++
++struct drm_mode_card_res {
++	uint64_t fb_id_ptr;
++	uint64_t crtc_id_ptr;
++	uint64_t output_id_ptr;
++	int count_fbs;
++	int count_crtcs;
++	int count_outputs;
++	int min_width, max_width;
++	int min_height, max_height;
++};
++
++struct drm_mode_crtc {
++	uint64_t set_outputs_ptr;
++
++	unsigned int crtc_id; /**< Id */
++	unsigned int fb_id; /**< Id of framebuffer */
++
++	int x, y; /**< Position on the frameuffer */
++
++	int count_outputs;
++	unsigned int outputs; /**< Outputs that are connected */
++
++	int count_possibles;
++	unsigned int possibles; /**< Outputs that can be connected */
++	int gamma_size;
++	int mode_valid;
++	struct drm_mode_modeinfo mode;
++};
++
++#define DRM_MODE_OUTPUT_NONE 0
++#define DRM_MODE_OUTPUT_DAC  1
++#define DRM_MODE_OUTPUT_TMDS 2
++#define DRM_MODE_OUTPUT_LVDS 3
++#define DRM_MODE_OUTPUT_TVDAC 4
++
++struct drm_mode_get_output {
++
++	uint64_t modes_ptr;
++	uint64_t props_ptr;
++	uint64_t prop_values_ptr;
++
++	int count_modes;
++	int count_props;
++	unsigned int output; /**< Id */
++	unsigned int crtc; /**< Id of crtc */
++	unsigned int output_type;
++	unsigned int output_type_id;
++
++	unsigned int connection;
++	unsigned int mm_width, mm_height; /**< HxW in millimeters */
++	unsigned int subpixel;
++	int count_crtcs;
++	int count_clones;
++	unsigned int crtcs; /**< possible crtc to connect to */
++	unsigned int clones; /**< list of clones */
++};
++
++#define DRM_MODE_PROP_PENDING (1<<0)
++#define DRM_MODE_PROP_RANGE (1<<1)
++#define DRM_MODE_PROP_IMMUTABLE (1<<2)
++#define DRM_MODE_PROP_ENUM (1<<3) // enumerated type with text strings
++#define DRM_MODE_PROP_BLOB (1<<4)
++
++struct drm_mode_property_enum {
++	uint64_t value;
++	unsigned char name[DRM_PROP_NAME_LEN];
++};
++
++struct drm_mode_get_property {
++	uint64_t values_ptr; /* values and blob lengths */
++	uint64_t enum_blob_ptr; /* enum and blob id ptrs */
++
++	unsigned int prop_id;
++	unsigned int flags;
++	unsigned char name[DRM_PROP_NAME_LEN];
++
++	int count_values;
++	int count_enum_blobs;
++};
++
++struct drm_mode_output_set_property {
++	uint64_t value;
++	unsigned int prop_id;
++	unsigned int output_id;
++};
++
++struct drm_mode_get_blob {
++	uint32_t blob_id;
++	uint32_t length;
++	uint64_t data;
++};
++
++struct drm_mode_fb_cmd {
++        unsigned int buffer_id;
++        unsigned int width, height;
++        unsigned int pitch;
++        unsigned int bpp;
++        unsigned int handle;
++	unsigned int depth;
++};
++
++struct drm_mode_mode_cmd {
++	unsigned int output_id;
++	struct drm_mode_modeinfo mode;
++};
++
++#define DRM_MODE_CURSOR_BO   0x01
++#define DRM_MODE_CURSOR_MOVE 0x02
++
++/*
++ * depending on the value in flags diffrent members are used.
++ *
++ * CURSOR_BO uses
++ *    crtc
++ *    width
++ *    height
++ *    handle - if 0 turns the cursor of
++ *
++ * CURSOR_MOVE uses
++ *    crtc
++ *    x
++ *    y
++ */
++struct drm_mode_cursor {
++	unsigned int flags;
++	unsigned int crtc;
++	int x;
++	int y;
++	uint32_t width;
++	uint32_t height;
++	unsigned int handle;
++};
++
++/*
++ * oh so ugly hotplug
++ */
++struct drm_mode_hotplug {
++	uint32_t counter;
++};
++
+ /**
+  * \name Ioctls Definitions
+  */
+@@ -1046,6 +1215,24 @@ struct drm_mm_init_arg {
+ #define DRM_IOCTL_BO_INFO               DRM_IOWR(0xd4, struct drm_bo_reference_info_arg)
+ #define DRM_IOCTL_BO_WAIT_IDLE          DRM_IOWR(0xd5, struct drm_bo_map_wait_idle_arg)
+ #define DRM_IOCTL_BO_VERSION          DRM_IOR(0xd6, struct drm_bo_version_arg)
++#define DRM_IOCTL_MM_INFO               DRM_IOWR(0xd7, struct drm_mm_info_arg)
++
++#define DRM_IOCTL_MODE_GETRESOURCES     DRM_IOWR(0xA0, struct drm_mode_card_res)
++#define DRM_IOCTL_MODE_GETCRTC          DRM_IOWR(0xA1, struct drm_mode_crtc)
++#define DRM_IOCTL_MODE_GETOUTPUT        DRM_IOWR(0xA2, struct drm_mode_get_output)
++#define DRM_IOCTL_MODE_SETCRTC          DRM_IOWR(0xA3, struct drm_mode_crtc)
++#define DRM_IOCTL_MODE_ADDFB            DRM_IOWR(0xA4, struct drm_mode_fb_cmd)
++#define DRM_IOCTL_MODE_RMFB             DRM_IOWR(0xA5, unsigned int)
++#define DRM_IOCTL_MODE_GETFB            DRM_IOWR(0xA6, struct drm_mode_fb_cmd)
++
++#define DRM_IOCTL_MODE_SETPROPERTY     DRM_IOWR(0xA7, struct drm_mode_output_set_property)
++#define DRM_IOCTL_MODE_GETPROPBLOB     DRM_IOWR(0xA8, struct drm_mode_get_blob)
++#define DRM_IOCTL_MODE_ATTACHMODE      DRM_IOWR(0xA9, struct drm_mode_mode_cmd)
++#define DRM_IOCTL_MODE_DETACHMODE      DRM_IOWR(0xAA, struct drm_mode_mode_cmd)
++
++#define DRM_IOCTL_MODE_GETPROPERTY     DRM_IOWR(0xAB, struct drm_mode_get_property)
++#define DRM_IOCTL_MODE_CURSOR          DRM_IOWR(0xAC, struct drm_mode_cursor)
++#define DRM_IOCTL_MODE_HOTPLUG         DRM_IOWR(0xAD, struct drm_mode_hotplug)
+ 
+ /*@}*/
+ 
+diff --git a/shared-core/i915_drm.h b/shared-core/i915_drm.h
+index b93df67..a40cabd 100644
+--- a/shared-core/i915_drm.h
++++ b/shared-core/i915_drm.h
+@@ -39,7 +39,7 @@
+ 				 * of chars for next/prev indices */
+ #define I915_LOG_MIN_TEX_REGION_SIZE 14
+ 
+-typedef struct _drm_i915_init {
++typedef struct drm_i915_init {
+ 	enum {
+ 		I915_INIT_DMA = 0x01,
+ 		I915_CLEANUP_DMA = 0x02,
+@@ -223,7 +223,7 @@ typedef struct drm_i915_batchbuffer {
+ /* As above, but pass a pointer to userspace buffer which can be
+  * validated by the kernel prior to sending to hardware.
+  */
+-typedef struct _drm_i915_cmdbuffer {
++typedef struct drm_i915_cmdbuffer {
+ 	char __user *buf;	/* pointer to userspace command buffer */
+ 	int sz;			/* nr bytes in buf */
+ 	int DR1;		/* hw flags for GFX_OP_DRAWRECT_INFO */
+@@ -326,6 +326,8 @@ typedef struct drm_i915_vblank_swap {
+ #define MMIO_REGS_CL_INVOCATION_COUNT		6
+ #define MMIO_REGS_PS_INVOCATION_COUNT		7
+ #define MMIO_REGS_PS_DEPTH_COUNT		8
++#define MMIO_REGS_DOVSTA			9
++#define MMIO_REGS_GAMMA				10
+ 
+ typedef struct drm_i915_mmio_entry {
+ 	unsigned int flag;
+diff --git a/tests/dristat.c b/tests/dristat.c
+index 8985316..48c3b51 100644
+--- a/tests/dristat.c
++++ b/tests/dristat.c
+@@ -263,7 +263,7 @@ int main(int argc, char **argv)
+ 
+     for (i = 0; i < 16; i++) if (!minor || i == minor) {
+ 	sprintf(buf, DRM_DEV_NAME, DRM_DIR_NAME, i);
+-	fd = drmOpenMinor(i, 1);
++	fd = drmOpenMinor(i, 1, DRM_NODE_RENDER);
+ 	if (fd >= 0) {
+ 	    printf("%s\n", buf);
+ 	    if (mask & DRM_BUSID)   getbusid(fd);

@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.0
-Release: 0.5%{?dist}
+Release: 0.6%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -14,6 +14,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires: pkgconfig automake autoconf libtool
 
+Patch1: libdrm-modesetting.patch
 Patch2: libdrm-2.4.0-no-freaking-mknod.patch
 
 %description
@@ -29,6 +30,7 @@ Direct Rendering Manager development package
 
 %prep
 %setup -q -n %{name}-%{gitdate}
+%patch1 -p1 -b .modesetting
 #patch2 -p1 -b .mknod
 
 %build
@@ -75,11 +77,15 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/drm/xgi_drm.h
 # FIXME should be in drm/ too
 %{_includedir}/xf86drm.h
+%{_includedir}/xf86drmMode.h
 %{_includedir}/xf86mm.h
 %{_libdir}/libdrm.so
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Wed Mar 05 2008 Dave Airlie <airlied@redhat.com> 2.4.0-0.6
+- add initial modesetting headers to the mix - this API isn't stable 
+
 * Mon Mar  3 2008 Kristian Høgsberg <krh@redhat.com> - 2.4.0-0.5
 - What he said.
 
