@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.0
-Release: 0.6%{?dist}
+Release: 0.7%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -13,6 +13,8 @@ Source1: make-git-snapshot.sh
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires: pkgconfig automake autoconf libtool
+
+Source2: 91-drm-modeset.rules
 
 Patch1: libdrm-modesetting.patch
 Patch2: libdrm-2.4.0-no-freaking-mknod.patch
@@ -41,6 +43,8 @@ make
 %install
 rm -rf $RPM_BUILD_ROOT
 make install DESTDIR=$RPM_BUILD_ROOT
+mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d/
+install -m 0644 %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d/
 
 # NOTE: We intentionally don't ship *.la files
 find $RPM_BUILD_ROOT -type f -name '*.la' | xargs rm -f -- || :
@@ -56,6 +60,7 @@ rm -rf $RPM_BUILD_ROOT
 %doc README
 %{_libdir}/libdrm.so.2
 %{_libdir}/libdrm.so.2.3.0
+%{_sysconfdir}/udev/rules.d/91-drm-modeset.rules
 
 %files devel
 %defattr(-,root,root,-)
@@ -83,6 +88,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Wed Mar 05 2008 Dave Airlie <airlied@redhat.com> 2.4.0-0.7
+- add udev rules for modesetting nodes.
+
 * Wed Mar 05 2008 Dave Airlie <airlied@redhat.com> 2.4.0-0.6
 - add initial modesetting headers to the mix - this API isn't stable 
 
