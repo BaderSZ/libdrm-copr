@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.0
-Release: 0.7%{?dist}
+Release: 0.8%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -15,6 +15,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: pkgconfig automake autoconf libtool
 
 Source2: 91-drm-modeset.rules
+Source3: i915modeset
 
 Patch1: libdrm-modesetting.patch
 Patch2: libdrm-2.4.0-no-freaking-mknod.patch
@@ -45,6 +46,8 @@ rm -rf $RPM_BUILD_ROOT
 make install DESTDIR=$RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d/
 install -m 0644 %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d/
+mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/modprobe.d/
+install -m 0644 %{SOURCE3} $RPM_BUILD_ROOT%{_sysconfdir}/modprobe.d/
 
 # NOTE: We intentionally don't ship *.la files
 find $RPM_BUILD_ROOT -type f -name '*.la' | xargs rm -f -- || :
@@ -61,6 +64,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libdrm.so.2
 %{_libdir}/libdrm.so.2.3.0
 %{_sysconfdir}/udev/rules.d/91-drm-modeset.rules
+%{_sysconfdir}/modprobe.d/i915modeset
 
 %files devel
 %defattr(-,root,root,-)
@@ -88,6 +92,10 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Thu Mar 06 2008 Dave Airlie <airlied@redhat.com> 2.4.0-0.8
+- add modprobe.d file so i915 modesetting can be specified on kernel command
+  line
+
 * Wed Mar 05 2008 Dave Airlie <airlied@redhat.com> 2.4.0-0.7
 - add udev rules for modesetting nodes.
 
