@@ -156,10 +156,10 @@ index 230f54c..7b41860 100644
  extern drmVersionPtr drmGetLibVersion(int fd);
 diff --git a/libdrm/xf86drmMode.c b/libdrm/xf86drmMode.c
 new file mode 100644
-index 0000000..07b14db
+index 0000000..f86cc48
 --- /dev/null
 +++ b/libdrm/xf86drmMode.c
-@@ -0,0 +1,594 @@
+@@ -0,0 +1,613 @@
 +/*
 + * \file xf86drmMode.c
 + * Header for DRM modesetting interface.
@@ -729,6 +729,25 @@ index 0000000..07b14db
 +	ret = sscanf(busid, "pci:%04x:%02x:%02x.%d", &domain, &bus, &dev, &func);
 +	if (ret != 4)
 +		return -EINVAL;
++
++	sprintf(pci_dev_dir, "/sys/bus/pci/devices/%04x:%02x:%02x.%d/drm",
++		domain, bus, dev, func);
++
++	sysdir = opendir(pci_dev_dir);
++	if (sysdir) {
++		dent = readdir(sysdir);
++		while (dent) {
++			if (!strncmp(dent->d_name, "controlD", 8)) {
++				found = 1;
++				break;
++			}
++		
++			dent = readdir(sysdir);
++		}
++		closedir(sysdir);
++		if (found)
++			return 0;
++	}
 +
 +	sprintf(pci_dev_dir, "/sys/bus/pci/devices/%04x:%02x:%02x.%d/",
 +		domain, bus, dev, func);

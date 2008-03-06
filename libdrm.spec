@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.0
-Release: 0.8%{?dist}
+Release: 0.9%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -92,6 +92,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Fri Mar 07 2008 Dave Airlie <airlied@redhat.com> 2.4.0-0.9
+- add support for new sysfs structure
+
 * Thu Mar 06 2008 Dave Airlie <airlied@redhat.com> 2.4.0-0.8
 - add modprobe.d file so i915 modesetting can be specified on kernel command
   line
