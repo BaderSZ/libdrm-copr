@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.0
-Release: 0.9%{?dist}
+Release: 0.10%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -19,6 +19,9 @@ Source3: i915modeset
 
 Patch1: libdrm-modesetting.patch
 Patch2: libdrm-2.4.0-no-freaking-mknod.patch
+# udev vs pam.console vs hal vs xml vs ConsoleKit
+# - funk that just bash it direct for now -
+Patch3: libdrm-make-dri-perms-okay.patch
 
 %description
 Direct Rendering Manager runtime library
@@ -35,6 +38,7 @@ Direct Rendering Manager development package
 %setup -q -n %{name}-%{gitdate}
 %patch1 -p1 -b .modesetting
 #patch2 -p1 -b .mknod
+%patch3 -p1 -b .forceperms
 
 %build
 autoreconf -v --install || exit 1
@@ -92,6 +96,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Wed Mar 19 2008 Dave Airlie <airlied@redhat.com> 2.4.0-0.10
+- force libdrm to make the node perms useful to everyone 
+
 * Fri Mar 07 2008 Dave Airlie <airlied@redhat.com> 2.4.0-0.9
 - add support for new sysfs structure
 
