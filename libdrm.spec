@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.0
-Release: 0.10%{?dist}
+Release: 0.12%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -22,6 +22,8 @@ Patch2: libdrm-2.4.0-no-freaking-mknod.patch
 # udev vs pam.console vs hal vs xml vs ConsoleKit
 # - funk that just bash it direct for now -
 Patch3: libdrm-make-dri-perms-okay.patch
+Patch4: libdrm-2.4.0-no-bc.patch
+Patch5: libdrm-radeon-r500.patch
 
 %description
 Direct Rendering Manager runtime library
@@ -39,6 +41,8 @@ Direct Rendering Manager development package
 %patch1 -p1 -b .modesetting
 #patch2 -p1 -b .mknod
 %patch3 -p1 -b .forceperms
+%patch4 -p1 -b .no-bc
+%patch5 -p1 -b .r500
 
 %build
 autoreconf -v --install || exit 1
@@ -96,6 +100,14 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Wed May 28 2008 Dave Airlie <airlied@redhat.com> 2.4.0-0.12
+- add r500 support patch
+
+* Tue Apr 29 2008 Adam Jackson <ajax@redhat.com> 2.4.0-0.11
+- libdrm-2.4.0-no-bc.patch: Delete the /proc/dri BC code.  It's not needed,
+  and the kernel implementation is sufficiently broken that we should avoid
+  ever touching it.
+
 * Wed Mar 19 2008 Dave Airlie <airlied@redhat.com> 2.4.0-0.10
 - force libdrm to make the node perms useful to everyone 
 
