@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.0
-Release: 0.12%{?dist}
+Release: 0.13%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -24,6 +24,7 @@ Patch2: libdrm-2.4.0-no-freaking-mknod.patch
 Patch3: libdrm-make-dri-perms-okay.patch
 Patch4: libdrm-2.4.0-no-bc.patch
 Patch5: libdrm-radeon-r500.patch
+Patch6: libdrm-modeset-fix.patch
 
 %description
 Direct Rendering Manager runtime library
@@ -43,6 +44,7 @@ Direct Rendering Manager development package
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
 %patch5 -p1 -b .r500
+%patch6 -p1 -b .modectl
 
 %build
 autoreconf -v --install || exit 1
@@ -100,6 +102,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Wed Jun 18 2008 Dave Airlie <airlied@redhat.com> 2.4.0-0.13
+- add modeset ctl interface fix
+
 * Wed May 28 2008 Dave Airlie <airlied@redhat.com> 2.4.0-0.12
 - add r500 support patch
 
