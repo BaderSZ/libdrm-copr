@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.0
-Release: 0.13%{?dist}
+Release: 0.14%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -33,6 +33,7 @@ Direct Rendering Manager runtime library
 Summary: Direct Rendering Manager development package
 Group: Development/Libraries
 Requires: %{name} = %{version}-%{release}
+Requires: kernel-headers >= 2.6.27-0.144.rc0.git2.fc10
 
 %description devel
 Direct Rendering Manager development package
@@ -80,20 +81,20 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 %dir %{_includedir}/drm
 # NOTE: Headers are listed explicitly, so we can monitor additions/removals.
-%{_includedir}/drm/drm.h
-%{_includedir}/drm/drm_sarea.h
-%{_includedir}/drm/i915_drm.h
+#%{_includedir}/drm/drm.h
+#%{_includedir}/drm/drm_sarea.h
+#%{_includedir}/drm/i915_drm.h
 %{_includedir}/drm/nouveau_drm.h
 %{_includedir}/drm/mach64_drm.h
-%{_includedir}/drm/mga_drm.h
-%{_includedir}/drm/r128_drm.h
-%{_includedir}/drm/r300_reg.h
-%{_includedir}/drm/radeon_drm.h
-%{_includedir}/drm/savage_drm.h
-%{_includedir}/drm/sis_drm.h
-%{_includedir}/drm/via_3d_reg.h
-%{_includedir}/drm/via_drm.h
-%{_includedir}/drm/xgi_drm.h
+#%{_includedir}/drm/mga_drm.h
+#%{_includedir}/drm/r128_drm.h
+#%{_includedir}/drm/r300_reg.h
+#%{_includedir}/drm/radeon_drm.h
+#%{_includedir}/drm/savage_drm.h
+#%{_includedir}/drm/sis_drm.h
+#%{_includedir}/drm/via_3d_reg.h
+#%{_includedir}/drm/via_drm.h
+#%{_includedir}/drm/xgi_drm.h
 # FIXME should be in drm/ too
 %{_includedir}/xf86drm.h
 %{_includedir}/xf86drmMode.h
@@ -102,6 +103,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Thu Jul 17 2008 Dave Airlie <airlied@redhat.com> 2.4.0-0.14
+- kernel headers now installs somes of these files for us
+
 * Wed Jun 18 2008 Dave Airlie <airlied@redhat.com> 2.4.0-0.13
 - add modeset ctl interface fix
 
