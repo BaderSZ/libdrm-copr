@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.0
-Release: 0.14%{?dist}
+Release: 0.15%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -54,7 +54,7 @@ make
 
 %install
 rm -rf $RPM_BUILD_ROOT
-make install DESTDIR=$RPM_BUILD_ROOT
+make install DESTDIR=$RPM_BUILD_ROOT SUBDIRS=libdrm
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d/
 install -m 0644 %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d/
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/modprobe.d/
@@ -79,22 +79,6 @@ rm -rf $RPM_BUILD_ROOT
 
 %files devel
 %defattr(-,root,root,-)
-%dir %{_includedir}/drm
-# NOTE: Headers are listed explicitly, so we can monitor additions/removals.
-#%{_includedir}/drm/drm.h
-#%{_includedir}/drm/drm_sarea.h
-#%{_includedir}/drm/i915_drm.h
-%{_includedir}/drm/nouveau_drm.h
-%{_includedir}/drm/mach64_drm.h
-#%{_includedir}/drm/mga_drm.h
-#%{_includedir}/drm/r128_drm.h
-#%{_includedir}/drm/r300_reg.h
-#%{_includedir}/drm/radeon_drm.h
-#%{_includedir}/drm/savage_drm.h
-#%{_includedir}/drm/sis_drm.h
-#%{_includedir}/drm/via_3d_reg.h
-#%{_includedir}/drm/via_drm.h
-#%{_includedir}/drm/xgi_drm.h
 # FIXME should be in drm/ too
 %{_includedir}/xf86drm.h
 %{_includedir}/xf86drmMode.h
@@ -103,6 +87,10 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Thu Jul 17 2008 Kristian Høgsberg <krh@redhat.com> - 2.4.0-0.15
+- Avoid shared-core when doing make install so we don't install kernel
+  header files.  Drop kernel header files from -devel pkg files list.
+
 * Thu Jul 17 2008 Dave Airlie <airlied@redhat.com> 2.4.0-0.14
 - kernel headers now installs somes of these files for us
 
