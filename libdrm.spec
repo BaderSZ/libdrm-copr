@@ -1,4 +1,4 @@
-%define gitdate 20080303
+%define gitdate 20080801
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
@@ -17,14 +17,12 @@ BuildRequires: pkgconfig automake autoconf libtool
 Source2: 91-drm-modeset.rules
 Source3: i915modeset
 
-Patch1: libdrm-modesetting.patch
+#Patch1: libdrm-modesetting.patch
 Patch2: libdrm-2.4.0-no-freaking-mknod.patch
 # udev vs pam.console vs hal vs xml vs ConsoleKit
 # - funk that just bash it direct for now -
 Patch3: libdrm-make-dri-perms-okay.patch
 Patch4: libdrm-2.4.0-no-bc.patch
-Patch5: libdrm-radeon-r500.patch
-Patch6: libdrm-modeset-fix.patch
 
 %description
 Direct Rendering Manager runtime library
@@ -40,12 +38,9 @@ Direct Rendering Manager development package
 
 %prep
 %setup -q -n %{name}-%{gitdate}
-%patch1 -p1 -b .modesetting
 #patch2 -p1 -b .mknod
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
-%patch5 -p1 -b .r500
-%patch6 -p1 -b .modectl
 
 %build
 autoreconf -v --install || exit 1
@@ -54,7 +49,8 @@ make
 
 %install
 rm -rf $RPM_BUILD_ROOT
-make install DESTDIR=$RPM_BUILD_ROOT SUBDIRS=libdrm
+make install DESTDIR=$RPM_BUILD_ROOT
+# SUBDIRS=libdrm
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d/
 install -m 0644 %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d/
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/modprobe.d/
@@ -62,6 +58,11 @@ install -m 0644 %{SOURCE3} $RPM_BUILD_ROOT%{_sysconfdir}/modprobe.d/
 
 # NOTE: We intentionally don't ship *.la files
 find $RPM_BUILD_ROOT -type f -name '*.la' | xargs rm -f -- || :
+find $RPM_BUILD_ROOT -type f -name '*_drm.h' | xargs rm -f -- || :
+for i in drm.h drm_sarea.h r300_reg.h via_3d_reg.h
+do
+rm -f $RPM_BUILD_ROOT/usr/include/drm/$i
+done
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -83,10 +84,15 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/xf86drm.h
 %{_includedir}/xf86drmMode.h
 %{_includedir}/xf86mm.h
+%{_includedir}/dri_bufmgr.h
+%{_includedir}/intel_bufmgr.h
 %{_libdir}/libdrm.so
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Fri Aug 01 2008 Dave Airlie <airlied@redhat.com> 2.4.0-0.16
+- new libdrm snapshot with modesetting for radeon interfaces
+
 * Thu Jul 17 2008 Kristian Høgsberg <krh@redhat.com> - 2.4.0-0.15
 - Avoid shared-core when doing make install so we don't install kernel
   header files.  Drop kernel header files from -devel pkg files list.
