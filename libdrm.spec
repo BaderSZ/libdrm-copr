@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.0
-Release: 0.16%{?dist}
+Release: 0.17%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -23,6 +23,7 @@ Patch2: libdrm-2.4.0-no-freaking-mknod.patch
 # - funk that just bash it direct for now -
 Patch3: libdrm-make-dri-perms-okay.patch
 Patch4: libdrm-2.4.0-no-bc.patch
+Patch5: libdrm-wait-udev.patch
 
 %description
 Direct Rendering Manager runtime library
@@ -41,10 +42,11 @@ Direct Rendering Manager development package
 #patch2 -p1 -b .mknod
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
+%patch5 -p1 -b .udev-wait
 
 %build
 autoreconf -v --install || exit 1
-%configure
+%configure --enable-udev
 make
 
 %install
@@ -90,6 +92,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Sun Aug 10 2008 Dave Airlie <airlied@redhat.com> 2.4.0-0.17
+- attempt to fix race with udev by just waiting for udev
+
 * Fri Aug 01 2008 Dave Airlie <airlied@redhat.com> 2.4.0-0.16
 - new libdrm snapshot with modesetting for radeon interfaces
 
