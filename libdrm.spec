@@ -1,9 +1,9 @@
-%define gitdate 20080801
+%define gitdate 20080811
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.0
-Release: 0.17%{?dist}
+Release: 0.18%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -84,14 +84,15 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 # FIXME should be in drm/ too
 %{_includedir}/xf86drm.h
-%{_includedir}/xf86drmMode.h
-%{_includedir}/xf86mm.h
 %{_includedir}/dri_bufmgr.h
 %{_includedir}/intel_bufmgr.h
 %{_libdir}/libdrm.so
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Mon Aug 11 2008 Adam Jackson <ajax@redhat.com> 2.4.0-0.18
+- Today's git snap.
+
 * Sun Aug 10 2008 Dave Airlie <airlied@redhat.com> 2.4.0-0.17
 - attempt to fix race with udev by just waiting for udev
 
