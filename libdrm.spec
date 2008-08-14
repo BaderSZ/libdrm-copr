@@ -1,9 +1,9 @@
-%define gitdate 20080811
+%define gitdate 20080814
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.0
-Release: 0.18%{?dist}
+Release: 0.19%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -84,12 +84,17 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 # FIXME should be in drm/ too
 %{_includedir}/xf86drm.h
+%{_includedir}/xf86drmMode.h
 %{_includedir}/dri_bufmgr.h
 %{_includedir}/intel_bufmgr.h
 %{_libdir}/libdrm.so
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Thu Aug 14 2008 Dave Airlie <airlied@redhat.com> 2.4.0-0.19
+- add back modesetting support - this is a snapshot from modesetting-gem
+- any bugs are in the other packages that fail to build
+
 * Mon Aug 11 2008 Adam Jackson <ajax@redhat.com> 2.4.0-0.18
 - Today's git snap.
 
