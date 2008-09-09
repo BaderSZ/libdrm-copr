@@ -1,0 +1,261 @@
+diff --git a/libdrm/intel/intel_bufmgr.h b/libdrm/intel/intel_bufmgr.h
+index 4d33521..59def00 100644
+--- a/libdrm/intel/intel_bufmgr.h
++++ b/libdrm/intel/intel_bufmgr.h
+@@ -126,5 +126,7 @@ int intel_bo_set_tiling(dri_bo *buf, uint32_t *tiling_mode);
+ 
+ int intel_bo_flink(dri_bo *buf, uint32_t *name);
+ 
++int dri_gem_bo_map_gtt(dri_bo *bo);
++
+ #endif /* INTEL_BUFMGR_GEM_H */
+ 
+diff --git a/libdrm/intel/intel_bufmgr_gem.c b/libdrm/intel/intel_bufmgr_gem.c
+index af20efb..ba49b24 100644
+--- a/libdrm/intel/intel_bufmgr_gem.c
++++ b/libdrm/intel/intel_bufmgr_gem.c
+@@ -35,6 +35,7 @@
+  */
+ 
+ #include <xf86drm.h>
++#include <fcntl.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+@@ -42,6 +43,8 @@
+ #include <assert.h>
+ #include <sys/ioctl.h>
+ #include <sys/mman.h>
++#include <sys/stat.h>
++#include <sys/types.h>
+ 
+ #include "errno.h"
+ #include "dri_bufmgr.h"
+@@ -370,6 +373,7 @@ intel_bo_gem_create_from_name(dri_bufmgr *bufmgr, const char *name,
+     bo_gem->refcount = 1;
+     bo_gem->validate_index = -1;
+     bo_gem->gem_handle = open_arg.handle;
++    bo_gem->bo.handle = bo_gem->gem_handle;
+ 
+     DBG("bo_create_from_handle: %d (%s)\n", handle, bo_gem->name);
+ 
+@@ -517,6 +521,90 @@ dri_gem_bo_map(dri_bo *bo, int write_enable)
+     return 0;
+ }
+ 
++int
++dri_gem_bo_map_gtt(dri_bo *bo)
++{
++    dri_bufmgr_gem *bufmgr_gem;
++    dri_bo_gem *bo_gem = (dri_bo_gem *)bo;
++    struct drm_i915_gem_set_domain set_domain;
++    int ret;
++    int fd;
++
++    bufmgr_gem = (dri_bufmgr_gem *)bo->bufmgr;
++
++    /* Allow recursive mapping. Mesa may recursively map buffers with
++     * nested display loops.
++     */
++    if (!bo_gem->mapped) {
++
++	assert(bo->virtual == NULL);
++
++	DBG("bo_map_gtt: %d (%s)\n", bo_gem->gem_handle, bo_gem->name);
++
++	if (bo_gem->virtual == NULL) {
++		struct drm_i915_gem_mmap_gtt mmap_arg;
++
++		memset(&mmap_arg, 0, sizeof(mmap_arg));
++		mmap_arg.handle = bo_gem->gem_handle;
++		mmap_arg.offset = 0;
++		mmap_arg.size = bo->size;
++		ret = ioctl(bufmgr_gem->fd, DRM_IOCTL_I915_GEM_MMAP_GTT,
++			    &mmap_arg);
++		if (ret != 0) {
++			fprintf(stderr,
++				"%s:%d: Error mapping buffer %d (%s): %s .\n",
++				__FILE__, __LINE__,
++				bo_gem->gem_handle, bo_gem->name,
++				strerror(errno));
++			return ret;
++		}
++		bo_gem->virtual = (void *)(uintptr_t)mmap_arg.addr_ptr;
++	}
++#if 0
++	if (bo_gem->virtual == NULL) {
++		fd = open("/sys/devices/pci0000:00/0000:00:02.0/resource2_wc",
++			  O_RDWR);
++		if (fd == -1) {
++			fprintf(stderr, "failed to open GTT: %s\n",
++				strerror(errno));
++			return errno;
++		}
++
++		bo_gem->virtual = mmap(NULL, bo->size, PROT_READ | PROT_WRITE,
++				       MAP_SHARED, fd, bo->offset);
++		if (bo_gem->virtual == MAP_FAILED) {
++			fprintf(stderr, "failed to map GTT: %s\n",
++				strerror(errno));
++			return errno;
++		}
++		close(fd);
++	}
++#endif
++	bo->virtual = bo_gem->virtual;
++	bo_gem->swrast = 0;
++	bo_gem->mapped = 1;
++	DBG("bo_map: %d (%s) -> %p\n", bo_gem->gem_handle, bo_gem->name,
++	    bo_gem->virtual);
++    }
++
++    if (!bo_gem->swrast) {
++	set_domain.handle = bo_gem->gem_handle;
++	set_domain.read_domains = I915_GEM_DOMAIN_GTT;
++	set_domain.write_domain = I915_GEM_DOMAIN_GTT;
++	do {
++	    ret = ioctl(bufmgr_gem->fd, DRM_IOCTL_I915_GEM_SET_DOMAIN,
++			&set_domain);
++	} while (ret == -1 && errno == EINTR);
++	if (ret != 0) {
++	    fprintf (stderr, "%s:%d: Error setting swrast %d: %s\n",
++		     __FILE__, __LINE__, bo_gem->gem_handle, strerror (errno));
++	}
++	bo_gem->swrast = 1;
++    }
++
++    return 0;
++}
++
+ static int
+ dri_gem_bo_unmap(dri_bo *bo)
+ {
+@@ -593,7 +681,7 @@ dri_gem_bo_get_subdata (dri_bo *bo, unsigned long offset,
+     return 0;
+ }
+ 
+-static void
++void
+ dri_gem_bo_wait_rendering(dri_bo *bo)
+ {
+     dri_bufmgr_gem *bufmgr_gem = (dri_bufmgr_gem *)bo->bufmgr;
+diff -up libdrm-20080814/shared-core/i915_drm.h.da libdrm-20080814/shared-core/i915_drm.h
+--- libdrm-20080814/shared-core/i915_drm.h.da	2008-09-09 16:43:43.000000000 +1000
++++ libdrm-20080814/shared-core/i915_drm.h	2008-09-09 16:43:45.000000000 +1000
+@@ -99,7 +99,7 @@ typedef struct drm_i915_sarea {
+ 	int tex_size;
+ 	int log_tex_granularity;
+ 	int pitch;
+-	int rotation;           /* 0, 90, 180 or 270 */
++	int rotation;	   /* 0, 90, 180 or 270 */
+ 	int rotated_offset;
+ 	int rotated_size;
+ 	int rotated_pitch;
+@@ -149,8 +149,8 @@ typedef struct drm_i915_sarea {
+ /* Flags for perf_boxes
+  */
+ #define I915_BOX_RING_EMPTY    0x1
+-#define I915_BOX_FLIP          0x2
+-#define I915_BOX_WAIT          0x4
++#define I915_BOX_FLIP	  0x2
++#define I915_BOX_WAIT	  0x4
+ #define I915_BOX_TEXTURE_LOAD  0x8
+ #define I915_BOX_LOST_CONTEXT  0x10
+ 
+@@ -192,24 +192,25 @@ typedef struct drm_i915_sarea {
+ #define DRM_I915_GEM_SW_FINISH	0x20
+ #define DRM_I915_GEM_SET_TILING	0x21
+ #define DRM_I915_GEM_GET_TILING	0x22
++#define DRM_I915_GEM_MMAP_GTT   0x23
+ 
+ #define DRM_IOCTL_I915_INIT		DRM_IOW( DRM_COMMAND_BASE + DRM_I915_INIT, drm_i915_init_t)
+ #define DRM_IOCTL_I915_FLUSH		DRM_IO ( DRM_COMMAND_BASE + DRM_I915_FLUSH)
+ #define DRM_IOCTL_I915_FLIP		DRM_IOW( DRM_COMMAND_BASE + DRM_I915_FLIP, drm_i915_flip_t)
+ #define DRM_IOCTL_I915_BATCHBUFFER	DRM_IOW( DRM_COMMAND_BASE + DRM_I915_BATCHBUFFER, drm_i915_batchbuffer_t)
+-#define DRM_IOCTL_I915_IRQ_EMIT         DRM_IOWR(DRM_COMMAND_BASE + DRM_I915_IRQ_EMIT, drm_i915_irq_emit_t)
+-#define DRM_IOCTL_I915_IRQ_WAIT         DRM_IOW( DRM_COMMAND_BASE + DRM_I915_IRQ_WAIT, drm_i915_irq_wait_t)
+-#define DRM_IOCTL_I915_GETPARAM         DRM_IOWR(DRM_COMMAND_BASE + DRM_I915_GETPARAM, drm_i915_getparam_t)
+-#define DRM_IOCTL_I915_SETPARAM         DRM_IOW( DRM_COMMAND_BASE + DRM_I915_SETPARAM, drm_i915_setparam_t)
+-#define DRM_IOCTL_I915_ALLOC            DRM_IOWR(DRM_COMMAND_BASE + DRM_I915_ALLOC, drm_i915_mem_alloc_t)
+-#define DRM_IOCTL_I915_FREE             DRM_IOW( DRM_COMMAND_BASE + DRM_I915_FREE, drm_i915_mem_free_t)
+-#define DRM_IOCTL_I915_INIT_HEAP        DRM_IOW( DRM_COMMAND_BASE + DRM_I915_INIT_HEAP, drm_i915_mem_init_heap_t)
++#define DRM_IOCTL_I915_IRQ_EMIT	 DRM_IOWR(DRM_COMMAND_BASE + DRM_I915_IRQ_EMIT, drm_i915_irq_emit_t)
++#define DRM_IOCTL_I915_IRQ_WAIT	 DRM_IOW( DRM_COMMAND_BASE + DRM_I915_IRQ_WAIT, drm_i915_irq_wait_t)
++#define DRM_IOCTL_I915_GETPARAM	 DRM_IOWR(DRM_COMMAND_BASE + DRM_I915_GETPARAM, drm_i915_getparam_t)
++#define DRM_IOCTL_I915_SETPARAM	 DRM_IOW( DRM_COMMAND_BASE + DRM_I915_SETPARAM, drm_i915_setparam_t)
++#define DRM_IOCTL_I915_ALLOC	    DRM_IOWR(DRM_COMMAND_BASE + DRM_I915_ALLOC, drm_i915_mem_alloc_t)
++#define DRM_IOCTL_I915_FREE	     DRM_IOW( DRM_COMMAND_BASE + DRM_I915_FREE, drm_i915_mem_free_t)
++#define DRM_IOCTL_I915_INIT_HEAP	DRM_IOW( DRM_COMMAND_BASE + DRM_I915_INIT_HEAP, drm_i915_mem_init_heap_t)
+ #define DRM_IOCTL_I915_CMDBUFFER	DRM_IOW( DRM_COMMAND_BASE + DRM_I915_CMDBUFFER, drm_i915_cmdbuffer_t)
+ #define DRM_IOCTL_I915_DESTROY_HEAP	DRM_IOW( DRM_COMMAND_BASE + DRM_I915_DESTROY_HEAP, drm_i915_mem_destroy_heap_t)
+ #define DRM_IOCTL_I915_SET_VBLANK_PIPE	DRM_IOW( DRM_COMMAND_BASE + DRM_I915_SET_VBLANK_PIPE, drm_i915_vblank_pipe_t)
+ #define DRM_IOCTL_I915_GET_VBLANK_PIPE	DRM_IOR( DRM_COMMAND_BASE + DRM_I915_GET_VBLANK_PIPE, drm_i915_vblank_pipe_t)
+ #define DRM_IOCTL_I915_VBLANK_SWAP	DRM_IOWR(DRM_COMMAND_BASE + DRM_I915_VBLANK_SWAP, drm_i915_vblank_swap_t)
+-#define DRM_IOCTL_I915_MMIO             DRM_IOWR(DRM_COMMAND_BASE + DRM_I915_MMIO, drm_i915_mmio)
++#define DRM_IOCTL_I915_MMIO	     DRM_IOWR(DRM_COMMAND_BASE + DRM_I915_MMIO, drm_i915_mmio)
+ #define DRM_IOCTL_I915_EXECBUFFER	DRM_IOWR(DRM_COMMAND_BASE + DRM_I915_EXECBUFFER, struct drm_i915_execbuffer)
+ #define DRM_IOCTL_I915_GEM_INIT		DRM_IOW(DRM_COMMAND_BASE + DRM_I915_GEM_INIT, struct drm_i915_gem_init)
+ #define DRM_IOCTL_I915_GEM_EXECBUFFER	DRM_IOW(DRM_COMMAND_BASE + DRM_I915_GEM_EXECBUFFER, struct drm_i915_gem_execbuffer)
+@@ -223,6 +224,7 @@ typedef struct drm_i915_sarea {
+ #define DRM_IOCTL_I915_GEM_PREAD	DRM_IOW (DRM_COMMAND_BASE + DRM_I915_GEM_PREAD, struct drm_i915_gem_pread)
+ #define DRM_IOCTL_I915_GEM_PWRITE	DRM_IOW (DRM_COMMAND_BASE + DRM_I915_GEM_PWRITE, struct drm_i915_gem_pwrite)
+ #define DRM_IOCTL_I915_GEM_MMAP		DRM_IOWR(DRM_COMMAND_BASE + DRM_I915_GEM_MMAP, struct drm_i915_gem_mmap)
++#define DRM_IOCTL_I915_GEM_MMAP_GTT     DRM_IOWR(DRM_COMMAND_BASE + DRM_I915_GEM_MMAP_GTT, struct drm_i915_gem_mmap_gtt)
+ #define DRM_IOCTL_I915_GEM_SET_DOMAIN	DRM_IOW (DRM_COMMAND_BASE + DRM_I915_GEM_SET_DOMAIN, struct drm_i915_gem_set_domain)
+ #define DRM_IOCTL_I915_GEM_SW_FINISH	DRM_IOW (DRM_COMMAND_BASE + DRM_I915_GEM_SW_FINISH, struct drm_i915_gem_sw_finish)
+ #define DRM_IOCTL_I915_GEM_SET_TILING	DRM_IOWR (DRM_COMMAND_BASE + DRM_I915_GEM_SET_TILING, struct drm_i915_gem_set_tiling)
+@@ -276,11 +278,11 @@ typedef struct drm_i915_irq_wait {
+ 
+ /* Ioctl to query kernel params:
+  */
+-#define I915_PARAM_IRQ_ACTIVE            1
++#define I915_PARAM_IRQ_ACTIVE	    1
+ #define I915_PARAM_ALLOW_BATCHBUFFER     2
+-#define I915_PARAM_LAST_DISPATCH         3
+-#define I915_PARAM_CHIPSET_ID            4
+-#define I915_PARAM_HAS_GEM               5
++#define I915_PARAM_LAST_DISPATCH	 3
++#define I915_PARAM_CHIPSET_ID	    4
++#define I915_PARAM_HAS_GEM	       5
+ 
+ typedef struct drm_i915_getparam {
+ 	int param;
+@@ -289,9 +291,9 @@ typedef struct drm_i915_getparam {
+ 
+ /* Ioctl to set kernel params:
+  */
+-#define I915_SETPARAM_USE_MI_BATCHBUFFER_START            1
+-#define I915_SETPARAM_TEX_LRU_LOG_GRANULARITY             2
+-#define I915_SETPARAM_ALLOW_BATCHBUFFER                   3
++#define I915_SETPARAM_USE_MI_BATCHBUFFER_START	    1
++#define I915_SETPARAM_TEX_LRU_LOG_GRANULARITY	     2
++#define I915_SETPARAM_ALLOW_BATCHBUFFER		   3
+ 
+ typedef struct drm_i915_setparam {
+ 	int param;
+@@ -460,6 +462,25 @@ struct drm_i915_gem_set_domain {
+ 	uint32_t write_domain;
+ };
+ 
++struct drm_i915_gem_mmap_gtt {
++	/** Handle for the object being mapped. */
++	uint32_t handle;
++	uint32_t pad;
++	/** Offset in the object to map. */
++	uint64_t offset;
++	/**
++	 * Length of data to map.
++	 *
++	 * The value will be page-aligned.
++	 */
++	uint64_t size;
++	/** Returned pointer the data was mapped at */
++	uint64_t addr_ptr;      /* void *, but pointers are not 32/64 compatible
++ */
++	uint32_t flags;
++};
++
++
+ struct drm_i915_gem_sw_finish {
+ 	/** Handle for the object */
+ 	uint32_t handle;

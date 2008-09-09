@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.0
-Release: 0.19%{?dist}
+Release: 0.20%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -13,6 +13,8 @@ Source1: make-git-snapshot.sh
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires: pkgconfig automake autoconf libtool
+
+BuildRequires: kernel-headers >= 2.6.27-0.317.rc5.git10.fc10
 
 Source2: 91-drm-modeset.rules
 Source3: i915modeset
@@ -24,6 +26,7 @@ Patch2: libdrm-2.4.0-no-freaking-mknod.patch
 Patch3: libdrm-make-dri-perms-okay.patch
 Patch4: libdrm-2.4.0-no-bc.patch
 Patch5: libdrm-wait-udev.patch
+Patch6: libdrm-gtt-map-support-3.patch
 
 %description
 Direct Rendering Manager runtime library
@@ -43,6 +46,7 @@ Direct Rendering Manager development package
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
 %patch5 -p1 -b .udev-wait
+%patch6 -p1 -b .gttmap
 
 %build
 autoreconf -v --install || exit 1
@@ -91,6 +95,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Tue Sep 09 2008 Dave Airlie <airlied@redhat.com> 2.4.0-0.20
+- add gtt mapping for intel modesetting
+
 * Thu Aug 14 2008 Dave Airlie <airlied@redhat.com> 2.4.0-0.19
 - add back modesetting support - this is a snapshot from modesetting-gem
 - any bugs are in the other packages that fail to build
