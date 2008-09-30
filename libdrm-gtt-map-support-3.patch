@@ -1,28 +1,15 @@
-diff --git a/libdrm/intel/intel_bufmgr.h b/libdrm/intel/intel_bufmgr.h
-index 4d33521..59def00 100644
---- a/libdrm/intel/intel_bufmgr.h
-+++ b/libdrm/intel/intel_bufmgr.h
-@@ -126,5 +126,7 @@ int intel_bo_set_tiling(dri_bo *buf, uint32_t *tiling_mode);
- 
- int intel_bo_flink(dri_bo *buf, uint32_t *name);
- 
-+int dri_gem_bo_map_gtt(dri_bo *bo);
-+
- #endif /* INTEL_BUFMGR_GEM_H */
- 
-diff --git a/libdrm/intel/intel_bufmgr_gem.c b/libdrm/intel/intel_bufmgr_gem.c
-index af20efb..ba49b24 100644
---- a/libdrm/intel/intel_bufmgr_gem.c
-+++ b/libdrm/intel/intel_bufmgr_gem.c
-@@ -35,6 +35,7 @@
-  */
+diff -up libdrm-20080930/libdrm/intel/intel_bufmgr_gem.c.gttmap libdrm-20080930/libdrm/intel/intel_bufmgr_gem.c
+--- libdrm-20080930/libdrm/intel/intel_bufmgr_gem.c.gttmap	2008-09-30 14:17:27.000000000 +1000
++++ libdrm-20080930/libdrm/intel/intel_bufmgr_gem.c	2008-09-30 17:35:51.000000000 +1000
+@@ -39,6 +39,7 @@
+ #endif
  
  #include <xf86drm.h>
 +#include <fcntl.h>
  #include <stdio.h>
  #include <stdlib.h>
  #include <string.h>
-@@ -42,6 +43,8 @@
+@@ -46,6 +47,8 @@
  #include <assert.h>
  #include <sys/ioctl.h>
  #include <sys/mman.h>
@@ -30,16 +17,8 @@ index af20efb..ba49b24 100644
 +#include <sys/types.h>
  
  #include "errno.h"
- #include "dri_bufmgr.h"
-@@ -370,6 +373,7 @@ intel_bo_gem_create_from_name(dri_bufmgr *bufmgr, const char *name,
-     bo_gem->refcount = 1;
-     bo_gem->validate_index = -1;
-     bo_gem->gem_handle = open_arg.handle;
-+    bo_gem->bo.handle = bo_gem->gem_handle;
- 
-     DBG("bo_create_from_handle: %d (%s)\n", handle, bo_gem->name);
- 
-@@ -517,6 +521,90 @@ dri_gem_bo_map(dri_bo *bo, int write_enable)
+ #include "intel_bufmgr.h"
+@@ -518,6 +521,90 @@ dri_gem_bo_map(dri_bo *bo, int write_ena
      return 0;
  }
  
@@ -130,7 +109,7 @@ index af20efb..ba49b24 100644
  static int
  dri_gem_bo_unmap(dri_bo *bo)
  {
-@@ -593,7 +681,7 @@ dri_gem_bo_get_subdata (dri_bo *bo, unsigned long offset,
+@@ -594,7 +681,7 @@ dri_gem_bo_get_subdata (dri_bo *bo, unsi
      return 0;
  }
  
@@ -139,9 +118,21 @@ index af20efb..ba49b24 100644
  dri_gem_bo_wait_rendering(dri_bo *bo)
  {
      dri_bufmgr_gem *bufmgr_gem = (dri_bufmgr_gem *)bo->bufmgr;
-diff -up libdrm-20080814/shared-core/i915_drm.h.da libdrm-20080814/shared-core/i915_drm.h
---- libdrm-20080814/shared-core/i915_drm.h.da	2008-09-09 16:43:43.000000000 +1000
-+++ libdrm-20080814/shared-core/i915_drm.h	2008-09-09 16:43:45.000000000 +1000
+diff -up libdrm-20080930/libdrm/intel/intel_bufmgr.h.gttmap libdrm-20080930/libdrm/intel/intel_bufmgr.h
+--- libdrm-20080930/libdrm/intel/intel_bufmgr.h.gttmap	2008-09-30 14:17:27.000000000 +1000
++++ libdrm-20080930/libdrm/intel/intel_bufmgr.h	2008-09-30 17:34:10.000000000 +1000
+@@ -89,6 +89,8 @@ int dri_bo_unpin(dri_bo *buf);
+ int dri_bo_set_tiling(dri_bo *buf, uint32_t *tiling_mode);
+ int dri_bo_flink(dri_bo *buf, uint32_t *name);
+ 
++int dri_gem_bo_map_gtt(dri_bo *bo);
++
+ /* intel_bufmgr_gem.c */
+ dri_bufmgr *intel_bufmgr_gem_init(int fd, int batch_size);
+ dri_bo *intel_bo_gem_create_from_name(dri_bufmgr *bufmgr, const char *name,
+diff -up libdrm-20080930/shared-core/i915_drm.h.gttmap libdrm-20080930/shared-core/i915_drm.h
+--- libdrm-20080930/shared-core/i915_drm.h.gttmap	2008-09-30 14:17:27.000000000 +1000
++++ libdrm-20080930/shared-core/i915_drm.h	2008-09-30 17:01:13.000000000 +1000
 @@ -99,7 +99,7 @@ typedef struct drm_i915_sarea {
  	int tex_size;
  	int log_tex_granularity;

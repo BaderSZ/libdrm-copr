@@ -1,9 +1,9 @@
-%define gitdate 20080814
+%define gitdate 20080930
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.0
-Release: 0.20%{?dist}
+Release: 0.21%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -25,7 +25,6 @@ Patch2: libdrm-2.4.0-no-freaking-mknod.patch
 # - funk that just bash it direct for now -
 Patch3: libdrm-make-dri-perms-okay.patch
 Patch4: libdrm-2.4.0-no-bc.patch
-Patch5: libdrm-wait-udev.patch
 Patch6: libdrm-gtt-map-support-3.patch
 
 %description
@@ -45,7 +44,6 @@ Direct Rendering Manager development package
 #patch2 -p1 -b .mknod
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
-%patch5 -p1 -b .udev-wait
 %patch6 -p1 -b .gttmap
 
 %build
@@ -65,7 +63,7 @@ install -m 0644 %{SOURCE3} $RPM_BUILD_ROOT%{_sysconfdir}/modprobe.d/
 # NOTE: We intentionally don't ship *.la files
 find $RPM_BUILD_ROOT -type f -name '*.la' | xargs rm -f -- || :
 find $RPM_BUILD_ROOT -type f -name '*_drm.h' | xargs rm -f -- || :
-for i in drm.h drm_sarea.h r300_reg.h via_3d_reg.h
+for i in drm.h drm_mode.h drm_sarea.h r300_reg.h via_3d_reg.h
 do
 rm -f $RPM_BUILD_ROOT/usr/include/drm/$i
 done
@@ -81,6 +79,8 @@ rm -rf $RPM_BUILD_ROOT
 %doc README
 %{_libdir}/libdrm.so.2
 %{_libdir}/libdrm.so.2.3.0
+%{_libdir}/libdrm_intel.so.1
+%{_libdir}/libdrm_intel.so.1.0.0
 %{_sysconfdir}/udev/rules.d/91-drm-modeset.rules
 %{_sysconfdir}/modprobe.d/i915modeset
 
@@ -89,12 +89,15 @@ rm -rf $RPM_BUILD_ROOT
 # FIXME should be in drm/ too
 %{_includedir}/xf86drm.h
 %{_includedir}/xf86drmMode.h
-%{_includedir}/dri_bufmgr.h
 %{_includedir}/intel_bufmgr.h
 %{_libdir}/libdrm.so
+%{_libdir}/libdrm_intel.so
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Tue Sep 30 2008 Dave Airlie <airlied@redhat.com> 2.4.0-0.21
+- move intel bufmgr code around - update patches
+
 * Tue Sep 09 2008 Dave Airlie <airlied@redhat.com> 2.4.0-0.20
 - add gtt mapping for intel modesetting
 
