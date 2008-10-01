@@ -25,7 +25,9 @@ Patch2: libdrm-2.4.0-no-freaking-mknod.patch
 # - funk that just bash it direct for now -
 Patch3: libdrm-make-dri-perms-okay.patch
 Patch4: libdrm-2.4.0-no-bc.patch
+Patch5: libdrm-2.4.0-intel-handle.patch
 Patch6: libdrm-gtt-map-support-3.patch
+Patch7: libdrm-fix-link.patch
 
 %description
 Direct Rendering Manager runtime library
@@ -44,7 +46,9 @@ Direct Rendering Manager development package
 #patch2 -p1 -b .mknod
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
+%patch5 -p1 -b .intel-handle
 %patch6 -p1 -b .gttmap
+%patch7 -p1 -b .fixlink
 
 %build
 autoreconf -v --install || exit 1

@@ -1,0 +1,44 @@
+From af2323b4b3b76070fb453531147a8956161b3718 Mon Sep 17 00:00:00 2001
+From: Jesse Barnes <jbarnes@virtuousgeek.org>
+Date: Tue, 30 Sep 2008 16:35:26 -0700
+Subject: [PATCH] intel bufmgr: reinstate buffer handle tracking
+
+We need a way of getting at the underlying handle for use with mode
+setting.  We can either export it in the dri_bo object or provide a new
+callback to get it.
+---
+ libdrm/intel/intel_bufmgr.h     |    4 ++++
+ libdrm/intel/intel_bufmgr_gem.c |    2 +-
+ 2 files changed, 5 insertions(+), 1 deletions(-)
+
+diff --git a/libdrm/intel/intel_bufmgr.h b/libdrm/intel/intel_bufmgr.h
+index c44d596..67dba6a 100644
+--- a/libdrm/intel/intel_bufmgr.h
++++ b/libdrm/intel/intel_bufmgr.h
+@@ -59,6 +59,10 @@ struct _dri_bo {
+ 
+     /** Buffer manager context associated with this buffer object */
+     dri_bufmgr *bufmgr;
++    /**
++     * MM-specific handle for accessing object
++     */
++    int handle;
+ };
+ 
+ dri_bo *dri_bo_alloc(dri_bufmgr *bufmgr, const char *name, unsigned long size,
+diff --git a/libdrm/intel/intel_bufmgr_gem.c b/libdrm/intel/intel_bufmgr_gem.c
+index 4ca49d0..70cdca7 100644
+--- a/libdrm/intel/intel_bufmgr_gem.c
++++ b/libdrm/intel/intel_bufmgr_gem.c
+@@ -316,7 +316,7 @@ dri_gem_bo_alloc(dri_bufmgr *bufmgr, const char *name,
+ 
+ 	ret = ioctl(bufmgr_gem->fd, DRM_IOCTL_I915_GEM_CREATE, &create);
+ 	bo_gem->gem_handle = create.handle;
+-	//bo_gem->bo.handle = bo_gem->gem_handle;
++	bo_gem->bo.handle = bo_gem->gem_handle;
+ 	if (ret != 0) {
+ 	    free(bo_gem);
+ 	    return NULL;
+-- 
+1.5.5.1
+
