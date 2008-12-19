@@ -16,6 +16,8 @@ BuildRequires: pkgconfig automake autoconf libtool
 
 BuildRequires: kernel-headers >= 2.6.27-0.317.rc5.git10.fc10
 
+BuildRequires: libxcb-devel
+
 Source2: 91-drm-modeset.rules
 Source3: i915modeset
 
