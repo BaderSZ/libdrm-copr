@@ -2,13 +2,13 @@
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.4.0
-Release: 0.21%{?dist}
+Version: 2.4.3
+Release: 0.1%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
-#Source0: http://dri.freedesktop.org/libdrm/%{name}-%{version}.tar.bz2
-Source0: %{name}-%{gitdate}.tar.bz2
+Source0: http://dri.freedesktop.org/libdrm/%{name}-%{version}.tar.bz2
+#Source0: %{name}-%{gitdate}.tar.bz2
 Source1: make-git-snapshot.sh
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
@@ -25,9 +25,7 @@ Patch2: libdrm-2.4.0-no-freaking-mknod.patch
 # - funk that just bash it direct for now -
 Patch3: libdrm-make-dri-perms-okay.patch
 Patch4: libdrm-2.4.0-no-bc.patch
-Patch5: libdrm-2.4.0-intel-handle.patch
-Patch6: libdrm-gtt-map-support-3.patch
-Patch7: libdrm-fix-link.patch
+Patch8: libdrm-radeon.patch
 
 %description
 Direct Rendering Manager runtime library
@@ -42,13 +40,11 @@ Requires: kernel-headers >= 2.6.27-0.144.rc0.git2.fc10
 Direct Rendering Manager development package
 
 %prep
-%setup -q -n %{name}-%{gitdate}
+%setup -q -n %{name}-%{version}
 #patch2 -p1 -b .mknod
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
-%patch5 -p1 -b .intel-handle
-%patch6 -p1 -b .gttmap
-%patch7 -p1 -b .fixlink
+%patch8 -p1 -b .radeon
 
 %build
 autoreconf -v --install || exit 1
@@ -82,9 +78,11 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 %doc README
 %{_libdir}/libdrm.so.2
-%{_libdir}/libdrm.so.2.3.0
+%{_libdir}/libdrm.so.2.4.0
 %{_libdir}/libdrm_intel.so.1
 %{_libdir}/libdrm_intel.so.1.0.0
+%{_libdir}/libdrm_radeon.so.1
+%{_libdir}/libdrm_radeon.so.1.0.0
 %{_sysconfdir}/udev/rules.d/91-drm-modeset.rules
 %{_sysconfdir}/modprobe.d/i915modeset
 
@@ -94,11 +92,16 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/xf86drm.h
 %{_includedir}/xf86drmMode.h
 %{_includedir}/intel_bufmgr.h
+%{_includedir}/drm/radeon*.h
 %{_libdir}/libdrm.so
 %{_libdir}/libdrm_intel.so
+%{_libdir}/libdrm_radeon.so
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Fri Dec 19 2008 Dave Airlie <airlied@redhat.com> 2.4.3-0.1
+- libdrm: update to upstream master + add radeon patches from modesetting-gem
+
 * Tue Sep 30 2008 Dave Airlie <airlied@redhat.com> 2.4.0-0.21
 - move intel bufmgr code around - update patches
 
