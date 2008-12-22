@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.3
-Release: 0.2%{?dist}
+Release: 0.3%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -101,6 +101,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Mon Dec 22 2008 Dave Airlie <airlied@redhat.com> 2.4.3-0.3
+- radeon: make library name correct
+
 * Mon Dec 22 2008 Dave Airlie <airlied@redhat.com> 2.4.3-0.2
 - radeon: update with fixes for reloc size
 
