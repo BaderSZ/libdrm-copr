@@ -1,6 +1,6 @@
-diff -up libdrm-2.4.3/configure.ac.radeon libdrm-2.4.3/configure.ac
---- libdrm-2.4.3/configure.ac.radeon	2008-12-19 16:41:39.000000000 +1000
-+++ libdrm-2.4.3/configure.ac	2008-12-19 16:41:41.000000000 +1000
+diff -up libdrm-2.4.3/configure.ac.dave libdrm-2.4.3/configure.ac
+--- libdrm-2.4.3/configure.ac.dave	2008-12-19 14:33:38.000000000 +1000
++++ libdrm-2.4.3/configure.ac	2008-12-22 12:05:48.000000000 +1000
 @@ -117,6 +117,7 @@ AC_OUTPUT([
  	Makefile
  	libdrm/Makefile
@@ -9,9 +9,9 @@ diff -up libdrm-2.4.3/configure.ac.radeon libdrm-2.4.3/configure.ac
  	shared-core/Makefile
  	tests/Makefile
  	tests/modeprint/Makefile
-diff -up libdrm-2.4.3/libdrm/Makefile.am.radeon libdrm-2.4.3/libdrm/Makefile.am
---- libdrm-2.4.3/libdrm/Makefile.am.radeon	2008-12-19 14:33:38.000000000 +1000
-+++ libdrm-2.4.3/libdrm/Makefile.am	2008-12-19 16:41:07.000000000 +1000
+diff -up libdrm-2.4.3/libdrm/Makefile.am.dave libdrm-2.4.3/libdrm/Makefile.am
+--- libdrm-2.4.3/libdrm/Makefile.am.dave	2008-12-19 14:33:38.000000000 +1000
++++ libdrm-2.4.3/libdrm/Makefile.am	2008-12-22 12:05:57.000000000 +1000
 @@ -18,7 +18,7 @@
  #  IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  #  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -23,7 +23,7 @@ diff -up libdrm-2.4.3/libdrm/Makefile.am.radeon libdrm-2.4.3/libdrm/Makefile.am
  libdrm_ladir = $(libdir)
 diff -up /dev/null libdrm-2.4.3/libdrm/radeon/Makefile.am
 --- /dev/null	2008-12-18 14:22:13.823022429 +1000
-+++ libdrm-2.4.3/libdrm/radeon/Makefile.am	2008-12-19 16:41:07.000000000 +1000
++++ libdrm-2.4.3/libdrm/radeon/Makefile.am	2008-12-22 12:05:48.000000000 +1000
 @@ -0,0 +1,48 @@
 +# Copyright © 2008 Jérôme Glisse
 +#
@@ -56,7 +56,7 @@ diff -up /dev/null libdrm-2.4.3/libdrm/radeon/Makefile.am
 +	$(PTHREADSTUBS_CFLAGS) \
 +	-I$(top_srcdir)/shared-core
 +
-+libdrm_radeon_la_LTLIBRARIES = libdrm_radeon.la
++libdrm_radeon_la_LTLIBRARIES = libdrm-radeon.la
 +libdrm_radeon_ladir = $(libdir)
 +libdrm_radeon_la_LDFLAGS = -version-number 1:0:0 -no-undefined
 +libdrm_radeon_la_LIBADD = ../libdrm.la @PTHREADSTUBS_LIBS@
@@ -75,7 +75,7 @@ diff -up /dev/null libdrm-2.4.3/libdrm/radeon/Makefile.am
 +	radeon_track.h
 diff -up /dev/null libdrm-2.4.3/libdrm/radeon/radeon_bo_gem.c
 --- /dev/null	2008-12-18 14:22:13.823022429 +1000
-+++ libdrm-2.4.3/libdrm/radeon/radeon_bo_gem.c	2008-12-19 16:41:07.000000000 +1000
++++ libdrm-2.4.3/libdrm/radeon/radeon_bo_gem.c	2008-12-22 12:05:48.000000000 +1000
 @@ -0,0 +1,208 @@
 +/* 
 + * Copyright © 2008 Dave Airlie
@@ -287,7 +287,7 @@ diff -up /dev/null libdrm-2.4.3/libdrm/radeon/radeon_bo_gem.c
 +}
 diff -up /dev/null libdrm-2.4.3/libdrm/radeon/radeon_bo_gem.h
 --- /dev/null	2008-12-18 14:22:13.823022429 +1000
-+++ libdrm-2.4.3/libdrm/radeon/radeon_bo_gem.h	2008-12-19 16:41:07.000000000 +1000
++++ libdrm-2.4.3/libdrm/radeon/radeon_bo_gem.h	2008-12-22 12:05:48.000000000 +1000
 @@ -0,0 +1,40 @@
 +/* 
 + * Copyright © 2008 Dave Airlie
@@ -331,7 +331,7 @@ diff -up /dev/null libdrm-2.4.3/libdrm/radeon/radeon_bo_gem.h
 +#endif
 diff -up /dev/null libdrm-2.4.3/libdrm/radeon/radeon_bo.h
 --- /dev/null	2008-12-18 14:22:13.823022429 +1000
-+++ libdrm-2.4.3/libdrm/radeon/radeon_bo.h	2008-12-19 16:41:07.000000000 +1000
++++ libdrm-2.4.3/libdrm/radeon/radeon_bo.h	2008-12-22 12:05:48.000000000 +1000
 @@ -0,0 +1,167 @@
 +/* 
 + * Copyright © 2008 Jérôme Glisse
@@ -502,8 +502,8 @@ diff -up /dev/null libdrm-2.4.3/libdrm/radeon/radeon_bo.h
 +#endif
 diff -up /dev/null libdrm-2.4.3/libdrm/radeon/radeon_cs_gem.c
 --- /dev/null	2008-12-18 14:22:13.823022429 +1000
-+++ libdrm-2.4.3/libdrm/radeon/radeon_cs_gem.c	2008-12-19 16:41:07.000000000 +1000
-@@ -0,0 +1,418 @@
++++ libdrm-2.4.3/libdrm/radeon/radeon_cs_gem.c	2008-12-22 12:05:48.000000000 +1000
+@@ -0,0 +1,420 @@
 +/* 
 + * Copyright © 2008 Jérôme Glisse
 + * All Rights Reserved.
@@ -553,7 +553,9 @@ diff -up /dev/null libdrm-2.4.3/libdrm/radeon/radeon_cs_gem.c
 +    uint32_t    write_domain;
 +    uint32_t    flags;
 +};
++
 +#pragma pack()
++#define RELOC_SIZE (sizeof(struct cs_reloc_gem) / sizeof(uint32_t))
 +
 +struct cs_gem {
 +    struct radeon_cs            base;
@@ -655,7 +657,7 @@ diff -up /dev/null libdrm-2.4.3/libdrm/radeon/radeon_cs_gem.c
 +    }
 +    /* check if bo is already referenced */
 +    for(i = 0; i < cs->crelocs; i++) {
-+        idx = i * 6;
++        idx = i * RELOC_SIZE;
 +        reloc = (struct cs_reloc_gem*)&csg->relocs[idx];
 +        if (reloc->handle == bo->handle) {
 +            /* Check domains must be in read or write. As we check already
@@ -690,7 +692,7 @@ diff -up /dev/null libdrm-2.4.3/libdrm/radeon/radeon_cs_gem.c
 +            return -ENOMEM;
 +        }
 +        csg->relocs_bo = (struct radeon_bo**)tmp;
-+        size = ((csg->nrelocs + 1) * 6 * 4);
++        size = ((csg->nrelocs + 1) * RELOC_SIZE * 4);
 +        tmp = (uint32_t*)realloc(csg->relocs, size);
 +        if (tmp == NULL) {
 +            return -ENOMEM;
@@ -700,13 +702,13 @@ diff -up /dev/null libdrm-2.4.3/libdrm/radeon/radeon_cs_gem.c
 +        csg->chunks[1].chunk_data = (uint64_t)(intptr_t)csg->relocs;
 +    }
 +    csg->relocs_bo[csg->base.crelocs] = bo;
-+    idx = (csg->base.crelocs++) * 6;
++    idx = (csg->base.crelocs++) * RELOC_SIZE;
 +    reloc = (struct cs_reloc_gem*)&csg->relocs[idx];
 +    reloc->handle = bo->handle;
 +    reloc->read_domain = read_domain;
 +    reloc->write_domain = write_domain;
 +    reloc->flags = flags;
-+    csg->chunks[1].length_dw += 6;
++    csg->chunks[1].length_dw += RELOC_SIZE;
 +    radeon_bo_ref(bo);
 +    cs->relocs_total_size += bo->size;
 +    cs_gem_write_dword(cs, 0xc0001000);
@@ -924,7 +926,7 @@ diff -up /dev/null libdrm-2.4.3/libdrm/radeon/radeon_cs_gem.c
 +}
 diff -up /dev/null libdrm-2.4.3/libdrm/radeon/radeon_cs_gem.h
 --- /dev/null	2008-12-18 14:22:13.823022429 +1000
-+++ libdrm-2.4.3/libdrm/radeon/radeon_cs_gem.h	2008-12-19 16:41:07.000000000 +1000
++++ libdrm-2.4.3/libdrm/radeon/radeon_cs_gem.h	2008-12-22 12:05:48.000000000 +1000
 @@ -0,0 +1,41 @@
 +/* 
 + * Copyright © 2008 Nicolai Haehnle
@@ -969,7 +971,7 @@ diff -up /dev/null libdrm-2.4.3/libdrm/radeon/radeon_cs_gem.h
 +#endif
 diff -up /dev/null libdrm-2.4.3/libdrm/radeon/radeon_cs.h
 --- /dev/null	2008-12-18 14:22:13.823022429 +1000
-+++ libdrm-2.4.3/libdrm/radeon/radeon_cs.h	2008-12-19 16:41:07.000000000 +1000
++++ libdrm-2.4.3/libdrm/radeon/radeon_cs.h	2008-12-22 12:05:48.000000000 +1000
 @@ -0,0 +1,160 @@
 +/* 
 + * Copyright © 2008 Nicolai Haehnle
@@ -1133,7 +1135,7 @@ diff -up /dev/null libdrm-2.4.3/libdrm/radeon/radeon_cs.h
 +#endif
 diff -up /dev/null libdrm-2.4.3/libdrm/radeon/radeon_track.c
 --- /dev/null	2008-12-18 14:22:13.823022429 +1000
-+++ libdrm-2.4.3/libdrm/radeon/radeon_track.c	2008-12-19 16:41:07.000000000 +1000
++++ libdrm-2.4.3/libdrm/radeon/radeon_track.c	2008-12-22 12:05:48.000000000 +1000
 @@ -0,0 +1,140 @@
 +/* 
 + * Copyright © 2008 Jérôme Glisse
@@ -1277,7 +1279,7 @@ diff -up /dev/null libdrm-2.4.3/libdrm/radeon/radeon_track.c
 +}
 diff -up /dev/null libdrm-2.4.3/libdrm/radeon/radeon_track.h
 --- /dev/null	2008-12-18 14:22:13.823022429 +1000
-+++ libdrm-2.4.3/libdrm/radeon/radeon_track.h	2008-12-19 16:41:07.000000000 +1000
++++ libdrm-2.4.3/libdrm/radeon/radeon_track.h	2008-12-22 12:05:48.000000000 +1000
 @@ -0,0 +1,64 @@
 +/* 
 + * Copyright © 2008 Jérôme Glisse
@@ -1343,9 +1345,9 @@ diff -up /dev/null libdrm-2.4.3/libdrm/radeon/radeon_track.h
 +                          FILE *file);
 +
 +#endif
-diff -up libdrm-2.4.3/shared-core/radeon_drm.h.radeon libdrm-2.4.3/shared-core/radeon_drm.h
---- libdrm-2.4.3/shared-core/radeon_drm.h.radeon	2008-12-19 14:33:38.000000000 +1000
-+++ libdrm-2.4.3/shared-core/radeon_drm.h	2008-12-19 16:41:07.000000000 +1000
+diff -up libdrm-2.4.3/shared-core/radeon_drm.h.dave libdrm-2.4.3/shared-core/radeon_drm.h
+--- libdrm-2.4.3/shared-core/radeon_drm.h.dave	2008-12-19 14:33:38.000000000 +1000
++++ libdrm-2.4.3/shared-core/radeon_drm.h	2008-12-22 12:05:48.000000000 +1000
 @@ -453,8 +453,18 @@ typedef struct {
  	int pfCurrentPage;	/* which buffer is being displayed? */
  	int crtc2_base;		/* CRTC2 frame offset */
