@@ -2,8 +2,8 @@
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.4.3
-Release: 0.3%{?dist}
+Version: 2.4.4
+Release: 1%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -19,7 +19,6 @@ BuildRequires: kernel-headers >= 2.6.27-0.317.rc5.git10.fc10
 BuildRequires: libxcb-devel
 
 Source2: 91-drm-modeset.rules
-Source3: i915modeset
 
 #Patch1: libdrm-modesetting.patch
 Patch2: libdrm-2.4.0-no-freaking-mknod.patch
@@ -28,6 +27,7 @@ Patch2: libdrm-2.4.0-no-freaking-mknod.patch
 Patch3: libdrm-make-dri-perms-okay.patch
 Patch4: libdrm-2.4.0-no-bc.patch
 Patch8: libdrm-radeon.patch
+Patch9: libdrm-radeon-update.patch
 
 %description
 Direct Rendering Manager runtime library
@@ -47,6 +47,7 @@ Direct Rendering Manager development package
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
 %patch8 -p1 -b .radeon
+%patch9 -p1 -b .radeon2
 
 %build
 autoreconf -v --install || exit 1
@@ -59,8 +60,6 @@ make install DESTDIR=$RPM_BUILD_ROOT
 # SUBDIRS=libdrm
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d/
 install -m 0644 %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d/
-mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/modprobe.d/
-install -m 0644 %{SOURCE3} $RPM_BUILD_ROOT%{_sysconfdir}/modprobe.d/
 
 # NOTE: We intentionally don't ship *.la files
 find $RPM_BUILD_ROOT -type f -name '*.la' | xargs rm -f -- || :
@@ -86,7 +85,6 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libdrm_radeon.so.1
 %{_libdir}/libdrm_radeon.so.1.0.0
 %{_sysconfdir}/udev/rules.d/91-drm-modeset.rules
-%{_sysconfdir}/modprobe.d/i915modeset
 
 %files devel
 %defattr(-,root,root,-)
@@ -101,6 +99,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Fri Jan 30 2009 Dave Airlie <airlied@redhat.com> 2.4.4-1
+- rebase to 2.4.4
+
 * Mon Dec 22 2008 Dave Airlie <airlied@redhat.com> 2.4.3-0.3
 - radeon: make library name correct
 
