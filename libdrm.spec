@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.4
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -11,6 +11,8 @@ Source0: http://dri.freedesktop.org/libdrm/%{name}-%{version}.tar.bz2
 #Source0: %{name}-%{gitdate}.tar.bz2
 Source1: make-git-snapshot.sh
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+
+Requires: udev
 
 BuildRequires: pkgconfig automake autoconf libtool
 
@@ -20,12 +22,11 @@ BuildRequires: libxcb-devel
 
 Source2: 91-drm-modeset.rules
 
-#Patch1: libdrm-modesetting.patch
-Patch2: libdrm-2.4.0-no-freaking-mknod.patch
-# udev vs pam.console vs hal vs xml vs ConsoleKit
-# - funk that just bash it direct for now -
+# hardcode the 666 instead of 660 for device nodes
 Patch3: libdrm-make-dri-perms-okay.patch
+# remove backwards compat not needed on Fedora
 Patch4: libdrm-2.4.0-no-bc.patch
+# radeon libdrm patches from modesetting-gem branch of upstream
 Patch8: libdrm-radeon.patch
 Patch9: libdrm-radeon-update.patch
 
@@ -37,13 +38,13 @@ Summary: Direct Rendering Manager development package
 Group: Development/Libraries
 Requires: %{name} = %{version}-%{release}
 Requires: kernel-headers >= 2.6.27-0.144.rc0.git2.fc10
+Requires: pkgconfig
 
 %description devel
 Direct Rendering Manager development package
 
 %prep
 %setup -q -n %{name}-%{version}
-#patch2 -p1 -b .mknod
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
 %patch8 -p1 -b .radeon
@@ -52,7 +53,7 @@ Direct Rendering Manager development package
 %build
 autoreconf -v --install || exit 1
 %configure --enable-udev
-make
+make %{?_smp_mflags}
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -84,7 +85,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libdrm_intel.so.1.0.0
 %{_libdir}/libdrm_radeon.so.1
 %{_libdir}/libdrm_radeon.so.1.0.0
-%{_sysconfdir}/udev/rules.d/91-drm-modeset.rules
+%config %{_sysconfdir}/udev/rules.d/91-drm-modeset.rules
 
 %files devel
 %defattr(-,root,root,-)
@@ -99,6 +100,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Sun Feb 01 2009 Dave Airlie <airlied@redhat.com> 2.4.4-2
+- update specfile with review changes
+
 * Fri Jan 30 2009 Dave Airlie <airlied@redhat.com> 2.4.4-1
 - rebase to 2.4.4
 
