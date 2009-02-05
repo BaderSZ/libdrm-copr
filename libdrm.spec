@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.4
-Release: 2%{?dist}
+Release: 3%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -28,7 +28,6 @@ Patch3: libdrm-make-dri-perms-okay.patch
 Patch4: libdrm-2.4.0-no-bc.patch
 # radeon libdrm patches from modesetting-gem branch of upstream
 Patch8: libdrm-radeon.patch
-Patch9: libdrm-radeon-update.patch
 
 %description
 Direct Rendering Manager runtime library
@@ -48,7 +47,6 @@ Direct Rendering Manager development package
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
 %patch8 -p1 -b .radeon
-%patch9 -p1 -b .radeon2
 
 %build
 autoreconf -v --install || exit 1
@@ -100,6 +98,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm.pc
 
 %changelog
+* Thu Feb 05 2009 Dave Airlie <airlied@redhat.com> 2.4.4-3
+- update with more libdrm/radeon upstream fixes
+
 * Sun Feb 01 2009 Dave Airlie <airlied@redhat.com> 2.4.4-2
 - update specfile with review changes
 
