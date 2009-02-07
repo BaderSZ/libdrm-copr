@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.4
-Release: 3%{?dist}
+Release: 4%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -28,6 +28,8 @@ Patch3: libdrm-make-dri-perms-okay.patch
 Patch4: libdrm-2.4.0-no-bc.patch
 # radeon libdrm patches from modesetting-gem branch of upstream
 Patch8: libdrm-radeon.patch
+# nouveau libdrm patches
+Patch9: libdrm-nouveau.patch
 
 %description
 Direct Rendering Manager runtime library
@@ -47,6 +49,7 @@ Direct Rendering Manager development package
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
 %patch8 -p1 -b .radeon
+%patch9 -p1 -b .nouveau
 
 %build
 autoreconf -v --install || exit 1
@@ -83,6 +86,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libdrm_intel.so.1.0.0
 %{_libdir}/libdrm_radeon.so.1
 %{_libdir}/libdrm_radeon.so.1.0.0
+%{_libdir}/libdrm_nouveau.so.1
+%{_libdir}/libdrm_nouveau.so.1.0.0
 %config %{_sysconfdir}/udev/rules.d/91-drm-modeset.rules
 
 %files devel
@@ -92,12 +97,19 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/xf86drmMode.h
 %{_includedir}/intel_bufmgr.h
 %{_includedir}/drm/radeon*.h
+%{_includedir}/drm/nouveau_drmif.h
+%{_includedir}/nouveau/nouveau_*.h
 %{_libdir}/libdrm.so
 %{_libdir}/libdrm_intel.so
 %{_libdir}/libdrm_radeon.so
+%{_libdir}/libdrm_nouveau.so
 %{_libdir}/pkgconfig/libdrm.pc
+%{_libdir}/pkgconfig/libdrm_nouveau.pc
 
 %changelog
+* Thu Feb 05 2009 Ben Skeggs <bskeggs@redhat.com> 2.4.4-4
+- nouveau: pull in updates from upstream
+
 * Thu Feb 05 2009 Dave Airlie <airlied@redhat.com> 2.4.4-3
 - update with more libdrm/radeon upstream fixes
 
