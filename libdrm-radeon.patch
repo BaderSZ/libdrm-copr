@@ -1,17 +1,18 @@
-diff -up libdrm-2.4.3/configure.ac.dave libdrm-2.4.3/configure.ac
---- libdrm-2.4.3/configure.ac.dave	2008-12-19 14:33:38.000000000 +1000
-+++ libdrm-2.4.3/configure.ac	2008-12-22 12:05:48.000000000 +1000
-@@ -117,6 +117,7 @@ AC_OUTPUT([
+diff -up libdrm-2.4.4/configure.ac.radeon libdrm-2.4.4/configure.ac
+--- libdrm-2.4.4/configure.ac.radeon	2009-01-15 10:12:09.000000000 +1000
++++ libdrm-2.4.4/configure.ac	2009-02-18 09:29:20.000000000 +1000
+@@ -124,6 +124,8 @@ AC_OUTPUT([
  	Makefile
  	libdrm/Makefile
  	libdrm/intel/Makefile
 +	libdrm/radeon/Makefile
++	libdrm/radeon/libdrm_radeon.pc
  	shared-core/Makefile
  	tests/Makefile
  	tests/modeprint/Makefile
-diff -up libdrm-2.4.3/libdrm/Makefile.am.dave libdrm-2.4.3/libdrm/Makefile.am
---- libdrm-2.4.3/libdrm/Makefile.am.dave	2008-12-19 14:33:38.000000000 +1000
-+++ libdrm-2.4.3/libdrm/Makefile.am	2008-12-22 12:05:57.000000000 +1000
+diff -up libdrm-2.4.4/libdrm/Makefile.am.radeon libdrm-2.4.4/libdrm/Makefile.am
+--- libdrm-2.4.4/libdrm/Makefile.am.radeon	2009-01-10 11:08:29.000000000 +1000
++++ libdrm-2.4.4/libdrm/Makefile.am	2009-02-18 09:27:49.000000000 +1000
 @@ -18,7 +18,7 @@
  #  IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  #  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -21,194 +22,24 @@ diff -up libdrm-2.4.3/libdrm/Makefile.am.dave libdrm-2.4.3/libdrm/Makefile.am
  
  libdrm_la_LTLIBRARIES = libdrm.la
  libdrm_ladir = $(libdir)
-diff -up libdrm-2.4.3/shared-core/radeon_drm.h.dave libdrm-2.4.3/shared-core/radeon_drm.h
---- libdrm-2.4.3/shared-core/radeon_drm.h.dave	2008-12-19 14:33:38.000000000 +1000
-+++ libdrm-2.4.3/shared-core/radeon_drm.h	2008-12-22 12:05:48.000000000 +1000
-@@ -453,8 +453,18 @@ typedef struct {
- 	int pfCurrentPage;	/* which buffer is being displayed? */
- 	int crtc2_base;		/* CRTC2 frame offset */
- 	int tiling_enabled;	/* set by drm, read by 2d + 3d clients */
+diff -up /dev/null libdrm-2.4.4/libdrm/radeon/libdrm_radeon.pc.in
+--- /dev/null	2009-02-17 18:26:02.221005894 +1000
++++ libdrm-2.4.4/libdrm/radeon/libdrm_radeon.pc.in	2009-02-18 09:27:49.000000000 +1000
+@@ -0,0 +1,10 @@
++prefix=@prefix@
++exec_prefix=@exec_prefix@
++libdir=@libdir@
++includedir=@includedir@
 +
-+	unsigned int last_fence;
-+
-+	uint32_t front_handle;
-+	uint32_t back_handle;
-+	uint32_t depth_handle;
-+	uint32_t front_pitch;
-+	uint32_t back_pitch;
-+	uint32_t depth_pitch;
- } drm_radeon_sarea_t;
- 
-+
- /* WARNING: If you change any of these defines, make sure to change the
-  * defines in the Xserver file (xf86drmRadeon.h)
-  *
-@@ -493,6 +503,18 @@ typedef struct {
- #define DRM_RADEON_SURF_ALLOC 0x1a
- #define DRM_RADEON_SURF_FREE  0x1b
- 
-+#define DRM_RADEON_GEM_INFO   0x1c
-+#define DRM_RADEON_GEM_CREATE 0x1d
-+#define DRM_RADEON_GEM_MMAP   0x1e
-+#define DRM_RADEON_GEM_PIN    0x1f
-+#define DRM_RADEON_GEM_UNPIN  0x20
-+#define DRM_RADEON_GEM_PREAD  0x21
-+#define DRM_RADEON_GEM_PWRITE 0x22
-+#define DRM_RADEON_GEM_SET_DOMAIN 0x23
-+#define DRM_RADEON_GEM_WAIT_RENDERING 0x24
-+
-+#define DRM_RADEON_CS       0x26
-+
- #define DRM_IOCTL_RADEON_CP_INIT    DRM_IOW( DRM_COMMAND_BASE + DRM_RADEON_CP_INIT, drm_radeon_init_t)
- #define DRM_IOCTL_RADEON_CP_START   DRM_IO(  DRM_COMMAND_BASE + DRM_RADEON_CP_START)
- #define DRM_IOCTL_RADEON_CP_STOP    DRM_IOW( DRM_COMMAND_BASE + DRM_RADEON_CP_STOP, drm_radeon_cp_stop_t)
-@@ -521,6 +543,17 @@ typedef struct {
- #define DRM_IOCTL_RADEON_SURF_ALLOC DRM_IOW( DRM_COMMAND_BASE + DRM_RADEON_SURF_ALLOC, drm_radeon_surface_alloc_t)
- #define DRM_IOCTL_RADEON_SURF_FREE  DRM_IOW( DRM_COMMAND_BASE + DRM_RADEON_SURF_FREE, drm_radeon_surface_free_t)
- 
-+#define DRM_IOCTL_RADEON_GEM_INFO   DRM_IOWR(DRM_COMMAND_BASE + DRM_RADEON_GEM_INFO, struct drm_radeon_gem_info)
-+#define DRM_IOCTL_RADEON_GEM_CREATE   DRM_IOWR(DRM_COMMAND_BASE + DRM_RADEON_GEM_CREATE, struct drm_radeon_gem_create)
-+#define DRM_IOCTL_RADEON_GEM_MMAP   DRM_IOWR(DRM_COMMAND_BASE + DRM_RADEON_GEM_MMAP, struct drm_radeon_gem_mmap)
-+#define DRM_IOCTL_RADEON_GEM_PIN   DRM_IOWR(DRM_COMMAND_BASE + DRM_RADEON_GEM_PIN, struct drm_radeon_gem_pin)
-+#define DRM_IOCTL_RADEON_GEM_UNPIN   DRM_IOWR(DRM_COMMAND_BASE + DRM_RADEON_GEM_UNPIN, struct drm_radeon_gem_unpin)
-+#define DRM_IOCTL_RADEON_GEM_PREAD   DRM_IOWR(DRM_COMMAND_BASE + DRM_RADEON_GEM_PREAD, struct drm_radeon_gem_pread)
-+#define DRM_IOCTL_RADEON_GEM_PWRITE   DRM_IOWR(DRM_COMMAND_BASE + DRM_RADEON_GEM_PWRITE, struct drm_radeon_gem_pwrite)
-+#define DRM_IOCTL_RADEON_GEM_SET_DOMAIN  DRM_IOWR(DRM_COMMAND_BASE + DRM_RADEON_GEM_SET_DOMAIN, struct drm_radeon_gem_set_domain)
-+#define DRM_IOCTL_RADEON_GEM_WAIT_RENDERING DRM_IOW(DRM_COMMAND_BASE + DRM_RADEON_GEM_WAIT_RENDERING, struct drm_radeon_gem_wait_rendering) 
-+#define DRM_IOCTL_RADEON_CS DRM_IOWR(DRM_COMMAND_BASE + DRM_RADEON_CS, struct drm_radeon_cs)
-+
- typedef struct drm_radeon_init {
- 	enum {
- 		RADEON_INIT_CP = 0x01,
-@@ -677,6 +710,7 @@ typedef struct drm_radeon_indirect {
- #define RADEON_PARAM_VBLANK_CRTC           13   /* VBLANK CRTC */
- #define RADEON_PARAM_FB_LOCATION           14   /* FB location */
- #define RADEON_PARAM_NUM_GB_PIPES          15   /* num GB pipes */
-+#define RADEON_PARAM_KERNEL_MM             16
- 
- typedef struct drm_radeon_getparam {
- 	int param;
-@@ -732,6 +766,7 @@ typedef struct drm_radeon_setparam {
- #define RADEON_SETPARAM_NEW_MEMMAP 4		/* Use new memory map */
- #define RADEON_SETPARAM_PCIGART_TABLE_SIZE 5    /* PCI GART Table Size */
- #define RADEON_SETPARAM_VBLANK_CRTC 6           /* VBLANK CRTC */
-+#define RADEON_SETPARAM_MM_INIT 7		/* Initialise the mm */
- /* 1.14: Clients can allocate/free a surface
-  */
- typedef struct drm_radeon_surface_alloc {
-@@ -747,4 +782,106 @@ typedef struct drm_radeon_surface_free {
- #define	DRM_RADEON_VBLANK_CRTC1		1
- #define	DRM_RADEON_VBLANK_CRTC2		2
- 
-+#define RADEON_GEM_DOMAIN_CPU 0x1   // Cached CPU domain
-+#define RADEON_GEM_DOMAIN_GTT 0x2   // GTT or cache flushed
-+#define RADEON_GEM_DOMAIN_VRAM 0x4  // VRAM domain
-+
-+/* return to userspace start/size of gtt and vram apertures */
-+struct drm_radeon_gem_info {
-+	uint64_t gart_start;
-+	uint64_t gart_size;
-+	uint64_t vram_start;
-+	uint64_t vram_size;
-+	uint64_t vram_visible;
-+};
-+
-+struct drm_radeon_gem_create {
-+	uint64_t size;
-+	uint64_t alignment;
-+	uint32_t handle;
-+	uint32_t initial_domain; // to allow VRAM to be created
-+	uint32_t no_backing_store; // for VRAM objects - select whether they need backing store
-+	// pretty much front/back/depth don't need it - other things do
-+};
-+
-+struct drm_radeon_gem_mmap {
-+	uint32_t handle;
-+	uint32_t pad;
-+	uint64_t offset;
-+	uint64_t size;
-+	uint64_t addr_ptr;
-+};
-+
-+struct drm_radeon_gem_set_domain {
-+	uint32_t handle;
-+	uint32_t read_domains;
-+	uint32_t write_domain;
-+};
-+
-+struct drm_radeon_gem_wait_rendering {
-+	uint32_t handle;
-+};
-+
-+struct drm_radeon_gem_pin {
-+	uint32_t handle;
-+	uint32_t pin_domain;
-+	uint64_t alignment;
-+	uint64_t offset;
-+};
-+
-+struct drm_radeon_gem_unpin {
-+	uint32_t handle;
-+	uint32_t pad;
-+};
-+
-+struct drm_radeon_gem_busy {
-+	uint32_t handle;
-+	uint32_t busy;
-+};
-+
-+struct drm_radeon_gem_pread {
-+	/** Handle for the object being read. */
-+	uint32_t handle;
-+	uint32_t pad;
-+	/** Offset into the object to read from */
-+	uint64_t offset;
-+	/** Length of data to read */
-+	uint64_t size;
-+	/** Pointer to write the data into. */
-+	uint64_t data_ptr;	/* void *, but pointers are not 32/64 compatible */
-+};
-+
-+struct drm_radeon_gem_pwrite {
-+	/** Handle for the object being written to. */
-+	uint32_t handle;
-+	uint32_t pad;
-+	/** Offset into the object to write to */
-+	uint64_t offset;
-+	/** Length of data to write */
-+	uint64_t size;
-+	/** Pointer to read the data from. */
-+	uint64_t data_ptr;	/* void *, but pointers are not 32/64 compatible */
-+};
-+
-+
-+/* New interface which obsolete all previous interface.
-+ */
-+
-+#define RADEON_CHUNK_ID_RELOCS 0x01
-+#define RADEON_CHUNK_ID_IB     0x02
-+
-+struct drm_radeon_cs_chunk {
-+	uint32_t chunk_id;
-+	uint32_t length_dw;
-+	uint64_t chunk_data;
-+};
-+
-+struct drm_radeon_cs {
-+	uint32_t	num_chunks;
-+	uint32_t        cs_id;
-+	uint64_t	chunks; /* this points to uint64_t * which point to
-+				   cs chunks */
-+};
-+
-+
- #endif
-diff --git a/libdrm/radeon/Makefile.am b/libdrm/radeon/Makefile.am
-new file mode 100644
-index 0000000..32ca559
---- /dev/null
-+++ b/libdrm/radeon/Makefile.am
-@@ -0,0 +1,48 @@
++Name: libdrm_radeon
++Description: Userspace interface to kernel DRM services for radeon
++Version: 1.0.1
++Libs: -L${libdir} -ldrm_radeon
++Cflags: -I${includedir} -I${includedir}/drm
+diff -up /dev/null libdrm-2.4.4/libdrm/radeon/Makefile.am
+--- /dev/null	2009-02-17 18:26:02.221005894 +1000
++++ libdrm-2.4.4/libdrm/radeon/Makefile.am	2009-02-18 09:27:49.000000000 +1000
+@@ -0,0 +1,53 @@
 +# Copyright © 2008 Jérôme Glisse
 +#
 +# Permission is hereby granted, free of charge, to any person obtaining a
@@ -257,196 +88,14 @@ index 0000000..32ca559
 +	radeon_bo_gem.h \
 +	radeon_cs_gem.h \
 +	radeon_track.h
-diff --git a/libdrm/radeon/radeon_bo.h b/libdrm/radeon/radeon_bo.h
-new file mode 100644
-index 0000000..3cabdfc
---- /dev/null
-+++ b/libdrm/radeon/radeon_bo.h
-@@ -0,0 +1,179 @@
-+/* 
-+ * Copyright © 2008 Jérôme Glisse
-+ * All Rights Reserved.
-+ * 
-+ * Permission is hereby granted, free of charge, to any person obtaining
-+ * a copy of this software and associated documentation files (the
-+ * "Software"), to deal in the Software without restriction, including
-+ * without limitation the rights to use, copy, modify, merge, publish,
-+ * distribute, sub license, and/or sell copies of the Software, and to
-+ * permit persons to whom the Software is furnished to do so, subject to
-+ * the following conditions:
-+ * 
-+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-+ * NON-INFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT HOLDERS, AUTHORS
-+ * AND/OR ITS SUPPLIERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-+ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE 
-+ * USE OR OTHER DEALINGS IN THE SOFTWARE.
-+ *
-+ * The above copyright notice and this permission notice (including the
-+ * next paragraph) shall be included in all copies or substantial portions
-+ * of the Software.
-+ */
-+/*
-+ * Authors:
-+ *      Jérôme Glisse <glisse@freedesktop.org>
-+ */
-+#ifndef RADEON_BO_H
-+#define RADEON_BO_H
 +
-+#include <stdio.h>
-+#include <stdint.h>
-+#include "radeon_track.h"
++pkgconfigdir = @pkgconfigdir@
++pkgconfig_DATA = libdrm_radeon.pc
 +
-+/* bo object */
-+#define RADEON_BO_FLAGS_MACRO_TILE  1
-+#define RADEON_BO_FLAGS_MICRO_TILE  2
-+
-+struct radeon_bo_manager;
-+
-+struct radeon_bo {
-+    uint32_t                    alignment;
-+    uint32_t                    handle;
-+    uint32_t                    size;
-+    uint32_t                    domains;
-+    uint32_t                    flags;
-+    unsigned                    cref;
-+#ifdef RADEON_BO_TRACK
-+    struct radeon_track         *track;
-+#endif
-+    void                        *ptr;
-+    struct radeon_bo_manager    *bom;
-+    uint32_t                    space_accounted;
-+};
-+
-+/* bo functions */
-+struct radeon_bo_funcs {
-+    struct radeon_bo *(*bo_open)(struct radeon_bo_manager *bom,
-+                                 uint32_t handle,
-+                                 uint32_t size,
-+                                 uint32_t alignment,
-+                                 uint32_t domains,
-+                                 uint32_t flags);
-+    void (*bo_ref)(struct radeon_bo *bo);
-+    struct radeon_bo *(*bo_unref)(struct radeon_bo *bo);
-+    int (*bo_map)(struct radeon_bo *bo, int write);
-+    int (*bo_unmap)(struct radeon_bo *bo);
-+    int (*bo_wait)(struct radeon_bo *bo);
-+};
-+
-+struct radeon_bo_manager {
-+    struct radeon_bo_funcs  *funcs;
-+    int                     fd;
-+    struct radeon_tracker   tracker;
-+};
-+    
-+static inline void _radeon_bo_debug(struct radeon_bo *bo,
-+                                    const char *op,
-+                                    const char *file,
-+                                    const char *func,
-+                                    int line)
-+{
-+    fprintf(stderr, "%s %p 0x%08X 0x%08X 0x%08X [%s %s %d]\n",
-+            op, bo, bo->handle, bo->size, bo->cref, file, func, line);
-+}
-+
-+static inline struct radeon_bo *_radeon_bo_open(struct radeon_bo_manager *bom,
-+                                                uint32_t handle,
-+                                                uint32_t size,
-+                                                uint32_t alignment,
-+                                                uint32_t domains,
-+                                                uint32_t flags,
-+                                                const char *file,
-+                                                const char *func,
-+                                                int line)
-+{
-+    struct radeon_bo *bo;
-+
-+    bo = bom->funcs->bo_open(bom, handle, size, alignment, domains, flags);
-+#ifdef RADEON_BO_TRACK
-+    if (bo) {
-+        bo->track = radeon_tracker_add_track(&bom->tracker, bo->handle);
-+        radeon_track_add_event(bo->track, file, func, "open", line);
-+    }
-+#endif
-+    return bo;
-+}
-+
-+static inline void _radeon_bo_ref(struct radeon_bo *bo,
-+                                  const char *file,
-+                                  const char *func,
-+                                  int line)
-+{
-+    bo->cref++;
-+#ifdef RADEON_BO_TRACK
-+    radeon_track_add_event(bo->track, file, func, "ref", line); 
-+#endif
-+    bo->bom->funcs->bo_ref(bo);
-+}
-+
-+static inline struct radeon_bo *_radeon_bo_unref(struct radeon_bo *bo,
-+                                                 const char *file,
-+                                                 const char *func,
-+                                                 int line)
-+{
-+    bo->cref--;
-+#ifdef RADEON_BO_TRACK
-+    radeon_track_add_event(bo->track, file, func, "unref", line);
-+    if (bo->cref <= 0) {
-+        radeon_tracker_remove_track(&bo->bom->tracker, bo->track);
-+        bo->track = NULL;
-+    }
-+#endif
-+    return bo->bom->funcs->bo_unref(bo);
-+}
-+
-+static inline int _radeon_bo_map(struct radeon_bo *bo,
-+                                 int write,
-+                                 const char *file,
-+                                 const char *func,
-+                                 int line)
-+{
-+    return bo->bom->funcs->bo_map(bo, write);
-+}
-+
-+static inline int _radeon_bo_unmap(struct radeon_bo *bo,
-+                                   const char *file,
-+                                   const char *func,
-+                                   int line)
-+{
-+    return bo->bom->funcs->bo_unmap(bo);
-+}
-+
-+static inline int _radeon_bo_wait(struct radeon_bo *bo,
-+                                  const char *file,
-+                                  const char *func,
-+                                  int line)
-+{
-+    return bo->bom->funcs->bo_wait(bo);
-+}
-+
-+#define radeon_bo_open(bom, h, s, a, d, f)\
-+    _radeon_bo_open(bom, h, s, a, d, f, __FILE__, __FUNCTION__, __LINE__)
-+#define radeon_bo_ref(bo)\
-+    _radeon_bo_ref(bo, __FILE__, __FUNCTION__, __LINE__)
-+#define radeon_bo_unref(bo)\
-+    _radeon_bo_unref(bo, __FILE__, __FUNCTION__, __LINE__)
-+#define radeon_bo_map(bo, w)\
-+    _radeon_bo_map(bo, w, __FILE__, __FUNCTION__, __LINE__)
-+#define radeon_bo_unmap(bo)\
-+    _radeon_bo_unmap(bo, __FILE__, __FUNCTION__, __LINE__)
-+#define radeon_bo_debug(bo, opcode)\
-+    _radeon_bo_debug(bo, opcode, __FILE__, __FUNCTION__, __LINE__)
-+#define radeon_bo_wait(bo) \
-+    _radeon_bo_wait(bo, __FILE__, __func__, __LINE__)
-+
-+#endif
-diff --git a/libdrm/radeon/radeon_bo_gem.c b/libdrm/radeon/radeon_bo_gem.c
-new file mode 100644
-index 0000000..932afeb
---- /dev/null
-+++ b/libdrm/radeon/radeon_bo_gem.c
++EXTRA_DIST = libdrm_radeon.pc.in
+diff -up /dev/null libdrm-2.4.4/libdrm/radeon/radeon_bo_gem.c
+--- /dev/null	2009-02-17 18:26:02.221005894 +1000
++++ libdrm-2.4.4/libdrm/radeon/radeon_bo_gem.c	2009-02-18 09:27:49.000000000 +1000
 @@ -0,0 +1,223 @@
 +/* 
 + * Copyright © 2008 Dave Airlie
@@ -671,11 +320,9 @@ index 0000000..932afeb
 +    }
 +    free(bomg);
 +}
-diff --git a/libdrm/radeon/radeon_bo_gem.h b/libdrm/radeon/radeon_bo_gem.h
-new file mode 100644
-index 0000000..c0f68e6
---- /dev/null
-+++ b/libdrm/radeon/radeon_bo_gem.h
+diff -up /dev/null libdrm-2.4.4/libdrm/radeon/radeon_bo_gem.h
+--- /dev/null	2009-02-17 18:26:02.221005894 +1000
++++ libdrm-2.4.4/libdrm/radeon/radeon_bo_gem.h	2009-02-18 09:27:49.000000000 +1000
 @@ -0,0 +1,40 @@
 +/* 
 + * Copyright © 2008 Dave Airlie
@@ -717,31 +364,29 @@ index 0000000..c0f68e6
 +void radeon_bo_manager_gem_dtor(struct radeon_bo_manager *bom);
 +
 +#endif
-diff --git a/libdrm/radeon/radeon_cs.h b/libdrm/radeon/radeon_cs.h
-new file mode 100644
-index 0000000..7cc75d4
---- /dev/null
-+++ b/libdrm/radeon/radeon_cs.h
-@@ -0,0 +1,198 @@
+diff -up /dev/null libdrm-2.4.4/libdrm/radeon/radeon_bo.h
+--- /dev/null	2009-02-17 18:26:02.221005894 +1000
++++ libdrm-2.4.4/libdrm/radeon/radeon_bo.h	2009-02-18 09:27:49.000000000 +1000
+@@ -0,0 +1,179 @@
 +/* 
-+ * Copyright © 2008 Nicolai Haehnle
 + * Copyright © 2008 Jérôme Glisse
 + * All Rights Reserved.
 + * 
-+ * Permission is hereby granted, free of charge, to any person obtaining a
-+ * copy of this software and associated documentation files (the
++ * Permission is hereby granted, free of charge, to any person obtaining
++ * a copy of this software and associated documentation files (the
 + * "Software"), to deal in the Software without restriction, including
 + * without limitation the rights to use, copy, modify, merge, publish,
 + * distribute, sub license, and/or sell copies of the Software, and to
 + * permit persons to whom the Software is furnished to do so, subject to
 + * the following conditions:
 + * 
-+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-+ * FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL
-+ * THE COPYRIGHT HOLDERS, AUTHORS AND/OR ITS SUPPLIERS BE LIABLE FOR ANY CLAIM,
-+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR 
-+ * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE 
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
++ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
++ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
++ * NON-INFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT HOLDERS, AUTHORS
++ * AND/OR ITS SUPPLIERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
++ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE 
 + * USE OR OTHER DEALINGS IN THE SOFTWARE.
 + *
 + * The above copyright notice and this permission notice (including the
@@ -750,182 +395,161 @@ index 0000000..7cc75d4
 + */
 +/*
 + * Authors:
-+ *      Aapo Tahkola <aet@rasterburn.org>
-+ *      Nicolai Haehnle <prefect_@gmx.net>
 + *      Jérôme Glisse <glisse@freedesktop.org>
 + */
-+#ifndef RADEON_CS_H
-+#define RADEON_CS_H
++#ifndef RADEON_BO_H
++#define RADEON_BO_H
 +
++#include <stdio.h>
 +#include <stdint.h>
-+#include "drm.h"
-+#include "radeon_drm.h"
-+#include "radeon_bo.h"
++#include "radeon_track.h"
 +
-+struct radeon_cs_reloc {
-+    struct radeon_bo    *bo;
-+    uint32_t            read_domain;
-+    uint32_t            write_domain;
-+    uint32_t            flags;
++/* bo object */
++#define RADEON_BO_FLAGS_MACRO_TILE  1
++#define RADEON_BO_FLAGS_MICRO_TILE  2
++
++struct radeon_bo_manager;
++
++struct radeon_bo {
++    uint32_t                    alignment;
++    uint32_t                    handle;
++    uint32_t                    size;
++    uint32_t                    domains;
++    uint32_t                    flags;
++    unsigned                    cref;
++#ifdef RADEON_BO_TRACK
++    struct radeon_track         *track;
++#endif
++    void                        *ptr;
++    struct radeon_bo_manager    *bom;
++    uint32_t                    space_accounted;
 +};
 +
-+
-+#define RADEON_CS_SPACE_OK 0
-+#define RADEON_CS_SPACE_OP_TO_BIG 1
-+#define RADEON_CS_SPACE_FLUSH 2
-+
-+struct radeon_cs_space_check {
-+    struct radeon_bo *bo;
-+    uint32_t read_domains;
-+    uint32_t write_domain;
-+    uint32_t new_accounted;
++/* bo functions */
++struct radeon_bo_funcs {
++    struct radeon_bo *(*bo_open)(struct radeon_bo_manager *bom,
++                                 uint32_t handle,
++                                 uint32_t size,
++                                 uint32_t alignment,
++                                 uint32_t domains,
++                                 uint32_t flags);
++    void (*bo_ref)(struct radeon_bo *bo);
++    struct radeon_bo *(*bo_unref)(struct radeon_bo *bo);
++    int (*bo_map)(struct radeon_bo *bo, int write);
++    int (*bo_unmap)(struct radeon_bo *bo);
++    int (*bo_wait)(struct radeon_bo *bo);
 +};
 +
-+struct radeon_cs_manager;
-+
-+struct radeon_cs {
-+    struct radeon_cs_manager    *csm;
-+    void                        *relocs;
-+    uint32_t                    *packets;
-+    unsigned                    crelocs;
-+    unsigned                    relocs_total_size;
-+    unsigned                    cdw;
-+    unsigned                    ndw;
-+    int                         section;
-+    unsigned                    section_ndw;
-+    unsigned                    section_cdw;
-+    const char                  *section_file;
-+    const char                  *section_func;
-+    int                         section_line;
-+
-+};
-+
-+/* cs functions */
-+struct radeon_cs_funcs {
-+    struct radeon_cs *(*cs_create)(struct radeon_cs_manager *csm,
-+                                   uint32_t ndw);
-+    int (*cs_write_reloc)(struct radeon_cs *cs,
-+                          struct radeon_bo *bo,
-+                          uint32_t read_domain,
-+                          uint32_t write_domain,
-+                          uint32_t flags);
-+    int (*cs_begin)(struct radeon_cs *cs,
-+                    uint32_t ndw,
-+                    const char *file,
-+                    const char *func,
-+                    int line);
-+    int (*cs_end)(struct radeon_cs *cs,
-+                  const char *file,
-+                  const char *func,
-+                  int line);
-+    int (*cs_emit)(struct radeon_cs *cs);
-+    int (*cs_destroy)(struct radeon_cs *cs);
-+    int (*cs_erase)(struct radeon_cs *cs);
-+    int (*cs_need_flush)(struct radeon_cs *cs);
-+    void (*cs_print)(struct radeon_cs *cs, FILE *file);
-+    int (*cs_space_check)(struct radeon_cs *cs, struct radeon_cs_space_check *bos,
-+			  int num_bo);
-+};
-+
-+struct radeon_cs_manager {
-+    struct radeon_cs_funcs  *funcs;
++struct radeon_bo_manager {
++    struct radeon_bo_funcs  *funcs;
 +    int                     fd;
-+    uint32_t vram_limit, gart_limit;
-+    uint32_t vram_write_used, gart_write_used;
-+    uint32_t read_used;
++    struct radeon_tracker   tracker;
 +};
-+
-+static inline struct radeon_cs *radeon_cs_create(struct radeon_cs_manager *csm,
-+                                                 uint32_t ndw)
++    
++static inline void _radeon_bo_debug(struct radeon_bo *bo,
++                                    const char *op,
++                                    const char *file,
++                                    const char *func,
++                                    int line)
 +{
-+    return csm->funcs->cs_create(csm, ndw);
++    fprintf(stderr, "%s %p 0x%08X 0x%08X 0x%08X [%s %s %d]\n",
++            op, bo, bo->handle, bo->size, bo->cref, file, func, line);
 +}
 +
-+static inline int radeon_cs_write_reloc(struct radeon_cs *cs,
-+                                        struct radeon_bo *bo,
-+                                        uint32_t read_domain,
-+                                        uint32_t write_domain,
-+                                        uint32_t flags)
++static inline struct radeon_bo *_radeon_bo_open(struct radeon_bo_manager *bom,
++                                                uint32_t handle,
++                                                uint32_t size,
++                                                uint32_t alignment,
++                                                uint32_t domains,
++                                                uint32_t flags,
++                                                const char *file,
++                                                const char *func,
++                                                int line)
 +{
-+    return cs->csm->funcs->cs_write_reloc(cs,
-+                                          bo,
-+                                          read_domain,
-+                                          write_domain,
-+                                          flags);
++    struct radeon_bo *bo;
++
++    bo = bom->funcs->bo_open(bom, handle, size, alignment, domains, flags);
++#ifdef RADEON_BO_TRACK
++    if (bo) {
++        bo->track = radeon_tracker_add_track(&bom->tracker, bo->handle);
++        radeon_track_add_event(bo->track, file, func, "open", line);
++    }
++#endif
++    return bo;
 +}
 +
-+static inline int radeon_cs_begin(struct radeon_cs *cs,
-+                                  uint32_t ndw,
++static inline void _radeon_bo_ref(struct radeon_bo *bo,
 +                                  const char *file,
 +                                  const char *func,
 +                                  int line)
 +{
-+    return cs->csm->funcs->cs_begin(cs, ndw, file, func, line);
++    bo->cref++;
++#ifdef RADEON_BO_TRACK
++    radeon_track_add_event(bo->track, file, func, "ref", line); 
++#endif
++    bo->bom->funcs->bo_ref(bo);
 +}
 +
-+static inline int radeon_cs_end(struct radeon_cs *cs,
-+                                const char *file,
-+                                const char *func,
-+                                int line)
++static inline struct radeon_bo *_radeon_bo_unref(struct radeon_bo *bo,
++                                                 const char *file,
++                                                 const char *func,
++                                                 int line)
 +{
-+    return cs->csm->funcs->cs_end(cs, file, func, line);
-+}
-+
-+static inline int radeon_cs_emit(struct radeon_cs *cs)
-+{
-+    return cs->csm->funcs->cs_emit(cs);
-+}
-+
-+static inline int radeon_cs_destroy(struct radeon_cs *cs)
-+{
-+    return cs->csm->funcs->cs_destroy(cs);
-+}
-+
-+static inline int radeon_cs_erase(struct radeon_cs *cs)
-+{
-+    return cs->csm->funcs->cs_erase(cs);
-+}
-+
-+static inline int radeon_cs_need_flush(struct radeon_cs *cs)
-+{
-+    return cs->csm->funcs->cs_need_flush(cs);
-+}
-+
-+static inline void radeon_cs_print(struct radeon_cs *cs, FILE *file)
-+{
-+    cs->csm->funcs->cs_print(cs, file);
-+}
-+
-+static inline int radeon_cs_space_check(struct radeon_cs *cs,
-+					    struct radeon_cs_space_check *bos,
-+					    int num_bo)
-+{
-+    return cs->csm->funcs->cs_space_check(cs, bos, num_bo);
-+}
-+
-+static inline void radeon_cs_set_limit(struct radeon_cs *cs, uint32_t domain, uint32_t limit)
-+{
-+    
-+    if (domain == RADEON_GEM_DOMAIN_VRAM)
-+	cs->csm->vram_limit = limit;
-+    else
-+	cs->csm->gart_limit = limit;
-+}
-+
-+static inline void radeon_cs_write_dword(struct radeon_cs *cs, uint32_t dword)
-+{
-+    cs->packets[cs->cdw++] = dword;
-+    if (cs->section) {
-+        cs->section_cdw++;
++    bo->cref--;
++#ifdef RADEON_BO_TRACK
++    radeon_track_add_event(bo->track, file, func, "unref", line);
++    if (bo->cref <= 0) {
++        radeon_tracker_remove_track(&bo->bom->tracker, bo->track);
++        bo->track = NULL;
 +    }
++#endif
++    return bo->bom->funcs->bo_unref(bo);
 +}
++
++static inline int _radeon_bo_map(struct radeon_bo *bo,
++                                 int write,
++                                 const char *file,
++                                 const char *func,
++                                 int line)
++{
++    return bo->bom->funcs->bo_map(bo, write);
++}
++
++static inline int _radeon_bo_unmap(struct radeon_bo *bo,
++                                   const char *file,
++                                   const char *func,
++                                   int line)
++{
++    return bo->bom->funcs->bo_unmap(bo);
++}
++
++static inline int _radeon_bo_wait(struct radeon_bo *bo,
++                                  const char *file,
++                                  const char *func,
++                                  int line)
++{
++    return bo->bom->funcs->bo_wait(bo);
++}
++
++#define radeon_bo_open(bom, h, s, a, d, f)\
++    _radeon_bo_open(bom, h, s, a, d, f, __FILE__, __FUNCTION__, __LINE__)
++#define radeon_bo_ref(bo)\
++    _radeon_bo_ref(bo, __FILE__, __FUNCTION__, __LINE__)
++#define radeon_bo_unref(bo)\
++    _radeon_bo_unref(bo, __FILE__, __FUNCTION__, __LINE__)
++#define radeon_bo_map(bo, w)\
++    _radeon_bo_map(bo, w, __FILE__, __FUNCTION__, __LINE__)
++#define radeon_bo_unmap(bo)\
++    _radeon_bo_unmap(bo, __FILE__, __FUNCTION__, __LINE__)
++#define radeon_bo_debug(bo, opcode)\
++    _radeon_bo_debug(bo, opcode, __FILE__, __FUNCTION__, __LINE__)
++#define radeon_bo_wait(bo) \
++    _radeon_bo_wait(bo, __FILE__, __func__, __LINE__)
 +
 +#endif
-diff --git a/libdrm/radeon/radeon_cs_gem.c b/libdrm/radeon/radeon_cs_gem.c
-new file mode 100644
-index 0000000..dc14a8a
---- /dev/null
-+++ b/libdrm/radeon/radeon_cs_gem.c
+diff -up /dev/null libdrm-2.4.4/libdrm/radeon/radeon_cs_gem.c
+--- /dev/null	2009-02-17 18:26:02.221005894 +1000
++++ libdrm-2.4.4/libdrm/radeon/radeon_cs_gem.c	2009-02-18 09:27:49.000000000 +1000
 @@ -0,0 +1,537 @@
 +/* 
 + * Copyright © 2008 Jérôme Glisse
@@ -1464,11 +1088,9 @@ index 0000000..dc14a8a
 +{
 +    free(csm);
 +}
-diff --git a/libdrm/radeon/radeon_cs_gem.h b/libdrm/radeon/radeon_cs_gem.h
-new file mode 100644
-index 0000000..5efd146
---- /dev/null
-+++ b/libdrm/radeon/radeon_cs_gem.h
+diff -up /dev/null libdrm-2.4.4/libdrm/radeon/radeon_cs_gem.h
+--- /dev/null	2009-02-17 18:26:02.221005894 +1000
++++ libdrm-2.4.4/libdrm/radeon/radeon_cs_gem.h	2009-02-18 09:27:49.000000000 +1000
 @@ -0,0 +1,41 @@
 +/* 
 + * Copyright © 2008 Nicolai Haehnle
@@ -1511,11 +1133,221 @@ index 0000000..5efd146
 +void radeon_cs_manager_gem_dtor(struct radeon_cs_manager *csm);
 +
 +#endif
-diff --git a/libdrm/radeon/radeon_track.c b/libdrm/radeon/radeon_track.c
-new file mode 100644
-index 0000000..1623906
---- /dev/null
-+++ b/libdrm/radeon/radeon_track.c
+diff -up /dev/null libdrm-2.4.4/libdrm/radeon/radeon_cs.h
+--- /dev/null	2009-02-17 18:26:02.221005894 +1000
++++ libdrm-2.4.4/libdrm/radeon/radeon_cs.h	2009-02-18 09:27:49.000000000 +1000
+@@ -0,0 +1,208 @@
++/* 
++ * Copyright © 2008 Nicolai Haehnle
++ * Copyright © 2008 Jérôme Glisse
++ * All Rights Reserved.
++ * 
++ * Permission is hereby granted, free of charge, to any person obtaining a
++ * copy of this software and associated documentation files (the
++ * "Software"), to deal in the Software without restriction, including
++ * without limitation the rights to use, copy, modify, merge, publish,
++ * distribute, sub license, and/or sell copies of the Software, and to
++ * permit persons to whom the Software is furnished to do so, subject to
++ * the following conditions:
++ * 
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL
++ * THE COPYRIGHT HOLDERS, AUTHORS AND/OR ITS SUPPLIERS BE LIABLE FOR ANY CLAIM,
++ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR 
++ * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE 
++ * USE OR OTHER DEALINGS IN THE SOFTWARE.
++ *
++ * The above copyright notice and this permission notice (including the
++ * next paragraph) shall be included in all copies or substantial portions
++ * of the Software.
++ */
++/*
++ * Authors:
++ *      Aapo Tahkola <aet@rasterburn.org>
++ *      Nicolai Haehnle <prefect_@gmx.net>
++ *      Jérôme Glisse <glisse@freedesktop.org>
++ */
++#ifndef RADEON_CS_H
++#define RADEON_CS_H
++
++#include <stdint.h>
++#include <string.h>
++#include "drm.h"
++#include "radeon_drm.h"
++#include "radeon_bo.h"
++
++struct radeon_cs_reloc {
++    struct radeon_bo    *bo;
++    uint32_t            read_domain;
++    uint32_t            write_domain;
++    uint32_t            flags;
++};
++
++
++#define RADEON_CS_SPACE_OK 0
++#define RADEON_CS_SPACE_OP_TO_BIG 1
++#define RADEON_CS_SPACE_FLUSH 2
++
++struct radeon_cs_space_check {
++    struct radeon_bo *bo;
++    uint32_t read_domains;
++    uint32_t write_domain;
++    uint32_t new_accounted;
++};
++
++struct radeon_cs_manager;
++
++struct radeon_cs {
++    struct radeon_cs_manager    *csm;
++    void                        *relocs;
++    uint32_t                    *packets;
++    unsigned                    crelocs;
++    unsigned                    relocs_total_size;
++    unsigned                    cdw;
++    unsigned                    ndw;
++    int                         section;
++    unsigned                    section_ndw;
++    unsigned                    section_cdw;
++    const char                  *section_file;
++    const char                  *section_func;
++    int                         section_line;
++
++};
++
++/* cs functions */
++struct radeon_cs_funcs {
++    struct radeon_cs *(*cs_create)(struct radeon_cs_manager *csm,
++                                   uint32_t ndw);
++    int (*cs_write_reloc)(struct radeon_cs *cs,
++                          struct radeon_bo *bo,
++                          uint32_t read_domain,
++                          uint32_t write_domain,
++                          uint32_t flags);
++    int (*cs_begin)(struct radeon_cs *cs,
++                    uint32_t ndw,
++                    const char *file,
++                    const char *func,
++                    int line);
++    int (*cs_end)(struct radeon_cs *cs,
++                  const char *file,
++                  const char *func,
++                  int line);
++    int (*cs_emit)(struct radeon_cs *cs);
++    int (*cs_destroy)(struct radeon_cs *cs);
++    int (*cs_erase)(struct radeon_cs *cs);
++    int (*cs_need_flush)(struct radeon_cs *cs);
++    void (*cs_print)(struct radeon_cs *cs, FILE *file);
++    int (*cs_space_check)(struct radeon_cs *cs, struct radeon_cs_space_check *bos,
++			  int num_bo);
++};
++
++struct radeon_cs_manager {
++    struct radeon_cs_funcs  *funcs;
++    int                     fd;
++    uint32_t vram_limit, gart_limit;
++    uint32_t vram_write_used, gart_write_used;
++    uint32_t read_used;
++};
++
++static inline struct radeon_cs *radeon_cs_create(struct radeon_cs_manager *csm,
++                                                 uint32_t ndw)
++{
++    return csm->funcs->cs_create(csm, ndw);
++}
++
++static inline int radeon_cs_write_reloc(struct radeon_cs *cs,
++                                        struct radeon_bo *bo,
++                                        uint32_t read_domain,
++                                        uint32_t write_domain,
++                                        uint32_t flags)
++{
++    return cs->csm->funcs->cs_write_reloc(cs,
++                                          bo,
++                                          read_domain,
++                                          write_domain,
++                                          flags);
++}
++
++static inline int radeon_cs_begin(struct radeon_cs *cs,
++                                  uint32_t ndw,
++                                  const char *file,
++                                  const char *func,
++                                  int line)
++{
++    return cs->csm->funcs->cs_begin(cs, ndw, file, func, line);
++}
++
++static inline int radeon_cs_end(struct radeon_cs *cs,
++                                const char *file,
++                                const char *func,
++                                int line)
++{
++    return cs->csm->funcs->cs_end(cs, file, func, line);
++}
++
++static inline int radeon_cs_emit(struct radeon_cs *cs)
++{
++    return cs->csm->funcs->cs_emit(cs);
++}
++
++static inline int radeon_cs_destroy(struct radeon_cs *cs)
++{
++    return cs->csm->funcs->cs_destroy(cs);
++}
++
++static inline int radeon_cs_erase(struct radeon_cs *cs)
++{
++    return cs->csm->funcs->cs_erase(cs);
++}
++
++static inline int radeon_cs_need_flush(struct radeon_cs *cs)
++{
++    return cs->csm->funcs->cs_need_flush(cs);
++}
++
++static inline void radeon_cs_print(struct radeon_cs *cs, FILE *file)
++{
++    cs->csm->funcs->cs_print(cs, file);
++}
++
++static inline int radeon_cs_space_check(struct radeon_cs *cs,
++					    struct radeon_cs_space_check *bos,
++					    int num_bo)
++{
++    return cs->csm->funcs->cs_space_check(cs, bos, num_bo);
++}
++
++static inline void radeon_cs_set_limit(struct radeon_cs *cs, uint32_t domain, uint32_t limit)
++{
++    
++    if (domain == RADEON_GEM_DOMAIN_VRAM)
++	cs->csm->vram_limit = limit;
++    else
++	cs->csm->gart_limit = limit;
++}
++
++static inline void radeon_cs_write_dword(struct radeon_cs *cs, uint32_t dword)
++{
++    cs->packets[cs->cdw++] = dword;
++    if (cs->section) {
++        cs->section_cdw++;
++    }
++}
++
++static inline void radeon_cs_write_qword(struct radeon_cs *cs, uint64_t qword)
++{
++    memcpy(cs->packets + cs->cdw, &qword, sizeof(uint64_t));
++    cs->cdw += 2;
++    if (cs->section) {
++        cs->section_cdw += 2;
++    }
++}
++
++#endif
+diff -up /dev/null libdrm-2.4.4/libdrm/radeon/radeon_track.c
+--- /dev/null	2009-02-17 18:26:02.221005894 +1000
++++ libdrm-2.4.4/libdrm/radeon/radeon_track.c	2009-02-18 09:27:49.000000000 +1000
 @@ -0,0 +1,140 @@
 +/* 
 + * Copyright © 2008 Jérôme Glisse
@@ -1657,11 +1489,9 @@ index 0000000..1623906
 +        free(tmp);
 +    }
 +}
-diff --git a/libdrm/radeon/radeon_track.h b/libdrm/radeon/radeon_track.h
-new file mode 100644
-index 0000000..838d1f3
---- /dev/null
-+++ b/libdrm/radeon/radeon_track.h
+diff -up /dev/null libdrm-2.4.4/libdrm/radeon/radeon_track.h
+--- /dev/null	2009-02-17 18:26:02.221005894 +1000
++++ libdrm-2.4.4/libdrm/radeon/radeon_track.h	2009-02-18 09:27:49.000000000 +1000
 @@ -0,0 +1,64 @@
 +/* 
 + * Copyright © 2008 Jérôme Glisse
@@ -1727,3 +1557,186 @@ index 0000000..838d1f3
 +                          FILE *file);
 +
 +#endif
+diff -up libdrm-2.4.4/shared-core/radeon_drm.h.radeon libdrm-2.4.4/shared-core/radeon_drm.h
+--- libdrm-2.4.4/shared-core/radeon_drm.h.radeon	2008-10-10 05:02:11.000000000 +1000
++++ libdrm-2.4.4/shared-core/radeon_drm.h	2009-02-18 09:27:49.000000000 +1000
+@@ -453,8 +453,18 @@ typedef struct {
+ 	int pfCurrentPage;	/* which buffer is being displayed? */
+ 	int crtc2_base;		/* CRTC2 frame offset */
+ 	int tiling_enabled;	/* set by drm, read by 2d + 3d clients */
++
++	unsigned int last_fence;
++
++	uint32_t front_handle;
++	uint32_t back_handle;
++	uint32_t depth_handle;
++	uint32_t front_pitch;
++	uint32_t back_pitch;
++	uint32_t depth_pitch;
+ } drm_radeon_sarea_t;
+ 
++
+ /* WARNING: If you change any of these defines, make sure to change the
+  * defines in the Xserver file (xf86drmRadeon.h)
+  *
+@@ -493,6 +503,18 @@ typedef struct {
+ #define DRM_RADEON_SURF_ALLOC 0x1a
+ #define DRM_RADEON_SURF_FREE  0x1b
+ 
++#define DRM_RADEON_GEM_INFO   0x1c
++#define DRM_RADEON_GEM_CREATE 0x1d
++#define DRM_RADEON_GEM_MMAP   0x1e
++#define DRM_RADEON_GEM_PIN    0x1f
++#define DRM_RADEON_GEM_UNPIN  0x20
++#define DRM_RADEON_GEM_PREAD  0x21
++#define DRM_RADEON_GEM_PWRITE 0x22
++#define DRM_RADEON_GEM_SET_DOMAIN 0x23
++#define DRM_RADEON_GEM_WAIT_RENDERING 0x24
++
++#define DRM_RADEON_CS       0x26
++
+ #define DRM_IOCTL_RADEON_CP_INIT    DRM_IOW( DRM_COMMAND_BASE + DRM_RADEON_CP_INIT, drm_radeon_init_t)
+ #define DRM_IOCTL_RADEON_CP_START   DRM_IO(  DRM_COMMAND_BASE + DRM_RADEON_CP_START)
+ #define DRM_IOCTL_RADEON_CP_STOP    DRM_IOW( DRM_COMMAND_BASE + DRM_RADEON_CP_STOP, drm_radeon_cp_stop_t)
+@@ -521,6 +543,17 @@ typedef struct {
+ #define DRM_IOCTL_RADEON_SURF_ALLOC DRM_IOW( DRM_COMMAND_BASE + DRM_RADEON_SURF_ALLOC, drm_radeon_surface_alloc_t)
+ #define DRM_IOCTL_RADEON_SURF_FREE  DRM_IOW( DRM_COMMAND_BASE + DRM_RADEON_SURF_FREE, drm_radeon_surface_free_t)
+ 
++#define DRM_IOCTL_RADEON_GEM_INFO   DRM_IOWR(DRM_COMMAND_BASE + DRM_RADEON_GEM_INFO, struct drm_radeon_gem_info)
++#define DRM_IOCTL_RADEON_GEM_CREATE   DRM_IOWR(DRM_COMMAND_BASE + DRM_RADEON_GEM_CREATE, struct drm_radeon_gem_create)
++#define DRM_IOCTL_RADEON_GEM_MMAP   DRM_IOWR(DRM_COMMAND_BASE + DRM_RADEON_GEM_MMAP, struct drm_radeon_gem_mmap)
++#define DRM_IOCTL_RADEON_GEM_PIN   DRM_IOWR(DRM_COMMAND_BASE + DRM_RADEON_GEM_PIN, struct drm_radeon_gem_pin)
++#define DRM_IOCTL_RADEON_GEM_UNPIN   DRM_IOWR(DRM_COMMAND_BASE + DRM_RADEON_GEM_UNPIN, struct drm_radeon_gem_unpin)
++#define DRM_IOCTL_RADEON_GEM_PREAD   DRM_IOWR(DRM_COMMAND_BASE + DRM_RADEON_GEM_PREAD, struct drm_radeon_gem_pread)
++#define DRM_IOCTL_RADEON_GEM_PWRITE   DRM_IOWR(DRM_COMMAND_BASE + DRM_RADEON_GEM_PWRITE, struct drm_radeon_gem_pwrite)
++#define DRM_IOCTL_RADEON_GEM_SET_DOMAIN  DRM_IOWR(DRM_COMMAND_BASE + DRM_RADEON_GEM_SET_DOMAIN, struct drm_radeon_gem_set_domain)
++#define DRM_IOCTL_RADEON_GEM_WAIT_RENDERING DRM_IOW(DRM_COMMAND_BASE + DRM_RADEON_GEM_WAIT_RENDERING, struct drm_radeon_gem_wait_rendering) 
++#define DRM_IOCTL_RADEON_CS DRM_IOWR(DRM_COMMAND_BASE + DRM_RADEON_CS, struct drm_radeon_cs)
++
+ typedef struct drm_radeon_init {
+ 	enum {
+ 		RADEON_INIT_CP = 0x01,
+@@ -677,6 +710,8 @@ typedef struct drm_radeon_indirect {
+ #define RADEON_PARAM_VBLANK_CRTC           13   /* VBLANK CRTC */
+ #define RADEON_PARAM_FB_LOCATION           14   /* FB location */
+ #define RADEON_PARAM_NUM_GB_PIPES          15   /* num GB pipes */
++#define RADEON_PARAM_KERNEL_MM             16
++#define RADEON_PARAM_DEVICE_ID            17
+ 
+ typedef struct drm_radeon_getparam {
+ 	int param;
+@@ -732,6 +767,7 @@ typedef struct drm_radeon_setparam {
+ #define RADEON_SETPARAM_NEW_MEMMAP 4		/* Use new memory map */
+ #define RADEON_SETPARAM_PCIGART_TABLE_SIZE 5    /* PCI GART Table Size */
+ #define RADEON_SETPARAM_VBLANK_CRTC 6           /* VBLANK CRTC */
++#define RADEON_SETPARAM_MM_INIT 7		/* Initialise the mm */
+ /* 1.14: Clients can allocate/free a surface
+  */
+ typedef struct drm_radeon_surface_alloc {
+@@ -747,4 +783,106 @@ typedef struct drm_radeon_surface_free {
+ #define	DRM_RADEON_VBLANK_CRTC1		1
+ #define	DRM_RADEON_VBLANK_CRTC2		2
+ 
++#define RADEON_GEM_DOMAIN_CPU 0x1   // Cached CPU domain
++#define RADEON_GEM_DOMAIN_GTT 0x2   // GTT or cache flushed
++#define RADEON_GEM_DOMAIN_VRAM 0x4  // VRAM domain
++
++/* return to userspace start/size of gtt and vram apertures */
++struct drm_radeon_gem_info {
++	uint64_t gart_start;
++	uint64_t gart_size;
++	uint64_t vram_start;
++	uint64_t vram_size;
++	uint64_t vram_visible;
++};
++
++struct drm_radeon_gem_create {
++	uint64_t size;
++	uint64_t alignment;
++	uint32_t handle;
++	uint32_t initial_domain; // to allow VRAM to be created
++	uint32_t no_backing_store; // for VRAM objects - select whether they need backing store
++	// pretty much front/back/depth don't need it - other things do
++};
++
++struct drm_radeon_gem_mmap {
++	uint32_t handle;
++	uint32_t pad;
++	uint64_t offset;
++	uint64_t size;
++	uint64_t addr_ptr;
++};
++
++struct drm_radeon_gem_set_domain {
++	uint32_t handle;
++	uint32_t read_domains;
++	uint32_t write_domain;
++};
++
++struct drm_radeon_gem_wait_rendering {
++	uint32_t handle;
++};
++
++struct drm_radeon_gem_pin {
++	uint32_t handle;
++	uint32_t pin_domain;
++	uint64_t alignment;
++	uint64_t offset;
++};
++
++struct drm_radeon_gem_unpin {
++	uint32_t handle;
++	uint32_t pad;
++};
++
++struct drm_radeon_gem_busy {
++	uint32_t handle;
++	uint32_t busy;
++};
++
++struct drm_radeon_gem_pread {
++	/** Handle for the object being read. */
++	uint32_t handle;
++	uint32_t pad;
++	/** Offset into the object to read from */
++	uint64_t offset;
++	/** Length of data to read */
++	uint64_t size;
++	/** Pointer to write the data into. */
++	uint64_t data_ptr;	/* void *, but pointers are not 32/64 compatible */
++};
++
++struct drm_radeon_gem_pwrite {
++	/** Handle for the object being written to. */
++	uint32_t handle;
++	uint32_t pad;
++	/** Offset into the object to write to */
++	uint64_t offset;
++	/** Length of data to write */
++	uint64_t size;
++	/** Pointer to read the data from. */
++	uint64_t data_ptr;	/* void *, but pointers are not 32/64 compatible */
++};
++
++
++/* New interface which obsolete all previous interface.
++ */
++
++#define RADEON_CHUNK_ID_RELOCS 0x01
++#define RADEON_CHUNK_ID_IB     0x02
++
++struct drm_radeon_cs_chunk {
++	uint32_t chunk_id;
++	uint32_t length_dw;
++	uint64_t chunk_data;
++};
++
++struct drm_radeon_cs {
++	uint32_t	num_chunks;
++	uint32_t        cs_id;
++	uint64_t	chunks; /* this points to uint64_t * which point to
++				   cs chunks */
++};
++
++
+ #endif

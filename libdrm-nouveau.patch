@@ -1,10 +1,10 @@
-diff -Nur libdrm-2.4.4.orig/configure.ac libdrm-2.4.4/configure.ac
---- libdrm-2.4.4.orig/configure.ac	2009-02-05 15:18:37.000000000 +1000
-+++ libdrm-2.4.4/configure.ac	2009-02-05 15:19:56.000000000 +1000
-@@ -125,6 +125,8 @@
- 	libdrm/Makefile
+diff -up libdrm-2.4.4/configure.ac.nouveau libdrm-2.4.4/configure.ac
+--- libdrm-2.4.4/configure.ac.nouveau	2009-02-18 09:37:36.000000000 +1000
++++ libdrm-2.4.4/configure.ac	2009-02-18 09:37:42.000000000 +1000
+@@ -126,6 +126,8 @@ AC_OUTPUT([
  	libdrm/intel/Makefile
  	libdrm/radeon/Makefile
+ 	libdrm/radeon/libdrm_radeon.pc
 +	libdrm/nouveau/Makefile
 +	libdrm/nouveau/libdrm_nouveau.pc
  	shared-core/Makefile

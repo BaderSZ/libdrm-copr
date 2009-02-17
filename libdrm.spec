@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.4
-Release: 4%{?dist}
+Release: 5%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -104,9 +104,13 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libdrm_radeon.so
 %{_libdir}/libdrm_nouveau.so
 %{_libdir}/pkgconfig/libdrm.pc
+%{_libdir}/pkgconfig/libdrm_radeon.pc
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 
 %changelog
+* Wed Feb 18 2009 Dave Airlie <airlied@redhat.com> 2.4.4-5
+- update libdrm_radeon again
+
 * Thu Feb 05 2009 Ben Skeggs <bskeggs@redhat.com> 2.4.4-4
 - nouveau: pull in updates from upstream
 
