@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.4
-Release: 7%{?dist}
+Release: 8%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -111,7 +111,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 
 %changelog
-* Mon Feb 23 2009 Kristian Høgsberg <krh@redhat.com> - 2.4.4-7
+* Mon Feb 23 2009 Kristian Høgsberg <krh@redhat.com> - 2.4.4-8
 - Pull in intel bufmgr changes while waiting for 2.4.5.
 
 * Mon Feb 23 2009 Dave Airlie <airlied@redhat.com> 2.4.4-6
