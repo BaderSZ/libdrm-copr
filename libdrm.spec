@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.4
-Release: 6%{?dist}
+Release: 7%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -30,6 +30,8 @@ Patch4: libdrm-2.4.0-no-bc.patch
 Patch8: libdrm-radeon.patch
 # nouveau libdrm patches
 Patch9: libdrm-nouveau.patch
+# Add this while waiting for 2.4.5
+Patch10: libdrm-intel.patch
 
 %description
 Direct Rendering Manager runtime library
@@ -50,6 +52,7 @@ Direct Rendering Manager development package
 %patch4 -p1 -b .no-bc
 %patch8 -p1 -b .radeon
 %patch9 -p1 -b .nouveau
+%patch10 -p1 -b .intel
 
 %build
 autoreconf -v --install || exit 1
@@ -108,6 +111,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 
 %changelog
+* Mon Feb 23 2009 Kristian Høgsberg <krh@redhat.com> - 2.4.4-7
+- Pull in intel bufmgr changes while waiting for 2.4.5.
+
 * Mon Feb 23 2009 Dave Airlie <airlied@redhat.com> 2.4.4-6
 - don't use the CS patch need_flush
 
