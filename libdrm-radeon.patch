@@ -7,18 +7,18 @@ diff -up libdrm-2.4.4/configure.ac.radeon libdrm-2.4.4/configure.ac
  	libdrm/intel/Makefile
 +	libdrm/radeon/Makefile
 +	libdrm/radeon/libdrm_radeon.pc
+	libdrm/nouveau/Makefile
+	libdrm/nouveau/libdrm_nouveau.pc
  	shared-core/Makefile
- 	tests/Makefile
- 	tests/modeprint/Makefile
 diff -up libdrm-2.4.4/libdrm/Makefile.am.radeon libdrm-2.4.4/libdrm/Makefile.am
 --- libdrm-2.4.4/libdrm/Makefile.am.radeon	2009-01-10 11:08:29.000000000 +1000
 +++ libdrm-2.4.4/libdrm/Makefile.am	2009-02-18 09:27:49.000000000 +1000
 @@ -18,7 +18,7 @@
- #  IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- #  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ NOUVEAU_SUBDIR = nouveau
+ endif
  
--SUBDIRS = . intel
-+SUBDIRS = . intel radeon
+-SUBDIRS = . intel $(NOUVEAU_SUBDIR)
++SUBDIRS = . intel radeon $(NOUVEAU_SUBDIR)
  
  libdrm_la_LTLIBRARIES = libdrm.la
  libdrm_ladir = $(libdir)

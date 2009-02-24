@@ -2,8 +2,8 @@
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.4.4
-Release: 9%{?dist}
+Version: 2.4.5
+Release: 0%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -15,9 +15,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 Requires: udev
 
 BuildRequires: pkgconfig automake autoconf libtool
-
 BuildRequires: kernel-headers >= 2.6.29-0.145.rc6.fc11
-
 BuildRequires: libxcb-devel
 
 Source2: 91-drm-modeset.rules
@@ -28,10 +26,8 @@ Patch3: libdrm-make-dri-perms-okay.patch
 Patch4: libdrm-2.4.0-no-bc.patch
 # radeon libdrm patches from modesetting-gem branch of upstream
 Patch8: libdrm-radeon.patch
-# nouveau libdrm patches
-Patch9: libdrm-nouveau.patch
-# Add this while waiting for 2.4.5
-Patch10: libdrm-intel.patch
+# 2.4.5 didn't dist nouveau_private.h and nouveau_dma.h, so add them like this
+Patch9: nouveau-missing-headers.patch
 
 %description
 Direct Rendering Manager runtime library
@@ -52,11 +48,10 @@ Direct Rendering Manager development package
 %patch4 -p1 -b .no-bc
 %patch8 -p1 -b .radeon
 %patch9 -p1 -b .nouveau
-%patch10 -p1 -b .intel
 
 %build
 autoreconf -v --install || exit 1
-%configure --enable-udev
+%configure --enable-udev --enable-nouveau-experimental-api
 make %{?_smp_mflags}
 
 %install
@@ -107,10 +102,14 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libdrm_radeon.so
 %{_libdir}/libdrm_nouveau.so
 %{_libdir}/pkgconfig/libdrm.pc
+%{_libdir}/pkgconfig/libdrm_intel.pc
 %{_libdir}/pkgconfig/libdrm_radeon.pc
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 
 %changelog
+* Tue Feb 24 2009 Kristian Høgsberg <krh@redhat.com> - 2.4.5-0
+- Update to 2.4.5, drop nouveau and intel patches, rebase radeon.
+
 * Mon Feb 23 2009 Kristian Høgsberg <krh@redhat.com> - 2.4.4-9
 - Pull in intel bufmgr changes while waiting for 2.4.5.
 
