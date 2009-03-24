@@ -1,0 +1,143 @@
+diff -Nur libdrm-2.4.5.orig/libdrm/nouveau/Makefile.am libdrm-2.4.5/libdrm/nouveau/Makefile.am
+--- libdrm-2.4.5.orig/libdrm/nouveau/Makefile.am	2009-02-11 10:09:35.000000000 +1000
++++ libdrm-2.4.5/libdrm/nouveau/Makefile.am	2009-03-25 09:06:49.000000000 +1000
+@@ -19,7 +19,9 @@
+ 			    nouveau_bo.c \
+ 			    nouveau_resource.c \
+ 			    nouveau_dma.c \
+-			    nouveau_fence.c
++			    nouveau_fence.c \
++			    nouveau_dma.h \
++			    nouveau_private.h
+ 
+ libdrm_nouveaucommonincludedir = ${includedir}/nouveau
+ libdrm_nouveaucommoninclude_HEADERS = \
+diff -Nur libdrm-2.4.5.orig/libdrm/nouveau/nouveau_bo.c libdrm-2.4.5/libdrm/nouveau/nouveau_bo.c
+--- libdrm-2.4.5.orig/libdrm/nouveau/nouveau_bo.c	2009-02-11 10:09:35.000000000 +1000
++++ libdrm-2.4.5/libdrm/nouveau/nouveau_bo.c	2009-03-25 09:06:20.000000000 +1000
+@@ -347,24 +347,25 @@
+ 	if (!bo || !handle)
+ 		return -EINVAL;
+ 
+-	if (!nvdev->mm_enabled)
+-		return -ENODEV;
+-
+ 	if (!nvbo->global_handle) {
+ 		struct drm_gem_flink req;
+  
+ 		ret = nouveau_bo_kalloc(nvbo, NULL);
+ 		if (ret)
+ 			return ret;
+- 
+-		req.handle = nvbo->handle;
+-		ret = ioctl(nvdev->fd, DRM_IOCTL_GEM_FLINK, &req);
+-		if (ret) {
+-			nouveau_bo_kfree(nvbo);
+-			return ret;
++
++		if (nvdev->mm_enabled) {
++			req.handle = nvbo->handle;
++			ret = ioctl(nvdev->fd, DRM_IOCTL_GEM_FLINK, &req);
++			if (ret) {
++				nouveau_bo_kfree(nvbo);
++				return ret;
++			}
++	 
++			nvbo->global_handle = req.name;
++		} else {
++			nvbo->global_handle = nvbo->offset;
+ 		}
+- 
+-		nvbo->global_handle = req.name;
+ 	}
+  
+ 	*handle = nvbo->global_handle;
+@@ -412,6 +413,8 @@
+ {
+ 	struct nouveau_bo_priv *nvbo = priv;
+ 
++	nouveau_fence_ref(NULL, &nvbo->fence);
++	nouveau_fence_ref(NULL, &nvbo->wr_fence);
+ 	nouveau_bo_kfree(nvbo);
+ 	free(nvbo);
+ }
+diff -Nur libdrm-2.4.5.orig/libdrm/nouveau/nouveau_device.c libdrm-2.4.5/libdrm/nouveau/nouveau_device.c
+--- libdrm-2.4.5.orig/libdrm/nouveau/nouveau_device.c	2009-02-22 03:54:48.000000000 +1000
++++ libdrm-2.4.5/libdrm/nouveau/nouveau_device.c	2009-03-25 09:06:21.000000000 +1000
+@@ -76,6 +76,22 @@
+ 	}
+ 	nvdev->base.vm_vram_base = value;
+ 
++	ret = nouveau_device_get_param(&nvdev->base,
++				       NOUVEAU_GETPARAM_FB_SIZE, &value);
++	if (ret) {
++		nouveau_device_close((void *)&nvdev);
++		return ret;
++	}
++	nvdev->vram_aper_size = value;
++
++	ret = nouveau_device_get_param(&nvdev->base,
++				       NOUVEAU_GETPARAM_AGP_SIZE, &value);
++	if (ret) {
++		nouveau_device_close((void *)&nvdev);
++		return ret;
++	}
++	nvdev->gart_aper_size = value;
++
+ 	ret = nouveau_bo_init(&nvdev->base);
+ 	if (ret) {
+ 		nouveau_device_close((void *)&nvdev);
+@@ -128,7 +144,7 @@
+ {
+ 	struct nouveau_device_priv *nvdev;
+ 
+-	if (dev || !*dev)
++	if (!dev || !*dev)
+ 		return;
+ 	nvdev = nouveau_device(*dev);
+ 	*dev = NULL;
+diff -Nur libdrm-2.4.5.orig/libdrm/nouveau/nouveau_drmif.h libdrm-2.4.5/libdrm/nouveau/nouveau_drmif.h
+--- libdrm-2.4.5.orig/libdrm/nouveau/nouveau_drmif.h	2009-02-11 10:09:35.000000000 +1000
++++ libdrm-2.4.5/libdrm/nouveau/nouveau_drmif.h	2009-03-25 09:06:21.000000000 +1000
+@@ -37,6 +37,9 @@
+ 	int needs_close;
+ 
+ 	int mm_enabled;
++/*XXX: move to nouveau_device when interface gets bumped */
++	uint64_t vram_aper_size;
++	uint64_t gart_aper_size;
+ };
+ #define nouveau_device(n) ((struct nouveau_device_priv *)(n))
+ 
+diff -Nur libdrm-2.4.5.orig/libdrm/nouveau/nouveau_fence.c libdrm-2.4.5/libdrm/nouveau/nouveau_fence.c
+--- libdrm-2.4.5.orig/libdrm/nouveau/nouveau_fence.c	2009-02-11 10:09:35.000000000 +1000
++++ libdrm-2.4.5/libdrm/nouveau/nouveau_fence.c	2009-03-25 09:06:21.000000000 +1000
+@@ -96,22 +96,16 @@
+ int
+ nouveau_fence_ref(struct nouveau_fence *ref, struct nouveau_fence **fence)
+ {
+-	struct nouveau_fence_priv *nvfence;
+-
+ 	if (!fence)
+ 		return -EINVAL;
+ 
+-	if (*fence) {
+-		nouveau_fence_del(fence);
+-		*fence = NULL;
+-	}
++	if (ref)
++		nouveau_fence(ref)->refcount++;
+ 
+-	if (ref) {
+-		nvfence = nouveau_fence(ref);
+-		nvfence->refcount++;	
+-		*fence = &nvfence->base;
+-	}
++	if (*fence)
++		nouveau_fence_del(fence);
+ 
++	*fence = ref;
+ 	return 0;
+ }
+ 
+
