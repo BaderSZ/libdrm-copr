@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.5
-Release: 0%{?dist}
+Release: 1%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -29,6 +29,7 @@ Patch8: libdrm-radeon.patch
 # 2.4.5 didn't dist nouveau_private.h and nouveau_dma.h, so add them like this
 Patch9: nouveau-missing-headers.patch
 
+Patch10: radeon-bo-name.patch
 %description
 Direct Rendering Manager runtime library
 
@@ -48,6 +49,7 @@ Direct Rendering Manager development package
 %patch4 -p1 -b .no-bc
 %patch8 -p1 -b .radeon
 %patch9 -p1 -b .nouveau
+%patch10 -p1 -b .boname
 
 %build
 autoreconf -v --install || exit 1
@@ -107,6 +109,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 
 %changelog
+* Mon Mar 23 2009 Dave Airlie <airlied@redhat.com> 2.4.5-1
+- add bo naming
+
 * Tue Feb 24 2009 Kristian Høgsberg <krh@redhat.com> - 2.4.5-0
 - Update to 2.4.5, drop nouveau and intel patches, rebase radeon.
 
