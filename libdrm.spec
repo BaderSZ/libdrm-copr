@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.5
-Release: 2%{?dist}
+Release: 3%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -32,6 +32,9 @@ Patch9: nouveau-missing-headers.patch
 Patch10: radeon-bo-name.patch
 # nouveau fixes from drm.git
 Patch11: nouveau-updates.patch
+# intel gtt map fixes
+# http://lists.freedesktop.org/archives/intel-gfx/2009-March/001869.html
+Patch12: libdrm-intel-gtt.patch
 
 %description
 Direct Rendering Manager runtime library
@@ -54,6 +57,7 @@ Direct Rendering Manager development package
 %patch9 -p1 -b .nouveau
 %patch10 -p1 -b .boname
 %patch11 -p1 -b .nouveau-updates
+%patch12 -p1 -b .intel-gtt
 
 %build
 autoreconf -v --install || exit 1
@@ -113,6 +117,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 
 %changelog
+* Thu Mar 26 2009 Adam Jackson <ajax@redhat.com> 2.4.5-3
+- libdrm-intel-gtt.patch: Fix GTT maps for intel.
+
 * Wed Mar 25 2009 Ben Skeggs <bskeggs@redhat.com> 2.4.5-2
 - pull in nouveau fixes from drm.git
 
