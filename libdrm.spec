@@ -2,8 +2,8 @@
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.4.5
-Release: 4%{?dist}
+Version: 2.4.6
+Release: 1%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -27,14 +27,6 @@ Patch3: libdrm-make-dri-perms-okay.patch
 Patch4: libdrm-2.4.0-no-bc.patch
 # radeon libdrm patches from modesetting-gem branch of upstream
 Patch8: libdrm-radeon.patch
-# 2.4.5 didn't dist nouveau_private.h and nouveau_dma.h, so add them like this
-Patch9: nouveau-missing-headers.patch
-
-# nouveau fixes from drm.git
-Patch11: nouveau-updates.patch
-# intel gtt map fixes
-# http://lists.freedesktop.org/archives/intel-gfx/2009-March/001869.html
-Patch12: libdrm-intel-gtt.patch
 
 %description
 Direct Rendering Manager runtime library
@@ -54,9 +46,6 @@ Direct Rendering Manager development package
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
 %patch8 -p1 -b .radeon
-%patch9 -p1 -b .nouveau
-%patch11 -p1 -b .nouveau-updates
-%patch12 -p1 -b .intel-gtt
 
 %build
 autoreconf -v --install || exit 1
