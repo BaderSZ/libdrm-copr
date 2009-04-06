@@ -22,23 +22,11 @@ diff -up libdrm-2.4.4/libdrm/Makefile.am.radeon libdrm-2.4.4/libdrm/Makefile.am
  
  libdrm_la_LTLIBRARIES = libdrm.la
  libdrm_ladir = $(libdir)
-diff -up /dev/null libdrm-2.4.4/libdrm/radeon/libdrm_radeon.pc.in
---- /dev/null	2009-02-17 18:26:02.221005894 +1000
-+++ libdrm-2.4.4/libdrm/radeon/libdrm_radeon.pc.in	2009-02-18 09:27:49.000000000 +1000
-@@ -0,0 +1,10 @@
-+prefix=@prefix@
-+exec_prefix=@exec_prefix@
-+libdir=@libdir@
-+includedir=@includedir@
-+
-+Name: libdrm_radeon
-+Description: Userspace interface to kernel DRM services for radeon
-+Version: 1.0.1
-+Libs: -L${libdir} -ldrm_radeon
-+Cflags: -I${includedir} -I${includedir}/drm
-diff -up /dev/null libdrm-2.4.4/libdrm/radeon/Makefile.am
---- /dev/null	2009-02-17 18:26:02.221005894 +1000
-+++ libdrm-2.4.4/libdrm/radeon/Makefile.am	2009-02-18 09:27:49.000000000 +1000
+diff --git a/libdrm/radeon/Makefile.am b/libdrm/radeon/Makefile.am
+new file mode 100644
+index 0000000..bc8a5b8
+--- /dev/null
++++ b/libdrm/radeon/Makefile.am
 @@ -0,0 +1,53 @@
 +# Copyright © 2008 Jérôme Glisse
 +#
@@ -93,280 +81,27 @@ diff -up /dev/null libdrm-2.4.4/libdrm/radeon/Makefile.am
 +pkgconfig_DATA = libdrm_radeon.pc
 +
 +EXTRA_DIST = libdrm_radeon.pc.in
-diff -up /dev/null libdrm-2.4.4/libdrm/radeon/radeon_bo_gem.c
---- /dev/null	2009-02-17 18:26:02.221005894 +1000
-+++ libdrm-2.4.4/libdrm/radeon/radeon_bo_gem.c	2009-02-18 09:27:49.000000000 +1000
-@@ -0,0 +1,223 @@
-+/* 
-+ * Copyright © 2008 Dave Airlie
-+ * Copyright © 2008 Jérôme Glisse
-+ * All Rights Reserved.
-+ * 
-+ * Permission is hereby granted, free of charge, to any person obtaining
-+ * a copy of this software and associated documentation files (the
-+ * "Software"), to deal in the Software without restriction, including
-+ * without limitation the rights to use, copy, modify, merge, publish,
-+ * distribute, sub license, and/or sell copies of the Software, and to
-+ * permit persons to whom the Software is furnished to do so, subject to
-+ * the following conditions:
-+ * 
-+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-+ * NON-INFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT HOLDERS, AUTHORS
-+ * AND/OR ITS SUPPLIERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-+ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE 
-+ * USE OR OTHER DEALINGS IN THE SOFTWARE.
-+ *
-+ * The above copyright notice and this permission notice (including the
-+ * next paragraph) shall be included in all copies or substantial portions
-+ * of the Software.
-+ */
-+/*
-+ * Authors:
-+ *      Dave Airlie
-+ *      Jérôme Glisse <glisse@freedesktop.org>
-+ */
-+#include <stdio.h>
-+#include <stdint.h>
-+#include <stdlib.h>
-+#include <string.h>
-+#include <sys/mman.h>
-+#include <sys/ioctl.h>
-+#include <errno.h>
-+#include "xf86drm.h"
-+#include "drm.h"
-+#include "radeon_drm.h"
-+#include "radeon_bo.h"
-+#include "radeon_bo_gem.h"
+diff --git a/libdrm/radeon/libdrm_radeon.pc.in b/libdrm/radeon/libdrm_radeon.pc.in
+new file mode 100644
+index 0000000..3306844
+--- /dev/null
++++ b/libdrm/radeon/libdrm_radeon.pc.in
+@@ -0,0 +1,10 @@
++prefix=@prefix@
++exec_prefix=@exec_prefix@
++libdir=@libdir@
++includedir=@includedir@
 +
-+struct radeon_bo_gem {
-+    struct radeon_bo    base;
-+    uint32_t            name;
-+    int                 map_count;
-+};
-+
-+struct bo_manager_gem {
-+    struct radeon_bo_manager    base;
-+};
-+
-+static struct radeon_bo *bo_open(struct radeon_bo_manager *bom,
-+                                 uint32_t handle,
-+                                 uint32_t size,
-+                                 uint32_t alignment,
-+                                 uint32_t domains,
-+                                 uint32_t flags)
-+{
-+    struct radeon_bo_gem *bo;
-+    int r;
-+
-+    bo = (struct radeon_bo_gem*)calloc(1, sizeof(struct radeon_bo_gem));
-+    if (bo == NULL) {
-+        return NULL;
-+    }
-+
-+    bo->base.bom = bom;
-+    bo->base.handle = 0;
-+    bo->base.size = size;
-+    bo->base.alignment = alignment;
-+    bo->base.domains = domains;
-+    bo->base.flags = flags;
-+    bo->base.ptr = NULL;
-+    bo->map_count = 0;
-+    if (handle) {
-+        struct drm_gem_open open_arg;
-+
-+        memset(&open_arg, 0, sizeof(open_arg));
-+        open_arg.name = handle;
-+        r = ioctl(bom->fd, DRM_IOCTL_GEM_OPEN, &open_arg);
-+        if (r != 0) {
-+            free(bo);
-+            return NULL;
-+        }
-+        bo->base.handle = open_arg.handle;
-+        bo->base.size = open_arg.size;
-+        bo->name = handle;
-+    } else {
-+        struct drm_radeon_gem_create args;
-+
-+        args.size = size;
-+        args.alignment = alignment;
-+        args.initial_domain = bo->base.domains;
-+        args.no_backing_store = 0;
-+        args.handle = 0;
-+        r = drmCommandWriteRead(bom->fd, DRM_RADEON_GEM_CREATE,
-+                                &args, sizeof(args));
-+        bo->base.handle = args.handle;
-+        if (r) {
-+            fprintf(stderr, "Failed to allocate :\n");
-+            fprintf(stderr, "   size      : %d bytes\n", size);
-+            fprintf(stderr, "   alignment : %d bytes\n", alignment);
-+            fprintf(stderr, "   domains   : %d\n", bo->base.domains);
-+            free(bo);
-+            return NULL;
-+        }
-+    }
-+    radeon_bo_ref((struct radeon_bo*)bo);
-+    return (struct radeon_bo*)bo;
-+}
-+
-+static void bo_ref(struct radeon_bo *bo)
-+{
-+}
-+
-+static struct radeon_bo *bo_unref(struct radeon_bo *bo)
-+{
-+    struct radeon_bo_gem *bo_gem = (struct radeon_bo_gem*)bo;
-+    struct drm_gem_close args;
-+
-+    if (bo == NULL) {
-+        return NULL;
-+    }
-+    if (bo->cref) {
-+        return bo;
-+    }
-+    if (bo_gem->map_count) {
-+        munmap(bo->ptr, bo->size);
-+    }
-+
-+    /* close object */
-+    args.handle = bo->handle;
-+    ioctl(bo->bom->fd, DRM_IOCTL_GEM_CLOSE, &args);
-+    memset(bo_gem, 0, sizeof(struct radeon_bo_gem));
-+    free(bo_gem);
-+    return NULL;
-+}
-+
-+static int bo_map(struct radeon_bo *bo, int write)
-+{
-+    struct radeon_bo_gem *bo_gem = (struct radeon_bo_gem*)bo;
-+    struct drm_radeon_gem_mmap args;
-+    int r;
-+
-+    if (bo_gem->map_count++ != 0) {
-+        return 0;
-+    }
-+    bo->ptr = NULL;
-+    args.handle = bo->handle;
-+    args.offset = 0;
-+    args.size = (uint64_t)bo->size;
-+    r = drmCommandWriteRead(bo->bom->fd,
-+                            DRM_RADEON_GEM_MMAP,
-+                            &args,
-+                            sizeof(args));
-+    if (!r) {
-+        bo->ptr = (void *)(unsigned long)args.addr_ptr;
-+    } else {
-+        fprintf(stderr, "error mapping %p 0x%08X (error = %d)\n",
-+                bo, bo->handle, r);
-+    }
-+    return r;
-+}
-+
-+static int bo_unmap(struct radeon_bo *bo)
-+{
-+    struct radeon_bo_gem *bo_gem = (struct radeon_bo_gem*)bo;
-+
-+    if (--bo_gem->map_count > 0) {
-+        return 0;
-+    }
-+    munmap(bo->ptr, bo->size);
-+    bo->ptr = NULL;
-+    return 0;
-+}
-+
-+static int bo_wait(struct radeon_bo *bo)
-+{
-+    struct drm_radeon_gem_wait_rendering args;
-+    int ret;
-+
-+    args.handle = bo->handle;
-+    do {
-+        ret = drmCommandWriteRead(bo->bom->fd, DRM_RADEON_GEM_WAIT_RENDERING,
-+                                  &args, sizeof(args));
-+    } while (ret == -EAGAIN);
-+    return ret;
-+}
-+
-+static struct radeon_bo_funcs bo_gem_funcs = {
-+    bo_open,
-+    bo_ref,
-+    bo_unref,
-+    bo_map,
-+    bo_unmap,
-+    bo_wait
-+};
-+
-+struct radeon_bo_manager *radeon_bo_manager_gem_ctor(int fd)
-+{
-+    struct bo_manager_gem *bomg;
-+
-+    bomg = (struct bo_manager_gem*)calloc(1, sizeof(struct bo_manager_gem));
-+    if (bomg == NULL) {
-+        return NULL;
-+    }
-+    bomg->base.funcs = &bo_gem_funcs;
-+    bomg->base.fd = fd;
-+    return (struct radeon_bo_manager*)bomg;
-+}
-+
-+void radeon_bo_manager_gem_dtor(struct radeon_bo_manager *bom)
-+{
-+    struct bo_manager_gem *bomg = (struct bo_manager_gem*)bom;
-+
-+    if (bom == NULL) {
-+        return;
-+    }
-+    free(bomg);
-+}
-diff -up /dev/null libdrm-2.4.4/libdrm/radeon/radeon_bo_gem.h
---- /dev/null	2009-02-17 18:26:02.221005894 +1000
-+++ libdrm-2.4.4/libdrm/radeon/radeon_bo_gem.h	2009-02-18 09:27:49.000000000 +1000
-@@ -0,0 +1,40 @@
-+/* 
-+ * Copyright © 2008 Dave Airlie
-+ * Copyright © 2008 Jérôme Glisse
-+ * All Rights Reserved.
-+ * 
-+ * Permission is hereby granted, free of charge, to any person obtaining
-+ * a copy of this software and associated documentation files (the
-+ * "Software"), to deal in the Software without restriction, including
-+ * without limitation the rights to use, copy, modify, merge, publish,
-+ * distribute, sub license, and/or sell copies of the Software, and to
-+ * permit persons to whom the Software is furnished to do so, subject to
-+ * the following conditions:
-+ * 
-+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-+ * NON-INFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT HOLDERS, AUTHORS
-+ * AND/OR ITS SUPPLIERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-+ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE 
-+ * USE OR OTHER DEALINGS IN THE SOFTWARE.
-+ *
-+ * The above copyright notice and this permission notice (including the
-+ * next paragraph) shall be included in all copies or substantial portions
-+ * of the Software.
-+ */
-+/*
-+ * Authors:
-+ *      Dave Airlie
-+ *      Jérôme Glisse <glisse@freedesktop.org>
-+ */
-+#ifndef RADEON_BO_GEM_H
-+#define RADEON_BO_GEM_H
-+
-+#include "radeon_bo.h"
-+
-+struct radeon_bo_manager *radeon_bo_manager_gem_ctor(int fd);
-+void radeon_bo_manager_gem_dtor(struct radeon_bo_manager *bom);
-+
-+#endif
-diff -up /dev/null libdrm-2.4.4/libdrm/radeon/radeon_bo.h
---- /dev/null	2009-02-17 18:26:02.221005894 +1000
-+++ libdrm-2.4.4/libdrm/radeon/radeon_bo.h	2009-02-18 09:27:49.000000000 +1000
++Name: libdrm_radeon
++Description: Userspace interface to kernel DRM services for radeon
++Version: 1.0.1
++Libs: -L${libdir} -ldrm_radeon
++Cflags: -I${includedir} -I${includedir}/drm
+diff --git a/libdrm/radeon/radeon_bo.h b/libdrm/radeon/radeon_bo.h
+new file mode 100644
+index 0000000..3cabdfc
+--- /dev/null
++++ b/libdrm/radeon/radeon_bo.h
 @@ -0,0 +1,179 @@
 +/* 
 + * Copyright © 2008 Jérôme Glisse
@@ -547,11 +282,14 @@ diff -up /dev/null libdrm-2.4.4/libdrm/radeon/radeon_bo.h
 +    _radeon_bo_wait(bo, __FILE__, __func__, __LINE__)
 +
 +#endif
-diff -up /dev/null libdrm-2.4.4/libdrm/radeon/radeon_cs_gem.c
---- /dev/null	2009-02-17 18:26:02.221005894 +1000
-+++ libdrm-2.4.4/libdrm/radeon/radeon_cs_gem.c	2009-02-18 09:27:49.000000000 +1000
-@@ -0,0 +1,537 @@
+diff --git a/libdrm/radeon/radeon_bo_gem.c b/libdrm/radeon/radeon_bo_gem.c
+new file mode 100644
+index 0000000..70f4b6b
+--- /dev/null
++++ b/libdrm/radeon/radeon_bo_gem.c
+@@ -0,0 +1,237 @@
 +/* 
++ * Copyright © 2008 Dave Airlie
 + * Copyright © 2008 Jérôme Glisse
 + * All Rights Reserved.
 + * 
@@ -578,522 +316,223 @@ diff -up /dev/null libdrm-2.4.4/libdrm/radeon/radeon_cs_gem.c
 + */
 +/*
 + * Authors:
-+ *      Aapo Tahkola <aet@rasterburn.org>
-+ *      Nicolai Haehnle <prefect_@gmx.net>
++ *      Dave Airlie
 + *      Jérôme Glisse <glisse@freedesktop.org>
 + */
-+#include <errno.h>
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++#include <stdio.h>
++#include <stdint.h>
 +#include <stdlib.h>
++#include <string.h>
 +#include <sys/mman.h>
 +#include <sys/ioctl.h>
-+#include "radeon_cs.h"
-+#include "radeon_cs_gem.h"
-+#include "radeon_bo_gem.h"
-+#include "drm.h"
++#include <errno.h>
 +#include "xf86drm.h"
++#include "drm.h"
 +#include "radeon_drm.h"
++#include "radeon_bo.h"
++#include "radeon_bo_gem.h"
 +
-+#pragma pack(1)
-+struct cs_reloc_gem {
-+    uint32_t    handle;
-+    uint32_t    read_domain;
-+    uint32_t    write_domain;
-+    uint32_t    flags;
++struct radeon_bo_gem {
++    struct radeon_bo    base;
++    uint32_t            name;
++    int                 map_count;
 +};
 +
-+#pragma pack()
-+#define RELOC_SIZE (sizeof(struct cs_reloc_gem) / sizeof(uint32_t))
-+
-+struct cs_gem {
-+    struct radeon_cs            base;
-+    struct drm_radeon_cs        cs;
-+    struct drm_radeon_cs_chunk  chunks[2];
-+    unsigned                    nrelocs;
-+    uint32_t                    *relocs;
-+    struct radeon_bo            **relocs_bo;
++struct bo_manager_gem {
++    struct radeon_bo_manager    base;
 +};
 +
-+static struct radeon_cs *cs_gem_create(struct radeon_cs_manager *csm,
-+                                       uint32_t ndw)
++static struct radeon_bo *bo_open(struct radeon_bo_manager *bom,
++                                 uint32_t handle,
++                                 uint32_t size,
++                                 uint32_t alignment,
++                                 uint32_t domains,
++                                 uint32_t flags)
 +{
-+    struct cs_gem *csg;
-+
-+    /* max cmd buffer size is 64Kb */
-+    if (ndw > (64 * 1024 / 4)) {
-+        return NULL;
-+    }
-+    csg = (struct cs_gem*)calloc(1, sizeof(struct cs_gem));
-+    if (csg == NULL) {
-+        return NULL;
-+    }
-+    csg->base.csm = csm;
-+    csg->base.ndw = 64 * 1024 / 4;
-+    csg->base.packets = (uint32_t*)calloc(1, 64 * 1024);
-+    if (csg->base.packets == NULL) {
-+        free(csg);
-+        return NULL;
-+    }
-+    csg->base.relocs_total_size = 0;
-+    csg->base.crelocs = 0;
-+    csg->nrelocs = 4096 / (4 * 4) ;
-+    csg->relocs_bo = (struct radeon_bo**)calloc(1,
-+                                                csg->nrelocs*sizeof(void*));
-+    if (csg->relocs_bo == NULL) {
-+        free(csg->base.packets);
-+        free(csg);
-+        return NULL;
-+    }
-+    csg->base.relocs = csg->relocs = (uint32_t*)calloc(1, 4096);
-+    if (csg->relocs == NULL) {
-+        free(csg->relocs_bo);
-+        free(csg->base.packets);
-+        free(csg);
-+        return NULL;
-+    }
-+    csg->chunks[0].chunk_id = RADEON_CHUNK_ID_IB;
-+    csg->chunks[0].length_dw = 0;
-+    csg->chunks[0].chunk_data = (uint64_t)(intptr_t)csg->base.packets;
-+    csg->chunks[1].chunk_id = RADEON_CHUNK_ID_RELOCS;
-+    csg->chunks[1].length_dw = 0;
-+    csg->chunks[1].chunk_data = (uint64_t)(intptr_t)csg->relocs;
-+    return (struct radeon_cs*)csg;
-+}
-+
-+static int cs_gem_write_reloc(struct radeon_cs *cs,
-+                              struct radeon_bo *bo,
-+                              uint32_t read_domain,
-+                              uint32_t write_domain,
-+                              uint32_t flags)
-+{
-+    struct cs_gem *csg = (struct cs_gem*)cs;
-+    struct cs_reloc_gem *reloc;
-+    uint32_t idx;
-+    unsigned i;
-+
-+    /* check domains */
-+    if ((read_domain && write_domain) || (!read_domain && !write_domain)) {
-+        /* in one CS a bo can only be in read or write domain but not
-+         * in read & write domain at the same sime
-+         */
-+        return -EINVAL;
-+    }
-+    if (read_domain == RADEON_GEM_DOMAIN_CPU) {
-+        return -EINVAL;
-+    }
-+    if (write_domain == RADEON_GEM_DOMAIN_CPU) {
-+        return -EINVAL;
-+    }
-+    /* check if bo is already referenced */
-+    for(i = 0; i < cs->crelocs; i++) {
-+        idx = i * RELOC_SIZE;
-+        reloc = (struct cs_reloc_gem*)&csg->relocs[idx];
-+        if (reloc->handle == bo->handle) {
-+            /* Check domains must be in read or write. As we check already
-+             * checked that in argument one of the read or write domain was
-+             * set we only need to check that if previous reloc as the read
-+             * domain set then the read_domain should also be set for this
-+             * new relocation.
-+             */
-+            if (reloc->read_domain && !read_domain) {
-+                return -EINVAL;
-+            }
-+            if (reloc->write_domain && !write_domain) {
-+                return -EINVAL;
-+            }
-+            reloc->read_domain |= read_domain;
-+            reloc->write_domain |= write_domain;
-+            /* update flags */
-+            reloc->flags |= (flags & reloc->flags);
-+            /* write relocation packet */
-+            radeon_cs_write_dword(cs, 0xc0001000);
-+            radeon_cs_write_dword(cs, idx);
-+            return 0;
-+        }
-+    }
-+    /* new relocation */
-+    if (csg->base.crelocs >= csg->nrelocs) {
-+        /* allocate more memory (TODO: should use a slab allocatore maybe) */
-+        uint32_t *tmp, size;
-+        size = ((csg->nrelocs + 1) * sizeof(struct radeon_bo*));
-+        tmp = (uint32_t*)realloc(csg->relocs_bo, size);
-+        if (tmp == NULL) {
-+            return -ENOMEM;
-+        }
-+        csg->relocs_bo = (struct radeon_bo**)tmp;
-+        size = ((csg->nrelocs + 1) * RELOC_SIZE * 4);
-+        tmp = (uint32_t*)realloc(csg->relocs, size);
-+        if (tmp == NULL) {
-+            return -ENOMEM;
-+        }
-+        cs->relocs = csg->relocs = tmp;
-+        csg->nrelocs += 1;
-+        csg->chunks[1].chunk_data = (uint64_t)(intptr_t)csg->relocs;
-+    }
-+    csg->relocs_bo[csg->base.crelocs] = bo;
-+    idx = (csg->base.crelocs++) * RELOC_SIZE;
-+    reloc = (struct cs_reloc_gem*)&csg->relocs[idx];
-+    reloc->handle = bo->handle;
-+    reloc->read_domain = read_domain;
-+    reloc->write_domain = write_domain;
-+    reloc->flags = flags;
-+    csg->chunks[1].length_dw += RELOC_SIZE;
-+    radeon_bo_ref(bo);
-+    cs->relocs_total_size += bo->size;
-+    radeon_cs_write_dword(cs, 0xc0001000);
-+    radeon_cs_write_dword(cs, idx);
-+    return 0;
-+}
-+
-+static int cs_gem_begin(struct radeon_cs *cs,
-+                        uint32_t ndw,
-+                        const char *file,
-+                        const char *func,
-+                        int line)
-+{
-+
-+    if (cs->section) {
-+        fprintf(stderr, "CS already in a section(%s,%s,%d)\n",
-+                cs->section_file, cs->section_func, cs->section_line);
-+        fprintf(stderr, "CS can't start section(%s,%s,%d)\n",
-+                file, func, line);
-+        return -EPIPE;
-+    }
-+    cs->section = 1;
-+    cs->section_ndw = ndw;
-+    cs->section_cdw = 0;
-+    cs->section_file = file;
-+    cs->section_func = func;
-+    cs->section_line = line;
-+
-+
-+    if (cs->cdw + ndw > cs->ndw) {
-+        uint32_t tmp, *ptr;
-+	int num = (ndw > 0x3FF) ? ndw : 0x3FF;
-+
-+        tmp = (cs->cdw + 1 + num) & (~num);
-+        ptr = (uint32_t*)realloc(cs->packets, 4 * tmp);
-+        if (ptr == NULL) {
-+            return -ENOMEM;
-+        }
-+        cs->packets = ptr;
-+        cs->ndw = tmp;
-+    }
-+
-+    return 0;
-+}
-+
-+static int cs_gem_end(struct radeon_cs *cs,
-+                      const char *file,
-+                      const char *func,
-+                      int line)
-+
-+{
-+    if (!cs->section) {
-+        fprintf(stderr, "CS no section to end at (%s,%s,%d)\n",
-+                file, func, line);
-+        return -EPIPE;
-+    }
-+    cs->section = 0;
-+    if (cs->section_ndw != cs->section_cdw) {
-+        fprintf(stderr, "CS section size missmatch start at (%s,%s,%d) %d vs %d\n",
-+                cs->section_file, cs->section_func, cs->section_line, cs->section_ndw, cs->section_cdw);
-+        fprintf(stderr, "CS section end at (%s,%s,%d)\n",
-+                file, func, line);
-+        return -EPIPE;
-+    }
-+    return 0;
-+}
-+
-+static int cs_gem_emit(struct radeon_cs *cs)
-+{
-+    struct cs_gem *csg = (struct cs_gem*)cs;
-+    uint64_t chunk_array[2];
-+    unsigned i;
++    struct radeon_bo_gem *bo;
 +    int r;
 +
-+    csg->chunks[0].length_dw = cs->cdw;
-+
-+    chunk_array[0] = (uint64_t)(intptr_t)&csg->chunks[0];
-+    chunk_array[1] = (uint64_t)(intptr_t)&csg->chunks[1];
-+
-+    csg->cs.num_chunks = 2;
-+    csg->cs.chunks = (uint64_t)(intptr_t)chunk_array;
-+
-+    r = drmCommandWriteRead(cs->csm->fd, DRM_RADEON_CS,
-+                            &csg->cs, sizeof(struct drm_radeon_cs));
-+    for (i = 0; i < csg->base.crelocs; i++) {
-+        radeon_bo_unref(csg->relocs_bo[i]);
-+        csg->relocs_bo[i] = NULL;
++    bo = (struct radeon_bo_gem*)calloc(1, sizeof(struct radeon_bo_gem));
++    if (bo == NULL) {
++        return NULL;
 +    }
 +
-+    cs->csm->read_used = 0;
-+    cs->csm->vram_write_used = 0;
-+    cs->csm->gart_write_used = 0;
++    bo->base.bom = bom;
++    bo->base.handle = 0;
++    bo->base.size = size;
++    bo->base.alignment = alignment;
++    bo->base.domains = domains;
++    bo->base.flags = flags;
++    bo->base.ptr = NULL;
++    bo->map_count = 0;
++    if (handle) {
++        struct drm_gem_open open_arg;
++
++        memset(&open_arg, 0, sizeof(open_arg));
++        open_arg.name = handle;
++        r = ioctl(bom->fd, DRM_IOCTL_GEM_OPEN, &open_arg);
++        if (r != 0) {
++            free(bo);
++            return NULL;
++        }
++        bo->base.handle = open_arg.handle;
++        bo->base.size = open_arg.size;
++        bo->name = handle;
++    } else {
++        struct drm_radeon_gem_create args;
++
++        args.size = size;
++        args.alignment = alignment;
++        args.initial_domain = bo->base.domains;
++        args.flags = 0;
++        args.handle = 0;
++        r = drmCommandWriteRead(bom->fd, DRM_RADEON_GEM_CREATE,
++                                &args, sizeof(args));
++        bo->base.handle = args.handle;
++        if (r) {
++            fprintf(stderr, "Failed to allocate :\n");
++            fprintf(stderr, "   size      : %d bytes\n", size);
++            fprintf(stderr, "   alignment : %d bytes\n", alignment);
++            fprintf(stderr, "   domains   : %d\n", bo->base.domains);
++            free(bo);
++            return NULL;
++        }
++    }
++    radeon_bo_ref((struct radeon_bo*)bo);
++    return (struct radeon_bo*)bo;
++}
++
++static void bo_ref(struct radeon_bo *bo)
++{
++}
++
++static struct radeon_bo *bo_unref(struct radeon_bo *bo)
++{
++    struct radeon_bo_gem *bo_gem = (struct radeon_bo_gem*)bo;
++    struct drm_gem_close args;
++
++    if (bo == NULL) {
++        return NULL;
++    }
++    if (bo->cref) {
++        return bo;
++    }
++    if (bo_gem->map_count) {
++        munmap(bo->ptr, bo->size);
++    }
++
++    /* close object */
++    args.handle = bo->handle;
++    ioctl(bo->bom->fd, DRM_IOCTL_GEM_CLOSE, &args);
++    memset(bo_gem, 0, sizeof(struct radeon_bo_gem));
++    free(bo_gem);
++    return NULL;
++}
++
++static int bo_map(struct radeon_bo *bo, int write)
++{
++    struct radeon_bo_gem *bo_gem = (struct radeon_bo_gem*)bo;
++    struct drm_radeon_gem_mmap args;
++    int r;
++    void *ptr;
++
++    if (bo_gem->map_count++ != 0) {
++        return 0;
++    }
++    bo->ptr = NULL;
++    args.handle = bo->handle;
++    args.offset = 0;
++    args.size = (uint64_t)bo->size;
++    r = drmCommandWriteRead(bo->bom->fd,
++                            DRM_RADEON_GEM_MMAP,
++                            &args,
++                            sizeof(args));
++    if (r) {
++        fprintf(stderr, "error mapping %p 0x%08X (error = %d)\n",
++                bo, bo->handle, r);
++        return r;
++    }
++    ptr = mmap(0, args.size, PROT_READ|PROT_WRITE, MAP_SHARED, bo->bom->fd, args.addr_ptr);
++    if (ptr == MAP_FAILED)
++        return -errno;
++    bo->ptr = ptr;
++
 +    return r;
 +}
 +
-+static int cs_gem_destroy(struct radeon_cs *cs)
++static int bo_unmap(struct radeon_bo *bo)
 +{
-+    struct cs_gem *csg = (struct cs_gem*)cs;
++    struct radeon_bo_gem *bo_gem = (struct radeon_bo_gem*)bo;
 +
-+    free(csg->relocs_bo);
-+    free(cs->relocs);
-+    free(cs->packets);
-+    free(cs);
-+    return 0;
-+}
-+
-+static int cs_gem_erase(struct radeon_cs *cs)
-+{
-+    struct cs_gem *csg = (struct cs_gem*)cs;
-+    unsigned i;
-+
-+    if (csg->relocs_bo) {
-+        for (i = 0; i < csg->base.crelocs; i++) {
-+            if (csg->relocs_bo[i]) {
-+                radeon_bo_unref(csg->relocs_bo[i]);
-+                csg->relocs_bo[i] = NULL;
-+            }
-+        }
-+    }
-+    cs->relocs_total_size = 0;
-+    cs->cdw = 0;
-+    cs->section = 0;
-+    cs->crelocs = 0;
-+    csg->chunks[0].length_dw = 0;
-+    csg->chunks[1].length_dw = 0;
-+    return 0;
-+}
-+
-+static int cs_gem_need_flush(struct radeon_cs *cs)
-+{
-+    return 0; //(cs->relocs_total_size > (32*1024*1024));
-+}
-+
-+#define PACKET_TYPE0 0
-+#define PACKET_TYPE1 1
-+#define PACKET_TYPE2 2
-+#define PACKET_TYPE3 3
-+  
-+#define PACKET3_NOP 0x10
-+#define PACKET3_SET_SCISSORS 0x1E
-+#define PACKET3_3D_DRAW_VBUF 0x28
-+#define PACKET3_3D_DRAW_IMMD 0x29
-+#define PACKET3_3D_DRAW_INDX 0x2A
-+#define PACKET3_3D_LOAD_VBPNTR 0x2F
-+#define PACKET3_INDX_BUFFER 0x33
-+#define PACKET3_3D_DRAW_VBUF_2 0x34
-+#define PACKET3_3D_DRAW_IMMD_2 0x35
-+#define PACKET3_3D_DRAW_INDX_2 0x36
-+ 
-+#define CP_PACKET_GET_TYPE(h) (((h) >> 30) & 3)
-+#define CP_PACKET_GET_COUNT(h) (((h) >> 16) & 0x3FFF)
-+#define CP_PACKET0_GET_REG(h) (((h) & 0x1FFF) << 2)
-+#define CP_PACKET0_GET_ONE_REG_WR(h) (((h) >> 15) & 1)
-+#define CP_PACKET3_GET_OPCODE(h) (((h) >> 8) & 0xFF)
-+
-+static void cs_gem_print(struct radeon_cs *cs, FILE *file)
-+{
-+    unsigned opcode;
-+    unsigned reg;
-+    unsigned cnt;
-+    int i, j;
-+
-+    for (i = 0; i < cs->cdw;) {
-+        cnt = CP_PACKET_GET_COUNT(cs->packets[i]);
-+        switch (CP_PACKET_GET_TYPE(cs->packets[i])) {
-+        case PACKET_TYPE0:
-+            fprintf(file, "Pkt0 at %d (%d dwords):\n", i, cnt + 1);
-+            reg = CP_PACKET0_GET_REG(cs->packets[i]);
-+            if (CP_PACKET0_GET_ONE_REG_WR(cs->packets[i++])) {
-+                for (j = 0; j <= cnt; j++) {
-+                    fprintf(file, "    0x%08X -> 0x%04X\n",
-+                            cs->packets[i++], reg);
-+                }
-+            } else {
-+                for (j = 0; j <= cnt; j++) {
-+                    fprintf(file, "    0x%08X -> 0x%04X\n",
-+                            cs->packets[i++], reg);
-+                    reg += 4;
-+                }
-+            }
-+            break;
-+        case PACKET_TYPE3:
-+            fprintf(file, "Pkt3 at %d :\n", i);
-+            opcode = CP_PACKET3_GET_OPCODE(cs->packets[i++]);
-+            switch (opcode) {
-+            case PACKET3_NOP:
-+                fprintf(file, "    PACKET3_NOP:\n");
-+                break;
-+            case PACKET3_3D_DRAW_VBUF:
-+                fprintf(file, "    PACKET3_3D_DRAW_VBUF:\n");
-+                break;
-+            case PACKET3_3D_DRAW_IMMD:
-+                fprintf(file, "    PACKET3_3D_DRAW_IMMD:\n");
-+                break;
-+            case PACKET3_3D_DRAW_INDX:
-+                fprintf(file, "    PACKET3_3D_DRAW_INDX:\n");
-+                break;
-+            case PACKET3_3D_LOAD_VBPNTR:
-+                fprintf(file, "    PACKET3_3D_LOAD_VBPNTR:\n");
-+                break;
-+            case PACKET3_INDX_BUFFER:
-+                fprintf(file, "    PACKET3_INDX_BUFFER:\n");
-+                break;
-+            case PACKET3_3D_DRAW_VBUF_2:
-+                fprintf(file, "    PACKET3_3D_DRAW_VBUF_2:\n");
-+                break;
-+            case PACKET3_3D_DRAW_IMMD_2:
-+                fprintf(file, "    PACKET3_3D_DRAW_IMMD_2:\n");
-+                break;
-+            case PACKET3_3D_DRAW_INDX_2:
-+                fprintf(file, "    PACKET3_3D_DRAW_INDX_2:\n");
-+                break;
-+            default:
-+                fprintf(file, "Unknow opcode 0x%02X at %d\n", opcode, i);
-+                return;
-+            }
-+            for (j = 0; j <= cnt; j++) {
-+                fprintf(file, "        0x%08X\n", cs->packets[i++]);
-+            }
-+            break;
-+        case PACKET_TYPE1:
-+        case PACKET_TYPE2:
-+        default:
-+            fprintf(file, "Unknow packet 0x%08X at %d\n", cs->packets[i], i);
-+            return;
-+        }
-+    }
-+}
-+
-+static int cs_gem_check_space(struct radeon_cs *cs, struct radeon_cs_space_check *bos, int num_bo)
-+{
-+    struct radeon_cs_manager *csm = cs->csm;
-+    int this_op_read = 0, this_op_gart_write = 0, this_op_vram_write = 0;
-+    uint32_t read_domains, write_domain;
-+    int i;
-+    struct radeon_bo *bo;
-+
-+    /* check the totals for this operation */
-+
-+    if (num_bo == 0)
++    if (--bo_gem->map_count > 0) {
 +        return 0;
-+
-+    /* prepare */
-+    for (i = 0; i < num_bo; i++) {
-+      bo = bos[i].bo;
-+
-+      bos[i].new_accounted = 0;
-+      read_domains = bos[i].read_domains;
-+      write_domain = bos[i].write_domain;
-+		
-+      /* already accounted this bo */
-+      if (write_domain && (write_domain == bo->space_accounted))
-+	  continue;
-+
-+      if (read_domains && ((read_domains << 16) == bo->space_accounted))
-+	  continue;
-+      
-+      if (bo->space_accounted == 0) {
-+	  if (write_domain == RADEON_GEM_DOMAIN_VRAM)
-+	      this_op_vram_write += bo->size;
-+	  else if (write_domain == RADEON_GEM_DOMAIN_GTT)
-+	      this_op_gart_write += bo->size;
-+	  else
-+	      this_op_read += bo->size;
-+	  bos[i].new_accounted = (read_domains << 16) | write_domain;
-+      } else {
-+	  uint16_t old_read, old_write;
-+	  
-+	  old_read = bo->space_accounted >> 16;
-+	  old_write = bo->space_accounted & 0xffff;
-+
-+	  if (write_domain && (old_read & write_domain)) {
-+	      bos[i].new_accounted = write_domain;
-+	      /* moving from read to a write domain */
-+	      if (write_domain == RADEON_GEM_DOMAIN_VRAM) {
-+		  this_op_read -= bo->size;
-+		  this_op_vram_write += bo->size;
-+	      } else if (write_domain == RADEON_GEM_DOMAIN_VRAM) {
-+		  this_op_read -= bo->size;
-+		  this_op_gart_write += bo->size;
-+	      }
-+	  } else if (read_domains & old_write) {
-+	      bos[i].new_accounted = bo->space_accounted & 0xffff;
-+	  } else {
-+	      /* rewrite the domains */
-+	      if (write_domain != old_write)
-+		  fprintf(stderr,"WRITE DOMAIN RELOC FAILURE 0x%x %d %d\n", bo->handle, write_domain, old_write);
-+	      if (read_domains != old_read)
-+		  fprintf(stderr,"READ DOMAIN RELOC FAILURE 0x%x %d %d\n", bo->handle, read_domains, old_read);
-+	      return RADEON_CS_SPACE_FLUSH;
-+	  }
-+      }
-+	}
-+	
-+	if (this_op_read < 0)
-+		this_op_read = 0;
-+
-+	/* check sizes - operation first */
-+	if ((this_op_read + this_op_gart_write > csm->gart_limit) ||
-+	    (this_op_vram_write > csm->vram_limit)) {
-+	    return RADEON_CS_SPACE_OP_TO_BIG;
-+	}
-+
-+	if (((csm->vram_write_used + this_op_vram_write) > csm->vram_limit) ||
-+	    ((csm->read_used + csm->gart_write_used + this_op_gart_write + this_op_read) > csm->gart_limit)) {
-+		return RADEON_CS_SPACE_FLUSH;
-+	}
-+
-+	csm->gart_write_used += this_op_gart_write;
-+	csm->vram_write_used += this_op_vram_write;
-+	csm->read_used += this_op_read;
-+	/* commit */
-+	for (i = 0; i < num_bo; i++) {
-+		bo = bos[i].bo;
-+		bo->space_accounted = bos[i].new_accounted;
-+	}
-+
-+	return RADEON_CS_SPACE_OK;
++    }
++    munmap(bo->ptr, bo->size);
++    bo->ptr = NULL;
++    return 0;
 +}
 +
-+static struct radeon_cs_funcs radeon_cs_gem_funcs = {
-+    cs_gem_create,
-+    cs_gem_write_reloc,
-+    cs_gem_begin,
-+    cs_gem_end,
-+    cs_gem_emit,
-+    cs_gem_destroy,
-+    cs_gem_erase,
-+    cs_gem_need_flush,
-+    cs_gem_print,
-+    cs_gem_check_space,
++static int bo_wait(struct radeon_bo *bo)
++{
++    struct drm_radeon_gem_wait_idle args;
++    int ret;
++
++    args.handle = bo->handle;
++    do {
++        ret = drmCommandWriteRead(bo->bom->fd, DRM_RADEON_GEM_WAIT_IDLE,
++                                  &args, sizeof(args));
++    } while (ret == -EAGAIN);
++    return ret;
++}
++
++static struct radeon_bo_funcs bo_gem_funcs = {
++    bo_open,
++    bo_ref,
++    bo_unref,
++    bo_map,
++    bo_unmap,
++    bo_wait
 +};
 +
-+struct radeon_cs_manager *radeon_cs_manager_gem_ctor(int fd)
++struct radeon_bo_manager *radeon_bo_manager_gem_ctor(int fd)
 +{
-+    struct radeon_cs_manager *csm;
++    struct bo_manager_gem *bomg;
 +
-+    csm = (struct radeon_cs_manager*)calloc(1,
-+                                            sizeof(struct radeon_cs_manager));
-+    if (csm == NULL) {
++    bomg = (struct bo_manager_gem*)calloc(1, sizeof(struct bo_manager_gem));
++    if (bomg == NULL) {
 +        return NULL;
 +    }
-+    csm->funcs = &radeon_cs_gem_funcs;
-+    csm->fd = fd;
-+    return csm;
++    bomg->base.funcs = &bo_gem_funcs;
++    bomg->base.fd = fd;
++    return (struct radeon_bo_manager*)bomg;
 +}
 +
-+void radeon_cs_manager_gem_dtor(struct radeon_cs_manager *csm)
++void radeon_bo_manager_gem_dtor(struct radeon_bo_manager *bom)
 +{
-+    free(csm);
++    struct bo_manager_gem *bomg = (struct bo_manager_gem*)bom;
++
++    if (bom == NULL) {
++        return;
++    }
++    free(bomg);
 +}
-diff -up /dev/null libdrm-2.4.4/libdrm/radeon/radeon_cs_gem.h
---- /dev/null	2009-02-17 18:26:02.221005894 +1000
-+++ libdrm-2.4.4/libdrm/radeon/radeon_cs_gem.h	2009-02-18 09:27:49.000000000 +1000
++
++uint32_t radeon_gem_name_bo(struct radeon_bo *bo)
++{
++    struct radeon_bo_gem *bo_gem = (struct radeon_bo_gem*)bo;
++    return bo_gem->name;
++}
+diff --git a/libdrm/radeon/radeon_bo_gem.h b/libdrm/radeon/radeon_bo_gem.h
+new file mode 100644
+index 0000000..980a6a4
+--- /dev/null
++++ b/libdrm/radeon/radeon_bo_gem.h
 @@ -0,0 +1,41 @@
 +/* 
-+ * Copyright © 2008 Nicolai Haehnle
++ * Copyright © 2008 Dave Airlie
 + * Copyright © 2008 Jérôme Glisse
 + * All Rights Reserved.
 + * 
@@ -1120,22 +559,24 @@ diff -up /dev/null libdrm-2.4.4/libdrm/radeon/radeon_cs_gem.h
 + */
 +/*
 + * Authors:
-+ *      Aapo Tahkola <aet@rasterburn.org>
-+ *      Nicolai Haehnle <prefect_@gmx.net>
++ *      Dave Airlie
 + *      Jérôme Glisse <glisse@freedesktop.org>
 + */
-+#ifndef RADEON_CS_GEM_H
-+#define RADEON_CS_GEM_H
++#ifndef RADEON_BO_GEM_H
++#define RADEON_BO_GEM_H
 +
-+#include "radeon_cs.h"
++#include "radeon_bo.h"
 +
-+struct radeon_cs_manager *radeon_cs_manager_gem_ctor(int fd);
-+void radeon_cs_manager_gem_dtor(struct radeon_cs_manager *csm);
++struct radeon_bo_manager *radeon_bo_manager_gem_ctor(int fd);
++void radeon_bo_manager_gem_dtor(struct radeon_bo_manager *bom);
 +
++uint32_t radeon_gem_name_bo(struct radeon_bo *bo);
 +#endif
-diff -up /dev/null libdrm-2.4.4/libdrm/radeon/radeon_cs.h
---- /dev/null	2009-02-17 18:26:02.221005894 +1000
-+++ libdrm-2.4.4/libdrm/radeon/radeon_cs.h	2009-02-18 09:27:49.000000000 +1000
+diff --git a/libdrm/radeon/radeon_cs.h b/libdrm/radeon/radeon_cs.h
+new file mode 100644
+index 0000000..d870961
+--- /dev/null
++++ b/libdrm/radeon/radeon_cs.h
 @@ -0,0 +1,208 @@
 +/* 
 + * Copyright © 2008 Nicolai Haehnle
@@ -1345,9 +786,608 @@ diff -up /dev/null libdrm-2.4.4/libdrm/radeon/radeon_cs.h
 +}
 +
 +#endif
-diff -up /dev/null libdrm-2.4.4/libdrm/radeon/radeon_track.c
---- /dev/null	2009-02-17 18:26:02.221005894 +1000
-+++ libdrm-2.4.4/libdrm/radeon/radeon_track.c	2009-02-18 09:27:49.000000000 +1000
+diff --git a/libdrm/radeon/radeon_cs_gem.c b/libdrm/radeon/radeon_cs_gem.c
+new file mode 100644
+index 0000000..b9f6f4b
+--- /dev/null
++++ b/libdrm/radeon/radeon_cs_gem.c
+@@ -0,0 +1,544 @@
++/* 
++ * Copyright © 2008 Jérôme Glisse
++ * All Rights Reserved.
++ * 
++ * Permission is hereby granted, free of charge, to any person obtaining
++ * a copy of this software and associated documentation files (the
++ * "Software"), to deal in the Software without restriction, including
++ * without limitation the rights to use, copy, modify, merge, publish,
++ * distribute, sub license, and/or sell copies of the Software, and to
++ * permit persons to whom the Software is furnished to do so, subject to
++ * the following conditions:
++ * 
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
++ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
++ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
++ * NON-INFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT HOLDERS, AUTHORS
++ * AND/OR ITS SUPPLIERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
++ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE 
++ * USE OR OTHER DEALINGS IN THE SOFTWARE.
++ *
++ * The above copyright notice and this permission notice (including the
++ * next paragraph) shall be included in all copies or substantial portions
++ * of the Software.
++ */
++/*
++ * Authors:
++ *      Aapo Tahkola <aet@rasterburn.org>
++ *      Nicolai Haehnle <prefect_@gmx.net>
++ *      Jérôme Glisse <glisse@freedesktop.org>
++ */
++#include <assert.h>
++#include <errno.h>
++#include <stdlib.h>
++#include <sys/mman.h>
++#include <sys/ioctl.h>
++#include "radeon_cs.h"
++#include "radeon_cs_gem.h"
++#include "radeon_bo_gem.h"
++#include "drm.h"
++#include "xf86drm.h"
++#include "radeon_drm.h"
++
++#pragma pack(1)
++struct cs_reloc_gem {
++    uint32_t    handle;
++    uint32_t    read_domain;
++    uint32_t    write_domain;
++    uint32_t    flags;
++};
++
++#pragma pack()
++#define RELOC_SIZE (sizeof(struct cs_reloc_gem) / sizeof(uint32_t))
++
++struct cs_gem {
++    struct radeon_cs            base;
++    struct drm_radeon_cs        cs;
++    struct drm_radeon_cs_chunk  chunks[2];
++    unsigned                    nrelocs;
++    uint32_t                    *relocs;
++    struct radeon_bo            **relocs_bo;
++};
++
++static struct radeon_cs *cs_gem_create(struct radeon_cs_manager *csm,
++                                       uint32_t ndw)
++{
++    struct cs_gem *csg;
++
++    /* max cmd buffer size is 64Kb */
++    if (ndw > (64 * 1024 / 4)) {
++        return NULL;
++    }
++    csg = (struct cs_gem*)calloc(1, sizeof(struct cs_gem));
++    if (csg == NULL) {
++        return NULL;
++    }
++    csg->base.csm = csm;
++    csg->base.ndw = 64 * 1024 / 4;
++    csg->base.packets = (uint32_t*)calloc(1, 64 * 1024);
++    if (csg->base.packets == NULL) {
++        free(csg);
++        return NULL;
++    }
++    csg->base.relocs_total_size = 0;
++    csg->base.crelocs = 0;
++    csg->nrelocs = 4096 / (4 * 4) ;
++    csg->relocs_bo = (struct radeon_bo**)calloc(1,
++                                                csg->nrelocs*sizeof(void*));
++    if (csg->relocs_bo == NULL) {
++        free(csg->base.packets);
++        free(csg);
++        return NULL;
++    }
++    csg->base.relocs = csg->relocs = (uint32_t*)calloc(1, 4096);
++    if (csg->relocs == NULL) {
++        free(csg->relocs_bo);
++        free(csg->base.packets);
++        free(csg);
++        return NULL;
++    }
++    csg->chunks[0].chunk_id = RADEON_CHUNK_ID_IB;
++    csg->chunks[0].length_dw = 0;
++    csg->chunks[0].chunk_data = (uint64_t)(intptr_t)csg->base.packets;
++    csg->chunks[1].chunk_id = RADEON_CHUNK_ID_RELOCS;
++    csg->chunks[1].length_dw = 0;
++    csg->chunks[1].chunk_data = (uint64_t)(intptr_t)csg->relocs;
++    return (struct radeon_cs*)csg;
++}
++
++static int cs_gem_write_reloc(struct radeon_cs *cs,
++                              struct radeon_bo *bo,
++                              uint32_t read_domain,
++                              uint32_t write_domain,
++                              uint32_t flags)
++{
++    struct cs_gem *csg = (struct cs_gem*)cs;
++    struct cs_reloc_gem *reloc;
++    uint32_t idx;
++    unsigned i;
++
++    assert(bo->space_accounted);
++
++    /* check domains */
++    if ((read_domain && write_domain) || (!read_domain && !write_domain)) {
++        /* in one CS a bo can only be in read or write domain but not
++         * in read & write domain at the same sime
++         */
++        return -EINVAL;
++    }
++    if (read_domain == RADEON_GEM_DOMAIN_CPU) {
++        return -EINVAL;
++    }
++    if (write_domain == RADEON_GEM_DOMAIN_CPU) {
++        return -EINVAL;
++    }
++    /* check if bo is already referenced */
++    for(i = 0; i < cs->crelocs; i++) {
++        idx = i * RELOC_SIZE;
++        reloc = (struct cs_reloc_gem*)&csg->relocs[idx];
++        if (reloc->handle == bo->handle) {
++            /* Check domains must be in read or write. As we check already
++             * checked that in argument one of the read or write domain was
++             * set we only need to check that if previous reloc as the read
++             * domain set then the read_domain should also be set for this
++             * new relocation.
++             */
++            if (reloc->read_domain && !read_domain) {
++                return -EINVAL;
++            }
++            if (reloc->write_domain && !write_domain) {
++                return -EINVAL;
++            }
++            reloc->read_domain |= read_domain;
++            reloc->write_domain |= write_domain;
++            /* update flags */
++            reloc->flags |= (flags & reloc->flags);
++            /* write relocation packet */
++            radeon_cs_write_dword(cs, 0xc0001000);
++            radeon_cs_write_dword(cs, idx);
++            return 0;
++        }
++    }
++    /* new relocation */
++    if (csg->base.crelocs >= csg->nrelocs) {
++        /* allocate more memory (TODO: should use a slab allocatore maybe) */
++        uint32_t *tmp, size;
++        size = ((csg->nrelocs + 1) * sizeof(struct radeon_bo*));
++        tmp = (uint32_t*)realloc(csg->relocs_bo, size);
++        if (tmp == NULL) {
++            return -ENOMEM;
++        }
++        csg->relocs_bo = (struct radeon_bo**)tmp;
++        size = ((csg->nrelocs + 1) * RELOC_SIZE * 4);
++        tmp = (uint32_t*)realloc(csg->relocs, size);
++        if (tmp == NULL) {
++            return -ENOMEM;
++        }
++        cs->relocs = csg->relocs = tmp;
++        csg->nrelocs += 1;
++        csg->chunks[1].chunk_data = (uint64_t)(intptr_t)csg->relocs;
++    }
++    csg->relocs_bo[csg->base.crelocs] = bo;
++    idx = (csg->base.crelocs++) * RELOC_SIZE;
++    reloc = (struct cs_reloc_gem*)&csg->relocs[idx];
++    reloc->handle = bo->handle;
++    reloc->read_domain = read_domain;
++    reloc->write_domain = write_domain;
++    reloc->flags = flags;
++    csg->chunks[1].length_dw += RELOC_SIZE;
++    radeon_bo_ref(bo);
++    cs->relocs_total_size += bo->size;
++    radeon_cs_write_dword(cs, 0xc0001000);
++    radeon_cs_write_dword(cs, idx);
++    return 0;
++}
++
++static int cs_gem_begin(struct radeon_cs *cs,
++                        uint32_t ndw,
++                        const char *file,
++                        const char *func,
++                        int line)
++{
++
++    if (cs->section) {
++        fprintf(stderr, "CS already in a section(%s,%s,%d)\n",
++                cs->section_file, cs->section_func, cs->section_line);
++        fprintf(stderr, "CS can't start section(%s,%s,%d)\n",
++                file, func, line);
++        return -EPIPE;
++    }
++    cs->section = 1;
++    cs->section_ndw = ndw;
++    cs->section_cdw = 0;
++    cs->section_file = file;
++    cs->section_func = func;
++    cs->section_line = line;
++
++
++    if (cs->cdw + ndw > cs->ndw) {
++        uint32_t tmp, *ptr;
++	int num = (ndw > 0x3FF) ? ndw : 0x3FF;
++
++        tmp = (cs->cdw + 1 + num) & (~num);
++        ptr = (uint32_t*)realloc(cs->packets, 4 * tmp);
++        if (ptr == NULL) {
++            return -ENOMEM;
++        }
++        cs->packets = ptr;
++        cs->ndw = tmp;
++    }
++
++    return 0;
++}
++
++static int cs_gem_end(struct radeon_cs *cs,
++                      const char *file,
++                      const char *func,
++                      int line)
++
++{
++    if (!cs->section) {
++        fprintf(stderr, "CS no section to end at (%s,%s,%d)\n",
++                file, func, line);
++        return -EPIPE;
++    }
++    cs->section = 0;
++    if (cs->section_ndw != cs->section_cdw) {
++        fprintf(stderr, "CS section size missmatch start at (%s,%s,%d) %d vs %d\n",
++                cs->section_file, cs->section_func, cs->section_line, cs->section_ndw, cs->section_cdw);
++        fprintf(stderr, "CS section end at (%s,%s,%d)\n",
++                file, func, line);
++        return -EPIPE;
++    }
++    return 0;
++}
++
++static int cs_gem_emit(struct radeon_cs *cs)
++{
++    struct cs_gem *csg = (struct cs_gem*)cs;
++    uint64_t chunk_array[2];
++    unsigned i;
++    int r;
++
++    csg->chunks[0].length_dw = cs->cdw;
++
++    chunk_array[0] = (uint64_t)(intptr_t)&csg->chunks[0];
++    chunk_array[1] = (uint64_t)(intptr_t)&csg->chunks[1];
++
++    csg->cs.num_chunks = 2;
++    csg->cs.chunks = (uint64_t)(intptr_t)chunk_array;
++
++    r = drmCommandWriteRead(cs->csm->fd, DRM_RADEON_CS,
++                            &csg->cs, sizeof(struct drm_radeon_cs));
++    for (i = 0; i < csg->base.crelocs; i++) {
++	    csg->relocs_bo[i]->space_accounted = 0;
++	    radeon_bo_unref(csg->relocs_bo[i]);
++	    csg->relocs_bo[i] = NULL;
++    }
++
++    cs->csm->read_used = 0;
++    cs->csm->vram_write_used = 0;
++    cs->csm->gart_write_used = 0;
++    return r;
++}
++
++static int cs_gem_destroy(struct radeon_cs *cs)
++{
++    struct cs_gem *csg = (struct cs_gem*)cs;
++
++    free(csg->relocs_bo);
++    free(cs->relocs);
++    free(cs->packets);
++    free(cs);
++    return 0;
++}
++
++static int cs_gem_erase(struct radeon_cs *cs)
++{
++    struct cs_gem *csg = (struct cs_gem*)cs;
++    unsigned i;
++
++    if (csg->relocs_bo) {
++        for (i = 0; i < csg->base.crelocs; i++) {
++            if (csg->relocs_bo[i]) {
++                radeon_bo_unref(csg->relocs_bo[i]);
++                csg->relocs_bo[i] = NULL;
++            }
++        }
++    }
++    cs->relocs_total_size = 0;
++    cs->cdw = 0;
++    cs->section = 0;
++    cs->crelocs = 0;
++    csg->chunks[0].length_dw = 0;
++    csg->chunks[1].length_dw = 0;
++    return 0;
++}
++
++static int cs_gem_need_flush(struct radeon_cs *cs)
++{
++    return 0; //(cs->relocs_total_size > (32*1024*1024));
++}
++
++#define PACKET_TYPE0 0
++#define PACKET_TYPE1 1
++#define PACKET_TYPE2 2
++#define PACKET_TYPE3 3
++  
++#define PACKET3_NOP 0x10
++#define PACKET3_SET_SCISSORS 0x1E
++#define PACKET3_3D_DRAW_VBUF 0x28
++#define PACKET3_3D_DRAW_IMMD 0x29
++#define PACKET3_3D_DRAW_INDX 0x2A
++#define PACKET3_3D_LOAD_VBPNTR 0x2F
++#define PACKET3_INDX_BUFFER 0x33
++#define PACKET3_3D_DRAW_VBUF_2 0x34
++#define PACKET3_3D_DRAW_IMMD_2 0x35
++#define PACKET3_3D_DRAW_INDX_2 0x36
++ 
++#define CP_PACKET_GET_TYPE(h) (((h) >> 30) & 3)
++#define CP_PACKET_GET_COUNT(h) (((h) >> 16) & 0x3FFF)
++#define CP_PACKET0_GET_REG(h) (((h) & 0x1FFF) << 2)
++#define CP_PACKET0_GET_ONE_REG_WR(h) (((h) >> 15) & 1)
++#define CP_PACKET3_GET_OPCODE(h) (((h) >> 8) & 0xFF)
++
++static void cs_gem_print(struct radeon_cs *cs, FILE *file)
++{
++    unsigned opcode;
++    unsigned reg;
++    unsigned cnt;
++    int i, j;
++
++    for (i = 0; i < cs->cdw;) {
++        cnt = CP_PACKET_GET_COUNT(cs->packets[i]);
++        switch (CP_PACKET_GET_TYPE(cs->packets[i])) {
++        case PACKET_TYPE0:
++            fprintf(file, "Pkt0 at %d (%d dwords):\n", i, cnt + 1);
++            reg = CP_PACKET0_GET_REG(cs->packets[i]);
++            if (CP_PACKET0_GET_ONE_REG_WR(cs->packets[i++])) {
++                for (j = 0; j <= cnt; j++) {
++                    fprintf(file, "    0x%08X -> 0x%04X\n",
++                            cs->packets[i++], reg);
++                }
++            } else {
++                for (j = 0; j <= cnt; j++) {
++                    fprintf(file, "    0x%08X -> 0x%04X\n",
++                            cs->packets[i++], reg);
++                    reg += 4;
++                }
++            }
++            break;
++        case PACKET_TYPE3:
++            fprintf(file, "Pkt3 at %d :\n", i);
++            opcode = CP_PACKET3_GET_OPCODE(cs->packets[i++]);
++            switch (opcode) {
++            case PACKET3_NOP:
++                fprintf(file, "    PACKET3_NOP:\n");
++                break;
++            case PACKET3_3D_DRAW_VBUF:
++                fprintf(file, "    PACKET3_3D_DRAW_VBUF:\n");
++                break;
++            case PACKET3_3D_DRAW_IMMD:
++                fprintf(file, "    PACKET3_3D_DRAW_IMMD:\n");
++                break;
++            case PACKET3_3D_DRAW_INDX:
++                fprintf(file, "    PACKET3_3D_DRAW_INDX:\n");
++                break;
++            case PACKET3_3D_LOAD_VBPNTR:
++                fprintf(file, "    PACKET3_3D_LOAD_VBPNTR:\n");
++                break;
++            case PACKET3_INDX_BUFFER:
++                fprintf(file, "    PACKET3_INDX_BUFFER:\n");
++                break;
++            case PACKET3_3D_DRAW_VBUF_2:
++                fprintf(file, "    PACKET3_3D_DRAW_VBUF_2:\n");
++                break;
++            case PACKET3_3D_DRAW_IMMD_2:
++                fprintf(file, "    PACKET3_3D_DRAW_IMMD_2:\n");
++                break;
++            case PACKET3_3D_DRAW_INDX_2:
++                fprintf(file, "    PACKET3_3D_DRAW_INDX_2:\n");
++                break;
++            default:
++                fprintf(file, "Unknow opcode 0x%02X at %d\n", opcode, i);
++                return;
++            }
++            for (j = 0; j <= cnt; j++) {
++                fprintf(file, "        0x%08X\n", cs->packets[i++]);
++            }
++            break;
++        case PACKET_TYPE1:
++        case PACKET_TYPE2:
++        default:
++            fprintf(file, "Unknow packet 0x%08X at %d\n", cs->packets[i], i);
++            return;
++        }
++    }
++}
++
++static int cs_gem_check_space(struct radeon_cs *cs, struct radeon_cs_space_check *bos, int num_bo)
++{
++    struct radeon_cs_manager *csm = cs->csm;
++    int this_op_read = 0, this_op_gart_write = 0, this_op_vram_write = 0;
++    uint32_t read_domains, write_domain;
++    int i;
++    struct radeon_bo *bo;
++
++    /* check the totals for this operation */
++
++    if (num_bo == 0)
++        return 0;
++
++    /* prepare */
++    for (i = 0; i < num_bo; i++) {
++      bo = bos[i].bo;
++
++      bos[i].new_accounted = 0;
++      read_domains = bos[i].read_domains;
++      write_domain = bos[i].write_domain;
++		
++      /* already accounted this bo */
++      if (write_domain && (write_domain == bo->space_accounted)) {
++	      bos[i].new_accounted = bo->space_accounted;
++	      continue;
++      }
++      if (read_domains && ((read_domains << 16) == bo->space_accounted)) {
++	      bos[i].new_accounted = bo->space_accounted;
++	      continue;
++      }
++      
++      if (bo->space_accounted == 0) {
++	  if (write_domain == RADEON_GEM_DOMAIN_VRAM)
++	      this_op_vram_write += bo->size;
++	  else if (write_domain == RADEON_GEM_DOMAIN_GTT)
++	      this_op_gart_write += bo->size;
++	  else
++	      this_op_read += bo->size;
++	  bos[i].new_accounted = (read_domains << 16) | write_domain;
++      } else {
++	  uint16_t old_read, old_write;
++	  
++	  old_read = bo->space_accounted >> 16;
++	  old_write = bo->space_accounted & 0xffff;
++
++	  if (write_domain && (old_read & write_domain)) {
++	      bos[i].new_accounted = write_domain;
++	      /* moving from read to a write domain */
++	      if (write_domain == RADEON_GEM_DOMAIN_VRAM) {
++		  this_op_read -= bo->size;
++		  this_op_vram_write += bo->size;
++	      } else if (write_domain == RADEON_GEM_DOMAIN_VRAM) {
++		  this_op_read -= bo->size;
++		  this_op_gart_write += bo->size;
++	      }
++	  } else if (read_domains & old_write) {
++	      bos[i].new_accounted = bo->space_accounted & 0xffff;
++	  } else {
++	      /* rewrite the domains */
++	      if (write_domain != old_write)
++		  fprintf(stderr,"WRITE DOMAIN RELOC FAILURE 0x%x %d %d\n", bo->handle, write_domain, old_write);
++	      if (read_domains != old_read)
++		  fprintf(stderr,"READ DOMAIN RELOC FAILURE 0x%x %d %d\n", bo->handle, read_domains, old_read);
++	      return RADEON_CS_SPACE_FLUSH;
++	  }
++      }
++    }
++	
++    if (this_op_read < 0)
++	    this_op_read = 0;
++
++    /* check sizes - operation first */
++    if ((this_op_read + this_op_gart_write > csm->gart_limit) ||
++	(this_op_vram_write > csm->vram_limit)) {
++	    return RADEON_CS_SPACE_OP_TO_BIG;
++    }
++    
++    if (((csm->vram_write_used + this_op_vram_write) > csm->vram_limit) ||
++	((csm->read_used + csm->gart_write_used + this_op_gart_write + this_op_read) > csm->gart_limit)) {
++	    return RADEON_CS_SPACE_FLUSH;
++    }
++    
++    csm->gart_write_used += this_op_gart_write;
++    csm->vram_write_used += this_op_vram_write;
++    csm->read_used += this_op_read;
++    /* commit */
++    for (i = 0; i < num_bo; i++) {
++	    bo = bos[i].bo;
++	    bo->space_accounted = bos[i].new_accounted;
++    }
++    
++    return RADEON_CS_SPACE_OK;
++}
++
++static struct radeon_cs_funcs radeon_cs_gem_funcs = {
++    cs_gem_create,
++    cs_gem_write_reloc,
++    cs_gem_begin,
++    cs_gem_end,
++    cs_gem_emit,
++    cs_gem_destroy,
++    cs_gem_erase,
++    cs_gem_need_flush,
++    cs_gem_print,
++    cs_gem_check_space,
++};
++
++struct radeon_cs_manager *radeon_cs_manager_gem_ctor(int fd)
++{
++    struct radeon_cs_manager *csm;
++
++    csm = (struct radeon_cs_manager*)calloc(1,
++                                            sizeof(struct radeon_cs_manager));
++    if (csm == NULL) {
++        return NULL;
++    }
++    csm->funcs = &radeon_cs_gem_funcs;
++    csm->fd = fd;
++    return csm;
++}
++
++void radeon_cs_manager_gem_dtor(struct radeon_cs_manager *csm)
++{
++    free(csm);
++}
+diff --git a/libdrm/radeon/radeon_cs_gem.h b/libdrm/radeon/radeon_cs_gem.h
+new file mode 100644
+index 0000000..5efd146
+--- /dev/null
++++ b/libdrm/radeon/radeon_cs_gem.h
+@@ -0,0 +1,41 @@
++/* 
++ * Copyright © 2008 Nicolai Haehnle
++ * Copyright © 2008 Jérôme Glisse
++ * All Rights Reserved.
++ * 
++ * Permission is hereby granted, free of charge, to any person obtaining
++ * a copy of this software and associated documentation files (the
++ * "Software"), to deal in the Software without restriction, including
++ * without limitation the rights to use, copy, modify, merge, publish,
++ * distribute, sub license, and/or sell copies of the Software, and to
++ * permit persons to whom the Software is furnished to do so, subject to
++ * the following conditions:
++ * 
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
++ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
++ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
++ * NON-INFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT HOLDERS, AUTHORS
++ * AND/OR ITS SUPPLIERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
++ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE 
++ * USE OR OTHER DEALINGS IN THE SOFTWARE.
++ *
++ * The above copyright notice and this permission notice (including the
++ * next paragraph) shall be included in all copies or substantial portions
++ * of the Software.
++ */
++/*
++ * Authors:
++ *      Aapo Tahkola <aet@rasterburn.org>
++ *      Nicolai Haehnle <prefect_@gmx.net>
++ *      Jérôme Glisse <glisse@freedesktop.org>
++ */
++#ifndef RADEON_CS_GEM_H
++#define RADEON_CS_GEM_H
++
++#include "radeon_cs.h"
++
++struct radeon_cs_manager *radeon_cs_manager_gem_ctor(int fd);
++void radeon_cs_manager_gem_dtor(struct radeon_cs_manager *csm);
++
++#endif
+diff --git a/libdrm/radeon/radeon_track.c b/libdrm/radeon/radeon_track.c
+new file mode 100644
+index 0000000..1623906
+--- /dev/null
++++ b/libdrm/radeon/radeon_track.c
 @@ -0,0 +1,140 @@
 +/* 
 + * Copyright © 2008 Jérôme Glisse
@@ -1489,9 +1529,11 @@ diff -up /dev/null libdrm-2.4.4/libdrm/radeon/radeon_track.c
 +        free(tmp);
 +    }
 +}
-diff -up /dev/null libdrm-2.4.4/libdrm/radeon/radeon_track.h
---- /dev/null	2009-02-17 18:26:02.221005894 +1000
-+++ libdrm-2.4.4/libdrm/radeon/radeon_track.h	2009-02-18 09:27:49.000000000 +1000
+diff --git a/libdrm/radeon/radeon_track.h b/libdrm/radeon/radeon_track.h
+new file mode 100644
+index 0000000..838d1f3
+--- /dev/null
++++ b/libdrm/radeon/radeon_track.h
 @@ -0,0 +1,64 @@
 +/* 
 + * Copyright © 2008 Jérôme Glisse
@@ -1557,48 +1599,28 @@ diff -up /dev/null libdrm-2.4.4/libdrm/radeon/radeon_track.h
 +                          FILE *file);
 +
 +#endif
-diff -up libdrm-2.4.4/shared-core/radeon_drm.h.radeon libdrm-2.4.4/shared-core/radeon_drm.h
---- libdrm-2.4.4/shared-core/radeon_drm.h.radeon	2008-10-10 05:02:11.000000000 +1000
-+++ libdrm-2.4.4/shared-core/radeon_drm.h	2009-02-18 09:27:49.000000000 +1000
-@@ -453,8 +453,18 @@ typedef struct {
- 	int pfCurrentPage;	/* which buffer is being displayed? */
- 	int crtc2_base;		/* CRTC2 frame offset */
- 	int tiling_enabled;	/* set by drm, read by 2d + 3d clients */
-+
-+	unsigned int last_fence;
-+
-+	uint32_t front_handle;
-+	uint32_t back_handle;
-+	uint32_t depth_handle;
-+	uint32_t front_pitch;
-+	uint32_t back_pitch;
-+	uint32_t depth_pitch;
- } drm_radeon_sarea_t;
- 
-+
- /* WARNING: If you change any of these defines, make sure to change the
-  * defines in the Xserver file (xf86drmRadeon.h)
-  *
-@@ -493,6 +503,18 @@ typedef struct {
+diff --git a/shared-core/radeon_drm.h b/shared-core/radeon_drm.h
+index ffaa46e..e9f2afa 100644
+--- a/shared-core/radeon_drm.h
++++ b/shared-core/radeon_drm.h
+@@ -492,6 +492,16 @@ typedef struct {
+ #define DRM_RADEON_SETPARAM   0x19
  #define DRM_RADEON_SURF_ALLOC 0x1a
  #define DRM_RADEON_SURF_FREE  0x1b
++/* KMS ioctl */
++#define DRM_RADEON_GEM_INFO		0x1c
++#define DRM_RADEON_GEM_CREATE		0x1d
++#define DRM_RADEON_GEM_MMAP		0x1e
++#define DRM_RADEON_GEM_PREAD		0x21
++#define DRM_RADEON_GEM_PWRITE		0x22
++#define DRM_RADEON_GEM_SET_DOMAIN	0x23
++#define DRM_RADEON_GEM_WAIT_IDLE	0x24
++#define DRM_RADEON_CS			0x26
++#define DRM_RADEON_INFO			0x27
  
-+#define DRM_RADEON_GEM_INFO   0x1c
-+#define DRM_RADEON_GEM_CREATE 0x1d
-+#define DRM_RADEON_GEM_MMAP   0x1e
-+#define DRM_RADEON_GEM_PIN    0x1f
-+#define DRM_RADEON_GEM_UNPIN  0x20
-+#define DRM_RADEON_GEM_PREAD  0x21
-+#define DRM_RADEON_GEM_PWRITE 0x22
-+#define DRM_RADEON_GEM_SET_DOMAIN 0x23
-+#define DRM_RADEON_GEM_WAIT_RENDERING 0x24
-+
-+#define DRM_RADEON_CS       0x26
-+
  #define DRM_IOCTL_RADEON_CP_INIT    DRM_IOW( DRM_COMMAND_BASE + DRM_RADEON_CP_INIT, drm_radeon_init_t)
  #define DRM_IOCTL_RADEON_CP_START   DRM_IO(  DRM_COMMAND_BASE + DRM_RADEON_CP_START)
- #define DRM_IOCTL_RADEON_CP_STOP    DRM_IOW( DRM_COMMAND_BASE + DRM_RADEON_CP_STOP, drm_radeon_cp_stop_t)
-@@ -521,6 +543,17 @@ typedef struct {
+@@ -521,6 +531,17 @@ typedef struct {
  #define DRM_IOCTL_RADEON_SURF_ALLOC DRM_IOW( DRM_COMMAND_BASE + DRM_RADEON_SURF_ALLOC, drm_radeon_surface_alloc_t)
  #define DRM_IOCTL_RADEON_SURF_FREE  DRM_IOW( DRM_COMMAND_BASE + DRM_RADEON_SURF_FREE, drm_radeon_surface_free_t)
  
@@ -1616,82 +1638,71 @@ diff -up libdrm-2.4.4/shared-core/radeon_drm.h.radeon libdrm-2.4.4/shared-core/r
  typedef struct drm_radeon_init {
  	enum {
  		RADEON_INIT_CP = 0x01,
-@@ -677,6 +710,8 @@ typedef struct drm_radeon_indirect {
+@@ -677,6 +698,7 @@ typedef struct drm_radeon_indirect {
  #define RADEON_PARAM_VBLANK_CRTC           13   /* VBLANK CRTC */
  #define RADEON_PARAM_FB_LOCATION           14   /* FB location */
  #define RADEON_PARAM_NUM_GB_PIPES          15   /* num GB pipes */
-+#define RADEON_PARAM_KERNEL_MM             16
-+#define RADEON_PARAM_DEVICE_ID            17
++#define RADEON_PARAM_DEVICE_ID             16
  
  typedef struct drm_radeon_getparam {
  	int param;
-@@ -732,6 +767,7 @@ typedef struct drm_radeon_setparam {
+@@ -728,7 +750,6 @@ typedef struct drm_radeon_setparam {
+ #define RADEON_SETPARAM_FB_LOCATION    1	/* determined framebuffer location */
+ #define RADEON_SETPARAM_SWITCH_TILING  2	/* enable/disable color tiling */
+ #define RADEON_SETPARAM_PCIGART_LOCATION 3	/* PCI Gart Location */
+-
  #define RADEON_SETPARAM_NEW_MEMMAP 4		/* Use new memory map */
  #define RADEON_SETPARAM_PCIGART_TABLE_SIZE 5    /* PCI GART Table Size */
  #define RADEON_SETPARAM_VBLANK_CRTC 6           /* VBLANK CRTC */
-+#define RADEON_SETPARAM_MM_INIT 7		/* Initialise the mm */
- /* 1.14: Clients can allocate/free a surface
-  */
- typedef struct drm_radeon_surface_alloc {
-@@ -747,4 +783,106 @@ typedef struct drm_radeon_surface_free {
+@@ -747,4 +768,112 @@ typedef struct drm_radeon_surface_free {
  #define	DRM_RADEON_VBLANK_CRTC1		1
  #define	DRM_RADEON_VBLANK_CRTC2		2
  
-+#define RADEON_GEM_DOMAIN_CPU 0x1   // Cached CPU domain
-+#define RADEON_GEM_DOMAIN_GTT 0x2   // GTT or cache flushed
-+#define RADEON_GEM_DOMAIN_VRAM 0x4  // VRAM domain
++/*
++ * Kernel modesetting world below.
++ */
++#define RADEON_GEM_DOMAIN_CPU		0x1
++#define RADEON_GEM_DOMAIN_GTT		0x2
++#define RADEON_GEM_DOMAIN_VRAM		0x4
 +
-+/* return to userspace start/size of gtt and vram apertures */
 +struct drm_radeon_gem_info {
-+	uint64_t gart_start;
-+	uint64_t gart_size;
-+	uint64_t vram_start;
-+	uint64_t vram_size;
-+	uint64_t vram_visible;
++	uint64_t	gart_size;
++	uint64_t	vram_size;
++	uint64_t	vram_visible;
 +};
 +
++#define RADEON_GEM_NO_BACKING_STORE 1
++
 +struct drm_radeon_gem_create {
-+	uint64_t size;
-+	uint64_t alignment;
-+	uint32_t handle;
-+	uint32_t initial_domain; // to allow VRAM to be created
-+	uint32_t no_backing_store; // for VRAM objects - select whether they need backing store
-+	// pretty much front/back/depth don't need it - other things do
++	uint64_t	size;
++	uint64_t	alignment;
++	uint32_t	handle;
++	uint32_t	initial_domain;
++	uint32_t	flags;
 +};
 +
 +struct drm_radeon_gem_mmap {
-+	uint32_t handle;
-+	uint32_t pad;
-+	uint64_t offset;
-+	uint64_t size;
-+	uint64_t addr_ptr;
++	uint32_t	handle;
++	uint32_t	pad;
++	uint64_t	offset;
++	uint64_t	size;
++	uint64_t	addr_ptr;
 +};
 +
 +struct drm_radeon_gem_set_domain {
-+	uint32_t handle;
-+	uint32_t read_domains;
-+	uint32_t write_domain;
++	uint32_t	handle;
++	uint32_t		read_domains;
++	uint32_t		write_domain;
 +};
 +
-+struct drm_radeon_gem_wait_rendering {
-+	uint32_t handle;
-+};
-+
-+struct drm_radeon_gem_pin {
-+	uint32_t handle;
-+	uint32_t pin_domain;
-+	uint64_t alignment;
-+	uint64_t offset;
-+};
-+
-+struct drm_radeon_gem_unpin {
-+	uint32_t handle;
-+	uint32_t pad;
++struct drm_radeon_gem_wait_idle {
++	uint32_t	handle;
++	uint32_t	pad;
 +};
 +
 +struct drm_radeon_gem_busy {
-+	uint32_t handle;
-+	uint32_t busy;
++	uint32_t	handle;
++	uint32_t	busy;
 +};
 +
 +struct drm_radeon_gem_pread {
@@ -1703,7 +1714,8 @@ diff -up libdrm-2.4.4/shared-core/radeon_drm.h.radeon libdrm-2.4.4/shared-core/r
 +	/** Length of data to read */
 +	uint64_t size;
 +	/** Pointer to write the data into. */
-+	uint64_t data_ptr;	/* void *, but pointers are not 32/64 compatible */
++	/* void *, but pointers are not 32/64 compatible */
++	uint64_t data_ptr;
 +};
 +
 +struct drm_radeon_gem_pwrite {
@@ -1715,28 +1727,43 @@ diff -up libdrm-2.4.4/shared-core/radeon_drm.h.radeon libdrm-2.4.4/shared-core/r
 +	/** Length of data to write */
 +	uint64_t size;
 +	/** Pointer to read the data from. */
-+	uint64_t data_ptr;	/* void *, but pointers are not 32/64 compatible */
++	/* void *, but pointers are not 32/64 compatible */
++	uint64_t data_ptr;
 +};
 +
-+
-+/* New interface which obsolete all previous interface.
-+ */
-+
-+#define RADEON_CHUNK_ID_RELOCS 0x01
-+#define RADEON_CHUNK_ID_IB     0x02
++#define RADEON_CHUNK_ID_RELOCS	0x01
++#define RADEON_CHUNK_ID_IB	0x02
 +
 +struct drm_radeon_cs_chunk {
-+	uint32_t chunk_id;
-+	uint32_t length_dw;
-+	uint64_t chunk_data;
++	uint32_t		chunk_id;
++	uint32_t		length_dw;
++	uint64_t		chunk_data;
++};
++
++struct drm_radeon_cs_reloc {
++	uint32_t		handle;
++	uint32_t		read_domains;
++	uint32_t		write_domain;
++	uint32_t		flags;
 +};
 +
 +struct drm_radeon_cs {
-+	uint32_t	num_chunks;
-+	uint32_t        cs_id;
-+	uint64_t	chunks; /* this points to uint64_t * which point to
-+				   cs chunks */
++	uint32_t		num_chunks;
++	uint32_t		cs_id;
++	/* this points to uint64_t * which point to cs chunks */
++	uint64_t		chunks;
++	/* updates to the limits after this CS ioctl */
++	uint64_t		gart_limit;
++	uint64_t		vram_limit;
 +};
 +
++#define RADEON_INFO_DEVICE_ID		0x00
++#define RADEON_INFO_NUM_GB_PIPES	0x01
++
++struct drm_radeon_info {
++	uint32_t		request;
++	uint32_t		pad;
++	uint64_t		value;
++};
 +
  #endif

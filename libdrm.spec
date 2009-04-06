@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.5
-Release: 3%{?dist}
+Release: 4%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -13,6 +13,7 @@ Source1: make-git-snapshot.sh
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 Requires: udev
+Requires: kernel >= 2.6.29.1-52.fc11
 
 BuildRequires: pkgconfig automake autoconf libtool
 BuildRequires: kernel-headers >= 2.6.29-0.145.rc6.fc11
@@ -29,7 +30,6 @@ Patch8: libdrm-radeon.patch
 # 2.4.5 didn't dist nouveau_private.h and nouveau_dma.h, so add them like this
 Patch9: nouveau-missing-headers.patch
 
-Patch10: radeon-bo-name.patch
 # nouveau fixes from drm.git
 Patch11: nouveau-updates.patch
 # intel gtt map fixes
@@ -55,7 +55,6 @@ Direct Rendering Manager development package
 %patch4 -p1 -b .no-bc
 %patch8 -p1 -b .radeon
 %patch9 -p1 -b .nouveau
-%patch10 -p1 -b .boname
 %patch11 -p1 -b .nouveau-updates
 %patch12 -p1 -b .intel-gtt
 
@@ -117,6 +116,10 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 
 %changelog
+* Mon Apr 06 2009 Dave Airlie <airlied@redhat.com<> 2.4.5-4
+- libdrm-radeon: API busting to latest upstream
+- bump kernel requires
+
 * Thu Mar 26 2009 Adam Jackson <ajax@redhat.com> 2.4.5-3
 - libdrm-intel-gtt.patch: Fix GTT maps for intel.
 
