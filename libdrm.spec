@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.6
-Release: 2%{?dist}
+Release: 3%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -18,6 +18,7 @@ Requires: kernel >= 2.6.29.1-52.fc11
 BuildRequires: pkgconfig automake autoconf libtool
 BuildRequires: kernel-headers >= 2.6.29-0.145.rc6.fc11
 BuildRequires: libxcb-devel
+BuildRequires: libudev-devel
 
 Source2: 91-drm-modeset.rules
 
@@ -105,6 +106,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 
 %changelog
+* Tue Apr  7 2009 Kristian Høgsberg <krh@redhat.com> - 2.4.6-3
+- BuildRequire libudev-devel for test cases.
+
 * Mon Apr  6 2009 Kristian Høgsberg <krh@redhat.com> - 2.4.6-2
 - Bump to 2.4.6
 
