@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.6
-Release: 3%{?dist}
+Release: 4%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -22,6 +22,8 @@ BuildRequires: libudev-devel
 
 Source2: 91-drm-modeset.rules
 
+# totally busted connector code
+Patch0: libdrm-2.4.7-revert-bong.patch
 # hardcode the 666 instead of 660 for device nodes
 Patch3: libdrm-make-dri-perms-okay.patch
 # remove backwards compat not needed on Fedora
@@ -44,6 +46,7 @@ Direct Rendering Manager development package
 
 %prep
 %setup -q -n %{name}-%{version}
+%patch0 -p1 -b .bong
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
 %patch8 -p1 -b .radeon
@@ -106,6 +109,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 
 %changelog
+* Sat Apr 11 2009 Dave Airlie <airlied@redhat.com> 2.4.6-4
+- libdrm-2.4.7-revert-bong.patch - revert connector "speedups"
+
 * Tue Apr  7 2009 Kristian Høgsberg <krh@redhat.com> - 2.4.6-3
 - BuildRequire libudev-devel for test cases.
 
