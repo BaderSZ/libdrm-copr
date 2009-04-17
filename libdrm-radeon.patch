@@ -484,7 +484,7 @@ index 0000000..70f4b6b
 +    do {
 +        ret = drmCommandWriteRead(bo->bom->fd, DRM_RADEON_GEM_WAIT_IDLE,
 +                                  &args, sizeof(args));
-+    } while (ret == -EAGAIN);
++    } while (ret == -EBUSY);
 +    return ret;
 +}
 +

@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.6
-Release: 4%{?dist}
+Release: 6%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -30,6 +30,8 @@ Patch3: libdrm-make-dri-perms-okay.patch
 Patch4: libdrm-2.4.0-no-bc.patch
 # radeon libdrm patches from modesetting-gem branch of upstream
 Patch8: libdrm-radeon.patch
+# nouveau fixes from drm.git
+Patch9: nouveau-updates.patch
 
 %description
 Direct Rendering Manager runtime library
@@ -50,6 +52,7 @@ Direct Rendering Manager development package
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
 %patch8 -p1 -b .radeon
+%patch9 -p1 -b .nouveau
 
 %build
 autoreconf -v --install || exit 1
@@ -109,6 +112,12 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 
 %changelog
+* Fri Apr 17 2009 Ben Skeggs <bskeggs@redhat.com> 2.4.6-6
+- nouveau: post writes to pushbuf before incrementing PUT
+
+* Thu Apr 16 2009 Dave Airlie <airlied@redhat.com> 2.4.6-5
+- libdrm-radeon: fix wait idle
+
 * Sat Apr 11 2009 Dave Airlie <airlied@redhat.com> 2.4.6-4
 - libdrm-2.4.7-revert-bong.patch - revert connector "speedups"
 
