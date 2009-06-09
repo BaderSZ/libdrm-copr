@@ -2,8 +2,8 @@
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.4.6
-Release: 6%{?dist}
+Version: 2.4.11
+Release: 0%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -22,16 +22,12 @@ BuildRequires: libudev-devel
 
 Source2: 91-drm-modeset.rules
 
-# totally busted connector code
-Patch0: libdrm-2.4.7-revert-bong.patch
 # hardcode the 666 instead of 660 for device nodes
 Patch3: libdrm-make-dri-perms-okay.patch
 # remove backwards compat not needed on Fedora
 Patch4: libdrm-2.4.0-no-bc.patch
 # radeon libdrm patches from modesetting-gem branch of upstream
 Patch8: libdrm-radeon.patch
-# nouveau fixes from drm.git
-Patch9: nouveau-updates.patch
 
 %description
 Direct Rendering Manager runtime library
@@ -48,11 +44,9 @@ Direct Rendering Manager development package
 
 %prep
 %setup -q -n %{name}-%{version}
-%patch0 -p1 -b .bong
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
 %patch8 -p1 -b .radeon
-%patch9 -p1 -b .nouveau
 
 %build
 autoreconf -v --install || exit 1
@@ -112,6 +106,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 
 %changelog
+* Mon Jun  8 2009 Kristian Høgsberg <krh@redhat.com> - 2.4.11-0
+- Bump to 2.4.11.
+
 * Fri Apr 17 2009 Ben Skeggs <bskeggs@redhat.com> 2.4.6-6
 - nouveau: post writes to pushbuf before incrementing PUT
 
