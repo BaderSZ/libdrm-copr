@@ -1,14 +1,14 @@
-%define gitdate 20080930
+%define gitdate 20090622
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.4.11
-Release: 0%{?dist}
+Version: 2.4.12
+Release: 0.1%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
-Source0: http://dri.freedesktop.org/libdrm/%{name}-%{version}.tar.bz2
-#Source0: %{name}-%{gitdate}.tar.bz2
+#Source0: http://dri.freedesktop.org/libdrm/%{name}-%{version}.tar.bz2
+Source0: %{name}-%{gitdate}.tar.bz2
 Source1: make-git-snapshot.sh
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
@@ -26,8 +26,6 @@ Source2: 91-drm-modeset.rules
 Patch3: libdrm-make-dri-perms-okay.patch
 # remove backwards compat not needed on Fedora
 Patch4: libdrm-2.4.0-no-bc.patch
-# radeon libdrm patches from modesetting-gem branch of upstream
-Patch8: libdrm-radeon.patch
 
 %description
 Direct Rendering Manager runtime library
@@ -43,14 +41,13 @@ Requires: pkgconfig
 Direct Rendering Manager development package
 
 %prep
-%setup -q -n %{name}-%{version}
+%setup -q -n %{name}-%{gitdate}
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
-%patch8 -p1 -b .radeon
 
 %build
 autoreconf -v --install || exit 1
-%configure --enable-udev --enable-nouveau-experimental-api
+%configure --enable-udev --enable-nouveau-experimental-api --enable-radeon-experimental-api
 make %{?_smp_mflags}
 
 %install
@@ -106,6 +103,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 
 %changelog
+* Mon Jun 22 2009 Dave Airlie <airlied@redhat.com> 2.4.12-0.1
+- rebase onto git snapshot - remove radeon patch in master now
+
 * Mon Jun  8 2009 Kristian Høgsberg <krh@redhat.com> - 2.4.11-0
 - Bump to 2.4.11.
 
