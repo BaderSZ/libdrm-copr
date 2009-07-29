@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.12
-Release: 0.5%{?dist}
+Release: 0.6%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -106,7 +106,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 
 %changelog
-* Wed Jul 29 2009 Kristian Høgsberg <krh@redhat.com> - 2.4.12-0.5
+* Wed Jul 29 2009 Kristian Høgsberg <krh@redhat.com> - 2.4.12-0.6
 - Add libdrm support for KMS pageflip ioctl.
 
 * Tue Jul 28 2009 Ben Skeggs <bskeggs@redhat.com> 2.4.12-0.4
