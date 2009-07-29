@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.12
-Release: 0.4%{?dist}
+Release: 0.5%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -27,6 +27,8 @@ Patch3: libdrm-make-dri-perms-okay.patch
 # remove backwards compat not needed on Fedora
 Patch4: libdrm-2.4.0-no-bc.patch
 
+Patch5: libdrm-page-flip.patch
+
 %description
 Direct Rendering Manager runtime library
 
@@ -44,6 +46,7 @@ Direct Rendering Manager development package
 %setup -q -n %{name}-%{gitdate}
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
+%patch5 -p1 -b .page-flip
 
 %build
 autoreconf -v --install || exit 1
@@ -103,6 +106,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 
 %changelog
+* Wed Jul 29 2009 Kristian Høgsberg <krh@redhat.com> - 2.4.12-0.5
+- Add libdrm support for KMS pageflip ioctl.
+
 * Tue Jul 28 2009 Ben Skeggs <bskeggs@redhat.com> 2.4.12-0.4
 - rebase onto git snapshot for new nouveau interface support
 
