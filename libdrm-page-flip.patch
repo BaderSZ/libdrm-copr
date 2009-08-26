@@ -108,16 +108,15 @@ diff --git a/shared-core/drm.h b/shared-core/drm.h
 index 97fab9a..8b504cb 100644
 --- a/shared-core/drm.h
 +++ b/shared-core/drm.h
-@@ -1113,7 +1113,7 @@ struct drm_gem_open {
+@@ -1113,6 +1113,7 @@ struct drm_gem_open {
  #define DRM_IOCTL_MODE_GETFB		DRM_IOWR(0xAD, struct drm_mode_fb_cmd)
  #define DRM_IOCTL_MODE_ADDFB		DRM_IOWR(0xAE, struct drm_mode_fb_cmd)
  #define DRM_IOCTL_MODE_RMFB		DRM_IOWR(0xAF, uint32_t)
--#define DRM_IOCTL_MODE_REPLACEFB	DRM_IOWR(0xB0, struct drm_mode_fb_cmd)
 +#define DRM_IOCTL_MODE_PAGE_FLIP	DRM_IOW( 0xB0, struct drm_mode_page_flip)
  
  /*@}*/
  
-@@ -1128,6 +1128,30 @@ struct drm_gem_open {
+@@ -1128,6 +1129,30 @@ struct drm_gem_open {
  #define DRM_COMMAND_BASE                0x40
  #define DRM_COMMAND_END                 0xA0
  

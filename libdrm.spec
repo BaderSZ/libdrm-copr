@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.12
-Release: 0.8%{?dist}
+Release: 0.9%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -22,12 +22,14 @@ BuildRequires: libudev-devel
 
 Source2: 91-drm-modeset.rules
 
+Patch2: radeon-busy.patch
 # hardcode the 666 instead of 660 for device nodes
 Patch3: libdrm-make-dri-perms-okay.patch
 # remove backwards compat not needed on Fedora
 Patch4: libdrm-2.4.0-no-bc.patch
 
 Patch5: libdrm-page-flip.patch
+
 
 %description
 Direct Rendering Manager runtime library
@@ -44,6 +46,7 @@ Direct Rendering Manager development package
 
 %prep
 %setup -q -n %{name}-%{gitdate}
+%patch2 -p1 -b .radeon-busy
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
 %patch5 -p1 -b .page-flip
@@ -106,6 +109,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 
 %changelog
+* Wed Aug 26 2009 Dave Airlie <airlied@redhat.com> 2.4.12-0.9
+- pull in radeon bo busy
+
 * Thu Aug 20 2009 Ben Skeggs <bskeggs@redhat.com> 2.4.12-0.8
 - rebase to new libdrm snapshot
 
