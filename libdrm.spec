@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.12
-Release: 0.9%{?dist}
+Release: 0.10%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -29,6 +29,7 @@ Patch3: libdrm-make-dri-perms-okay.patch
 Patch4: libdrm-2.4.0-no-bc.patch
 
 Patch5: libdrm-page-flip.patch
+Patch6: intel-busy.patch
 
 
 %description
@@ -50,6 +51,7 @@ Direct Rendering Manager development package
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
 %patch5 -p1 -b .page-flip
+%patch6 -p1 -b .intel-busy
 
 %build
 autoreconf -v --install || exit 1
@@ -109,6 +111,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 
 %changelog
+* Thu Sep 10 2009 Kristian Høgsberg <krh@redhat.com> - 2.4.12-0.10
+- Pull in intel bo busy.
+
 * Wed Aug 26 2009 Dave Airlie <airlied@redhat.com> 2.4.12-0.9
 - pull in radeon bo busy
 
