@@ -22,14 +22,12 @@ BuildRequires: libudev-devel
 
 Source2: 91-drm-modeset.rules
 
-Patch2: radeon-busy.patch
 # hardcode the 666 instead of 660 for device nodes
 Patch3: libdrm-make-dri-perms-okay.patch
 # remove backwards compat not needed on Fedora
 Patch4: libdrm-2.4.0-no-bc.patch
 
 Patch5: libdrm-page-flip.patch
-Patch6: intel-busy.patch
 
 
 %description
