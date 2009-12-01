@@ -1,14 +1,14 @@
-%define gitdate 20090820
+%define gitdate 20091201
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.4.14
-Release: 1%{?dist}
+Version: 2.4.16
+Release: 0.1%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
-Source0: http://dri.freedesktop.org/libdrm/%{name}-%{version}.tar.bz2
-#Source0: %{name}-%{gitdate}.tar.bz2
+#Source0: http://dri.freedesktop.org/libdrm/%{name}-%{version}.tar.bz2
+Source0: %{name}-%{gitdate}.tar.bz2
 Source1: make-git-snapshot.sh
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
@@ -27,8 +27,6 @@ Patch3: libdrm-make-dri-perms-okay.patch
 # remove backwards compat not needed on Fedora
 Patch4: libdrm-2.4.0-no-bc.patch
 
-Patch5: libdrm-page-flip.patch
-
 
 %description
 Direct Rendering Manager runtime library
@@ -44,11 +42,10 @@ Requires: pkgconfig
 Direct Rendering Manager development package
 
 %prep
-#%setup -q -n %{name}-%{gitdate}
-%setup -q 
+%setup -q -n %{name}-%{gitdate}
+#%setup -q 
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
-%patch5 -p1 -b .page-flip
 
 %build
 autoreconf -v --install || exit 1
@@ -108,6 +105,27 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 
 %changelog
+* Tue Dec 01 2009 Dave Airlie <airlied@redhat.com> 2.4.16-0.1
+- rebase to pre-snapshot of 2.4.16
+
+* Sat Nov 28 2009 Dave Airlie <airlied@redhat.com> 2.4.15-6
+- add new upstream API for drivers.
+
+* Fri Nov 20 2009 Dave Airlie <airlied@redhat.com> 2.4.15-5
+- update radeon API to upstream fixes
+
+* Thu Nov 05 2009 Ben Skeggs <bskeggs@redhat.com> 2.4.15-4
+- nouveau: improve reloc API to allow better error handling
+
+* Wed Nov 04 2009 Ben Skeggs <bskeggs@redhat.com> 2.4.15-3
+- nouveau: drop rendering on floor rather than asserting if flush fails
+
+* Tue Oct 27 2009 Ben Skeggs <bskeggs@redhat.com> 2.4.15-2
+- nouveau: retry pushbuf ioctl if interrupted by signal
+
+* Fri Oct 09 2009 Dave Airlie <airlied@redhat.com> 2.4.15-1
+- rebase to latest upstream release
+
 * Fri Sep 25 2009 Dave Airlie <airlied@redhat.com> 2.4.14-1
 - rebase to latest upstream release - drop carried patches
 
