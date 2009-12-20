@@ -1,8 +1,8 @@
-%define gitdate 20091201
+%define gitdate 20091221
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.4.16
+Version: 2.4.17
 Release: 0.1%{?dist}
 License: MIT
 Group: System Environment/Libraries
@@ -105,6 +105,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 
 %changelog
+* Mon Dec 21 2009 Dave Airlie <airlied@redhat.com> 2.4.17-0.1
+- new radeon API from upstream rebase
+
 * Tue Dec 01 2009 Dave Airlie <airlied@redhat.com> 2.4.16-0.1
 - rebase to pre-snapshot of 2.4.16
 
