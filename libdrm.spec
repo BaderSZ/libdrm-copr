@@ -3,12 +3,12 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.17
-Release: 0.1%{?dist}
+Release: 1%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
-#Source0: http://dri.freedesktop.org/libdrm/%{name}-%{version}.tar.bz2
-Source0: %{name}-%{gitdate}.tar.bz2
+Source0: http://dri.freedesktop.org/libdrm/%{name}-%{version}.tar.bz2
+#Source0: %{name}-%{gitdate}.tar.bz2
 Source1: make-git-snapshot.sh
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
@@ -42,8 +42,8 @@ Requires: pkgconfig
 Direct Rendering Manager development package
 
 %prep
-%setup -q -n %{name}-%{gitdate}
-#%setup -q 
+#%setup -q -n %{name}-%{gitdate}
+%setup -q 
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
 
@@ -105,6 +105,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 
 %changelog
+* Mon Dec 21 2009 Dave Airlie <airlied@redhat.com> 2.4.17-1
+- upstream released 2.4.17
+
 * Mon Dec 21 2009 Dave Airlie <airlied@redhat.com> 2.4.17-0.1
 - new radeon API from upstream rebase
 
