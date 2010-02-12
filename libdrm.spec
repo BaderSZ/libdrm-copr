@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.17
-Release: 2%{?dist}
+Release: 3%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -53,10 +53,12 @@ Direct Rendering Manager development package
 autoreconf -v --install || exit 1
 %configure --enable-udev --enable-nouveau-experimental-api --enable-radeon-experimental-api
 make %{?_smp_mflags}
+# make -C tests %{?_smp_mflags}
 
 %install
 rm -rf $RPM_BUILD_ROOT
 make install DESTDIR=$RPM_BUILD_ROOT
+# make -C tests install DESTDIR=$RPM_BUILD_ROOT
 # SUBDIRS=libdrm
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d/
 install -m 0644 %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d/
@@ -96,6 +98,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/intel_bufmgr.h
 %{_includedir}/drm/radeon*.h
 %{_includedir}/drm/nouveau_drmif.h
+%dir %{_includedir}/nouveau
 %{_includedir}/nouveau/nouveau_*.h
 %{_libdir}/libdrm.so
 %{_libdir}/libdrm_intel.so
@@ -107,6 +110,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 
 %changelog
+* Fri Feb 12 2010 Adam Jackson <ajax@redhat.com> 2.4.17-3
+- Own %%{_includedir}/nouveau (#561317)
+
 * Wed Feb 03 2010 Dave Airlie <airlied@redhat.com> 2.4.17-2
 - update to git master
 
