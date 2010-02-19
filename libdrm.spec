@@ -2,8 +2,8 @@
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.4.17
-Release: 3%{?dist}
+Version: 2.4.18
+Release: 1%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -22,7 +22,6 @@ BuildRequires: libudev-devel
 
 Source2: 91-drm-modeset.rules
 
-Patch1: libdrm-master.patch
 # hardcode the 666 instead of 660 for device nodes
 Patch3: libdrm-make-dri-perms-okay.patch
 # remove backwards compat not needed on Fedora
@@ -45,7 +44,6 @@ Direct Rendering Manager development package
 %prep
 #%setup -q -n %{name}-%{gitdate}
 %setup -q 
-%patch1 -p1 -b .master
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
 
@@ -110,6 +108,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 
 %changelog
+* Fri Feb 19 2010 Ben Skeggs <bskeggs@redhat.com> 2.4.18-1
+- Upstream release 2.4.18
+
 * Fri Feb 12 2010 Adam Jackson <ajax@redhat.com> 2.4.17-3
 - Own %%{_includedir}/nouveau (#561317)
 
