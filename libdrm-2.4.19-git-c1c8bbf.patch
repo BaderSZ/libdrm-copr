@@ -1,0 +1,1309 @@
+diff --git a/Makefile.am b/Makefile.am
+index ee3ccc7..25d1747 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -56,6 +56,7 @@ libdrm_la_SOURCES =				\
+ 	xf86drmRandom.c				\
+ 	xf86drmSL.c				\
+ 	xf86drmMode.c				\
++	xf86atomic.h				\
+ 	libdrm_lists.h
+ 
+ libdrmincludedir = ${includedir}
+diff --git a/configure.ac b/configure.ac
+index aaa8efa..6ef3c61 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -56,8 +56,8 @@ AC_ARG_ENABLE(intel,
+ 
+ AC_ARG_ENABLE(radeon,
+ 	      AS_HELP_STRING([--disable-radeon],
+-	      [Enable support for radeon's KMS API (default: enabled)]),
+-	      [RADEON=$enableval], [RADEON=yes])
++	      [Enable support for radeon's KMS API (default: auto)]),
++	      [RADEON=$enableval], [RADEON=auto])
+ 
+ AC_ARG_ENABLE(vmwgfx-experimental-api,
+ 	      AS_HELP_STRING([--enable-vmwgfx-experimental-api],
+@@ -158,8 +158,6 @@ if test "x$NOUVEAU" = xyes; then
+ 	AC_DEFINE(HAVE_NOUVEAU, 1, [Have nouveau (nvidia) support])
+ fi
+ 
+-AM_CONDITIONAL(HAVE_RADEON, [test "x$RADEON" = xyes])
+-
+ PKG_CHECK_MODULES(CAIRO, cairo, [HAVE_CAIRO=yes], [HAVE_CAIRO=no])
+ if test "x$HAVE_CAIRO" = xyes; then
+ 	AC_DEFINE(HAVE_CAIRO, 1, [Have cairo support])
+@@ -173,7 +171,7 @@ if test "x$HAVE_LIBUDEV" = xyes; then
+ fi
+ AM_CONDITIONAL(HAVE_LIBUDEV, [test "x$HAVE_LIBUDEV" = xyes])
+ 
+-if test "x$INTEL" != "xno"; then
++if test "x$INTEL" != "xno" -o "x$RADEON" != "xno"; then
+     # Check for atomic intrinsics
+     AC_CACHE_CHECK([for native atomic primitives], drm_cv_atomic_primitives,
+     [
+@@ -198,7 +196,7 @@ if test "x$INTEL" != "xno"; then
+ 
+     ])
+     if test "x$drm_cv_atomic_primitives" = xIntel; then
+-	    AC_DEFINE(HAVE_INTEL_ATOMIC_PRIMITIVES, 1,
++	    AC_DEFINE(HAVE_LIBDRM_ATOMIC_PRIMITIVES, 1,
+ 		      [Enable if your compiler supports the Intel __sync_* atomic primitives])
+     fi
+     if test "x$drm_cv_atomic_primitives" = "xlibatomic-ops"; then
+@@ -206,17 +204,35 @@ if test "x$INTEL" != "xno"; then
+     fi
+ 
+     if test "x$drm_cv_atomic_primitives" = "xnone"; then
+-	    if test "x$INTEL" != "xauto"; then
+-		    AC_MSG_ERROR([libdrm_intel depends upon atomic operations, which were not found for your compiler/cpu. Try compiling with -march=native, or install the libatomics-op-dev package, or, failing both of those, disable support for Intel GPUs by passing --disable-intel to ./configure])
+-	   else
+-		    INTEL=no
+-	   fi
++           if test "x$INTEL" != "xauto"; then
++                   if test "x$INTEL" != "xno"; then
++                        AC_MSG_ERROR([libdrm_intel depends upon atomic operations, which were not found for your compiler/cpu. Try compiling with -march=native, or install the libatomics-op-dev package, or, failing both of those, disable support for Intel GPUs by passing --disable-intel to ./configure])
++                   fi
++           else
++                   AC_MSG_WARN([Disabling libdrm_intel. It depends on atomic operations, which were not found for your compiler/cpu. Try compiling with -march=native, or install the libatomics-op-dev package.])
++                   INTEL=no
++           fi
++           if test "x$RADEON" != "xauto"; then
++                   if test "x$RADEON" != "xno"; then
++                        AC_MSG_ERROR([libdrm_radeon depends upon atomic operations, which were not found for your compiler/cpu. Try compiling with -march=native, or install the libatomics-op-dev package, or, failing both of those, disable support for Radeon support by passing --disable-radeon to ./configure])
++                   fi
++           else
++                   AC_MSG_WARN([Disabling libdrm_radeon. It depends on atomic operations, which were not found for your compiler/cpu. Try compiling with -march=native, or install the libatomics-op-dev package.])
++                   RADEON=no
++           fi
++
+     else
+-	   INTEL=yes
++           if test "x$INTEL" != "xno"; then
++                   INTEL=yes
++           fi
++           if test "x$RADEON" != "xno"; then
++                   RADEON=yes
++           fi
+     fi
+ fi
+ 
+ AM_CONDITIONAL(HAVE_INTEL, [test "x$INTEL" != "xno"])
++AM_CONDITIONAL(HAVE_RADEON, [test "x$RADEON" != "xno"])
+ 
+ AC_ARG_WITH([kernel-source],
+             [AS_HELP_STRING([--with-kernel-source],
+diff --git a/include/drm/Makefile.am b/include/drm/Makefile.am
+index 9046955..43695bd 100644
+--- a/include/drm/Makefile.am
++++ b/include/drm/Makefile.am
+@@ -22,7 +22,7 @@
+ # however, r300 and via need their reg headers installed in order to build.
+ # better solutions are welcome.
+ 
+-klibdrmincludedir = ${includedir}/drm
++klibdrmincludedir = ${includedir}/libdrm
+ klibdrminclude_HEADERS = \
+ 	drm.h \
+ 	drm_mode.h \
+diff --git a/intel/Makefile.am b/intel/Makefile.am
+index 8bb2c6e..1ae92f8 100644
+--- a/intel/Makefile.am
++++ b/intel/Makefile.am
+@@ -35,7 +35,6 @@ libdrm_intel_la_LDFLAGS = -version-number 1:0:0 -no-undefined
+ libdrm_intel_la_LIBADD = ../libdrm.la @PTHREADSTUBS_LIBS@ @CLOCK_LIB@
+ 
+ libdrm_intel_la_SOURCES = \
+-	intel_atomic.h \
+ 	intel_bufmgr.c \
+ 	intel_bufmgr_priv.h \
+ 	intel_bufmgr_fake.c \
+@@ -44,7 +43,7 @@ libdrm_intel_la_SOURCES = \
+ 	mm.c \
+ 	mm.h
+ 
+-libdrm_intelincludedir = ${includedir}
++libdrm_intelincludedir = ${includedir}/libdrm
+ libdrm_intelinclude_HEADERS = intel_bufmgr.h
+ 
+ pkgconfig_DATA = libdrm_intel.pc
+diff --git a/intel/intel_atomic.h b/intel/intel_atomic.h
+deleted file mode 100644
+index 12bb96b..0000000
+--- a/intel/intel_atomic.h
++++ /dev/null
+@@ -1,93 +0,0 @@
+-/*
+- * Copyright © 2009 Intel Corporation
+- *
+- * Permission is hereby granted, free of charge, to any person obtaining a
+- * copy of this software and associated documentation files (the "Software"),
+- * to deal in the Software without restriction, including without limitation
+- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+- * and/or sell copies of the Software, and to permit persons to whom the
+- * Software is furnished to do so, subject to the following conditions:
+- *
+- * The above copyright notice and this permission notice (including the next
+- * paragraph) shall be included in all copies or substantial portions of the
+- * Software.
+- *
+- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+- * IN THE SOFTWARE.
+- *
+- * Authors:
+- *    Chris Wilson <chris@chris-wilson.co.uk>
+- *
+- */
+-
+-/**
+- * @file intel_atomics.h
+- *
+- * Private definitions for atomic operations
+- */
+-
+-#ifndef INTEL_ATOMICS_H
+-#define INTEL_ATOMICS_H
+-
+-#ifdef HAVE_CONFIG_H
+-#include "config.h"
+-#endif
+-
+-#if HAVE_INTEL_ATOMIC_PRIMITIVES
+-
+-#define HAS_ATOMIC_OPS 1
+-
+-typedef struct {
+-	int atomic;
+-} atomic_t;
+-
+-# define atomic_read(x) ((x)->atomic)
+-# define atomic_set(x, val) ((x)->atomic = (val))
+-# define atomic_inc(x) ((void) __sync_fetch_and_add (&(x)->atomic, 1))
+-# define atomic_dec_and_test(x) (__sync_fetch_and_add (&(x)->atomic, -1) == 1)
+-# define atomic_cmpxchg(x, oldv, newv) __sync_val_compare_and_swap (&(x)->atomic, oldv, newv)
+-
+-#endif
+-
+-#if HAVE_LIB_ATOMIC_OPS
+-#include <atomic_ops.h>
+-
+-#define HAS_ATOMIC_OPS 1
+-
+-typedef struct {
+-	AO_t atomic;
+-} atomic_t;
+-
+-# define atomic_read(x) AO_load_full(&(x)->atomic)
+-# define atomic_set(x, val) AO_store_full(&(x)->atomic, (val))
+-# define atomic_inc(x) ((void) AO_fetch_and_add1_full(&(x)->atomic))
+-# define atomic_dec_and_test(x) (AO_fetch_and_sub1_full(&(x)->atomic) == 1)
+-# define atomic_cmpxchg(x, oldv, newv) AO_compare_and_swap_full(&(x)->atomic, oldv, newv)
+-
+-#endif
+-
+-#if defined(__sun) && !defined(HAS_ATOMIC_OPS)  /* Solaris & OpenSolaris */
+-
+-#include <sys/atomic.h>
+-#define HAS_ATOMIC_OPS 1
+-
+-typedef struct { uint_t atomic; } atomic_t;
+-
+-# define atomic_read(x) (int) ((x)->atomic)
+-# define atomic_set(x, val) ((x)->atomic = (uint_t)(val))
+-# define atomic_inc(x) (atomic_inc_uint (&(x)->atomic))
+-# define atomic_dec_and_test(x) (atomic_dec_uint_nv(&(x)->atomic) == 1)
+-# define atomic_cmpxchg(x, oldv, newv) atomic_cas_uint (&(x)->atomic, oldv, newv)
+-
+-#endif
+-
+-#if ! HAS_ATOMIC_OPS
+-#error libdrm-intel requires atomic operations, please define them for your CPU/compiler.
+-#endif
+-
+-#endif
+diff --git a/intel/intel_bufmgr_gem.c b/intel/intel_bufmgr_gem.c
+index 7ccadd2..8e46e37 100644
+--- a/intel/intel_bufmgr_gem.c
++++ b/intel/intel_bufmgr_gem.c
+@@ -39,6 +39,7 @@
+ #endif
+ 
+ #include <xf86drm.h>
++#include <xf86atomic.h>
+ #include <fcntl.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+@@ -53,7 +54,6 @@
+ 
+ #include "errno.h"
+ #include "libdrm_lists.h"
+-#include "intel_atomic.h"
+ #include "intel_bufmgr.h"
+ #include "intel_bufmgr_priv.h"
+ #include "intel_chipset.h"
+@@ -254,11 +254,19 @@ static unsigned long
+ drm_intel_gem_bo_tile_pitch(drm_intel_bufmgr_gem *bufmgr_gem,
+ 			    unsigned long pitch, uint32_t tiling_mode)
+ {
+-	unsigned long tile_width = 512;
++	unsigned long tile_width;
+ 	unsigned long i;
+ 
++	/* If untiled, then just align it so that we can do rendering
++	 * to it with the 3D engine.
++	 */
+ 	if (tiling_mode == I915_TILING_NONE)
+-		return pitch;
++		return ALIGN(pitch, 64);
++
++	if (tiling_mode == I915_TILING_X)
++		tile_width = 512;
++	else
++		tile_width = 128;
+ 
+ 	/* 965 is flexible */
+ 	if (bufmgr_gem->gen >= 4)
+@@ -1099,10 +1107,12 @@ static int drm_intel_gem_bo_unmap(drm_intel_bo *bo)
+ 			    DRM_IOCTL_I915_GEM_SW_FINISH,
+ 			    &sw_finish);
+ 	} while (ret == -1 && errno == EINTR);
++	ret = ret == -1 ? -errno : 0;
+ 
+ 	bo->virtual = NULL;
+ 	pthread_mutex_unlock(&bufmgr_gem->lock);
+-	return 0;
++
++	return ret;
+ }
+ 
+ static int
+@@ -1125,12 +1135,14 @@ drm_intel_gem_bo_subdata(drm_intel_bo *bo, unsigned long offset,
+ 			    &pwrite);
+ 	} while (ret == -1 && errno == EINTR);
+ 	if (ret != 0) {
++		ret = -errno;
+ 		fprintf(stderr,
+ 			"%s:%d: Error writing data to buffer %d: (%d %d) %s .\n",
+ 			__FILE__, __LINE__, bo_gem->gem_handle, (int)offset,
+ 			(int)size, strerror(errno));
+ 	}
+-	return 0;
++
++	return ret;
+ }
+ 
+ static int
+@@ -1182,6 +1194,7 @@ drm_intel_gem_bo_get_subdata(drm_intel_bo *bo, unsigned long offset,
+ 			__FILE__, __LINE__, bo_gem->gem_handle, (int)offset,
+ 			(int)size, strerror(errno));
+ 	}
++
+ 	return ret;
+ }
+ 
+@@ -1549,17 +1562,20 @@ drm_intel_gem_bo_exec2(drm_intel_bo *bo, int used,
+ 	do {
+ 		ret = ioctl(bufmgr_gem->fd, DRM_IOCTL_I915_GEM_EXECBUFFER2,
+ 			    &execbuf);
+-	} while (ret != 0 && errno == EAGAIN);
++	} while (ret != 0 && errno == EINTR);
+ 
+-	if (ret != 0 && errno == ENOMEM) {
+-		fprintf(stderr,
+-			"Execbuffer fails to pin. "
+-			"Estimate: %u. Actual: %u. Available: %u\n",
+-			drm_intel_gem_estimate_batch_space(bufmgr_gem->exec_bos,
+-							   bufmgr_gem->exec_count),
+-			drm_intel_gem_compute_batch_space(bufmgr_gem->exec_bos,
+-							  bufmgr_gem->exec_count),
+-			(unsigned int) bufmgr_gem->gtt_size);
++	if (ret != 0) {
++		ret = -errno;
++		if (ret == -ENOMEM) {
++			fprintf(stderr,
++				"Execbuffer fails to pin. "
++				"Estimate: %u. Actual: %u. Available: %u\n",
++				drm_intel_gem_estimate_batch_space(bufmgr_gem->exec_bos,
++								   bufmgr_gem->exec_count),
++				drm_intel_gem_compute_batch_space(bufmgr_gem->exec_bos,
++								  bufmgr_gem->exec_count),
++				(unsigned int) bufmgr_gem->gtt_size);
++		}
+ 	}
+ 	drm_intel_update_buffer_offsets2(bufmgr_gem);
+ 
+@@ -1577,7 +1593,7 @@ drm_intel_gem_bo_exec2(drm_intel_bo *bo, int used,
+ 	bufmgr_gem->exec_count = 0;
+ 	pthread_mutex_unlock(&bufmgr_gem->lock);
+ 
+-	return 0;
++	return ret;
+ }
+ 
+ static int
+diff --git a/intel/libdrm_intel.pc.in b/intel/libdrm_intel.pc.in
+index b93f1c6..3ba6793 100644
+--- a/intel/libdrm_intel.pc.in
++++ b/intel/libdrm_intel.pc.in
+@@ -8,4 +8,4 @@ Description: Userspace interface to kernel DRM services
+ Version: @PACKAGE_VERSION@
+ Requires: libdrm
+ Libs: -L${libdir} -ldrm_intel
+-Cflags: -I${includedir} -I${includedir}/drm
++Cflags: -I${includedir} -I${includedir}/libdrm
+diff --git a/libdrm.pc.in b/libdrm.pc.in
+index 6e00597..b46e2a6 100644
+--- a/libdrm.pc.in
++++ b/libdrm.pc.in
+@@ -7,4 +7,4 @@ Name: libdrm
+ Description: Userspace interface to kernel DRM services
+ Version: @PACKAGE_VERSION@
+ Libs: -L${libdir} -ldrm
+-Cflags: -I${includedir} -I${includedir}/drm
++Cflags: -I${includedir} -I${includedir}/libdrm
+diff --git a/nouveau/Makefile.am b/nouveau/Makefile.am
+index 5d759c5..b6d214a 100644
+--- a/nouveau/Makefile.am
++++ b/nouveau/Makefile.am
+@@ -34,7 +34,7 @@ libdrm_nouveaucommoninclude_HEADERS = \
+ 				nouveau_reloc.h
+ 
+ 
+-libdrm_nouveauincludedir = ${includedir}/drm
++libdrm_nouveauincludedir = ${includedir}/libdrm
+ libdrm_nouveauinclude_HEADERS = \
+ 				nouveau_drmif.h
+ 
+diff --git a/nouveau/libdrm_nouveau.pc.in b/nouveau/libdrm_nouveau.pc.in
+index 7ef49e5..c78a28a 100644
+--- a/nouveau/libdrm_nouveau.pc.in
++++ b/nouveau/libdrm_nouveau.pc.in
+@@ -7,4 +7,5 @@ Name: libdrm_nouveau
+ Description: Userspace interface to nouveau kernel DRM services
+ Version: 0.6
+ Libs: -L${libdir} -ldrm_nouveau
+-Cflags: -I${includedir} -I${includedir}/drm -I${includedir}/nouveau
++Cflags: -I${includedir} -I${includedir}/libdrm -I${includedir}/nouveau
++Requires.private: libdrm
+diff --git a/nouveau/nouveau_bo.c b/nouveau/nouveau_bo.c
+index 4973636..32b23b6 100644
+--- a/nouveau/nouveau_bo.c
++++ b/nouveau/nouveau_bo.c
+@@ -198,7 +198,7 @@ nouveau_bo_new_tile(struct nouveau_device *dev, uint32_t flags, int align,
+ 	if (flags & (NOUVEAU_BO_VRAM | NOUVEAU_BO_GART)) {
+ 		ret = nouveau_bo_kalloc(nvbo, NULL);
+ 		if (ret) {
+-			nouveau_bo_ref(NULL, (void *)nvbo);
++			nouveau_bo_ref(NULL, (void *)&nvbo);
+ 			return ret;
+ 		}
+ 	}
+diff --git a/nouveau/nouveau_channel.c b/nouveau/nouveau_channel.c
+index 5622c1d..40a0b34 100644
+--- a/nouveau/nouveau_channel.c
++++ b/nouveau/nouveau_channel.c
+@@ -106,7 +106,7 @@ nouveau_channel_free(struct nouveau_channel **chan)
+ 	struct nouveau_channel_priv *nvchan;
+ 	struct nouveau_device_priv *nvdev;
+ 	struct drm_nouveau_channel_free cf;
+-	int i;
++	unsigned i;
+ 
+ 	if (!chan || !*chan)
+ 		return;
+diff --git a/nouveau/nouveau_class.h b/nouveau/nouveau_class.h
+index e098368..0167cbc 100644
+--- a/nouveau/nouveau_class.h
++++ b/nouveau/nouveau_class.h
+@@ -1549,8 +1549,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ #define    NV04_TEXTURED_TRIANGLE_BLEND_SHADE_MODE_GOURAUD				0x00000080
+ #define    NV04_TEXTURED_TRIANGLE_BLEND_SHADE_MODE_PHONG				0x000000c0
+ #define   NV04_TEXTURED_TRIANGLE_BLEND_TEXTURE_PERSPECTIVE_ENABLE			(1 <<  8)
+-#define   NV04_TEXTURED_TRIANGLE_BLEND_SPECULAR_ENABLE_SHIFT				12
+-#define   NV04_TEXTURED_TRIANGLE_BLEND_SPECULAR_ENABLE_MASK				0x0000f000
++#define   NV04_TEXTURED_TRIANGLE_BLEND_SPECULAR_ENABLE					(1 << 12)
+ #define   NV04_TEXTURED_TRIANGLE_BLEND_FOG_ENABLE					(1 << 16)
+ #define   NV04_TEXTURED_TRIANGLE_BLEND_BLEND_ENABLE					(1 << 20)
+ #define   NV04_TEXTURED_TRIANGLE_BLEND_SRC_SHIFT					24
+@@ -1798,8 +1797,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ #define    NV04_MULTITEX_TRIANGLE_BLEND_SHADE_MODE_GOURAUD				0x00000080
+ #define    NV04_MULTITEX_TRIANGLE_BLEND_SHADE_MODE_PHONG				0x000000c0
+ #define   NV04_MULTITEX_TRIANGLE_BLEND_TEXTURE_PERSPECTIVE_ENABLE			(1 <<  8)
+-#define   NV04_MULTITEX_TRIANGLE_BLEND_SPECULAR_ENABLE_SHIFT				12
+-#define   NV04_MULTITEX_TRIANGLE_BLEND_SPECULAR_ENABLE_MASK				0x0000f000
++#define   NV04_MULTITEX_TRIANGLE_BLEND_SPECULAR_ENABLE					(1 << 12)
+ #define   NV04_MULTITEX_TRIANGLE_BLEND_FOG_ENABLE					(1 << 16)
+ #define   NV04_MULTITEX_TRIANGLE_BLEND_BLEND_ENABLE					(1 << 20)
+ #define   NV04_MULTITEX_TRIANGLE_BLEND_SRC_SHIFT					24
+@@ -2619,6 +2617,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ #define    NV10TCL_RC_FINAL1_E_MAPPING_SIGNED_IDENTITY					0xc0000000
+ #define    NV10TCL_RC_FINAL1_E_MAPPING_SIGNED_NEGATE					0xe0000000
+ #define  NV10TCL_LIGHT_MODEL								0x00000294
++#define   NV10TCL_LIGHT_MODEL_VERTEX_SPECULAR						(1 <<  0)
+ #define   NV10TCL_LIGHT_MODEL_SEPARATE_SPECULAR						(1 <<  1)
+ #define   NV10TCL_LIGHT_MODEL_LOCAL_VIEWER						(1 << 16)
+ #define  NV10TCL_COLOR_MATERIAL								0x00000298
+@@ -2867,38 +2866,38 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ #define    NV10TCL_ENABLED_LIGHTS_7_NONPOSITIONAL					0x00004000
+ #define    NV10TCL_ENABLED_LIGHTS_7_POSITIONAL						0x00008000
+ #define    NV10TCL_ENABLED_LIGHTS_7_DIRECTIONAL						0x0000c000
+-#define  NV10TCL_TX_GEN_S(x)								(0x000003c0+((x)*16))
+-#define  NV10TCL_TX_GEN_S__SIZE								0x00000002
+-#define   NV10TCL_TX_GEN_S_FALSE							0x00000000
+-#define   NV10TCL_TX_GEN_S_EYE_LINEAR							0x00002400
+-#define   NV10TCL_TX_GEN_S_OBJECT_LINEAR						0x00002401
+-#define   NV10TCL_TX_GEN_S_SPHERE_MAP							0x00002402
+-#define   NV10TCL_TX_GEN_S_NORMAL_MAP							0x00008511
+-#define   NV10TCL_TX_GEN_S_REFLECTION_MAP						0x00008512
+-#define  NV10TCL_TX_GEN_T(x)								(0x000003c4+((x)*16))
+-#define  NV10TCL_TX_GEN_T__SIZE								0x00000002
+-#define   NV10TCL_TX_GEN_T_FALSE							0x00000000
+-#define   NV10TCL_TX_GEN_T_EYE_LINEAR							0x00002400
+-#define   NV10TCL_TX_GEN_T_OBJECT_LINEAR						0x00002401
+-#define   NV10TCL_TX_GEN_T_SPHERE_MAP							0x00002402
+-#define   NV10TCL_TX_GEN_T_NORMAL_MAP							0x00008511
+-#define   NV10TCL_TX_GEN_T_REFLECTION_MAP						0x00008512
+-#define  NV10TCL_TX_GEN_R(x)								(0x000003c8+((x)*16))
+-#define  NV10TCL_TX_GEN_R__SIZE								0x00000002
+-#define   NV10TCL_TX_GEN_R_FALSE							0x00000000
+-#define   NV10TCL_TX_GEN_R_EYE_LINEAR							0x00002400
+-#define   NV10TCL_TX_GEN_R_OBJECT_LINEAR						0x00002401
+-#define   NV10TCL_TX_GEN_R_SPHERE_MAP							0x00002402
+-#define   NV10TCL_TX_GEN_R_NORMAL_MAP							0x00008511
+-#define   NV10TCL_TX_GEN_R_REFLECTION_MAP						0x00008512
+-#define  NV10TCL_TX_GEN_Q(x)								(0x000003cc+((x)*16))
+-#define  NV10TCL_TX_GEN_Q__SIZE								0x00000002
+-#define   NV10TCL_TX_GEN_Q_FALSE							0x00000000
+-#define   NV10TCL_TX_GEN_Q_EYE_LINEAR							0x00002400
+-#define   NV10TCL_TX_GEN_Q_OBJECT_LINEAR						0x00002401
+-#define   NV10TCL_TX_GEN_Q_SPHERE_MAP							0x00002402
+-#define   NV10TCL_TX_GEN_Q_NORMAL_MAP							0x00008511
+-#define   NV10TCL_TX_GEN_Q_REFLECTION_MAP						0x00008512
++#define  NV10TCL_TX_GEN_MODE_S(x)							(0x000003c0+((x)*16))
++#define  NV10TCL_TX_GEN_MODE_S__SIZE							0x00000002
++#define   NV10TCL_TX_GEN_MODE_S_FALSE							0x00000000
++#define   NV10TCL_TX_GEN_MODE_S_EYE_LINEAR						0x00002400
++#define   NV10TCL_TX_GEN_MODE_S_OBJECT_LINEAR						0x00002401
++#define   NV10TCL_TX_GEN_MODE_S_SPHERE_MAP						0x00002402
++#define   NV10TCL_TX_GEN_MODE_S_NORMAL_MAP						0x00008511
++#define   NV10TCL_TX_GEN_MODE_S_REFLECTION_MAP						0x00008512
++#define  NV10TCL_TX_GEN_MODE_T(x)							(0x000003c4+((x)*16))
++#define  NV10TCL_TX_GEN_MODE_T__SIZE							0x00000002
++#define   NV10TCL_TX_GEN_MODE_T_FALSE							0x00000000
++#define   NV10TCL_TX_GEN_MODE_T_EYE_LINEAR						0x00002400
++#define   NV10TCL_TX_GEN_MODE_T_OBJECT_LINEAR						0x00002401
++#define   NV10TCL_TX_GEN_MODE_T_SPHERE_MAP						0x00002402
++#define   NV10TCL_TX_GEN_MODE_T_NORMAL_MAP						0x00008511
++#define   NV10TCL_TX_GEN_MODE_T_REFLECTION_MAP						0x00008512
++#define  NV10TCL_TX_GEN_MODE_R(x)							(0x000003c8+((x)*16))
++#define  NV10TCL_TX_GEN_MODE_R__SIZE							0x00000002
++#define   NV10TCL_TX_GEN_MODE_R_FALSE							0x00000000
++#define   NV10TCL_TX_GEN_MODE_R_EYE_LINEAR						0x00002400
++#define   NV10TCL_TX_GEN_MODE_R_OBJECT_LINEAR						0x00002401
++#define   NV10TCL_TX_GEN_MODE_R_SPHERE_MAP						0x00002402
++#define   NV10TCL_TX_GEN_MODE_R_NORMAL_MAP						0x00008511
++#define   NV10TCL_TX_GEN_MODE_R_REFLECTION_MAP						0x00008512
++#define  NV10TCL_TX_GEN_MODE_Q(x)							(0x000003cc+((x)*16))
++#define  NV10TCL_TX_GEN_MODE_Q__SIZE							0x00000002
++#define   NV10TCL_TX_GEN_MODE_Q_FALSE							0x00000000
++#define   NV10TCL_TX_GEN_MODE_Q_EYE_LINEAR						0x00002400
++#define   NV10TCL_TX_GEN_MODE_Q_OBJECT_LINEAR						0x00002401
++#define   NV10TCL_TX_GEN_MODE_Q_SPHERE_MAP						0x00002402
++#define   NV10TCL_TX_GEN_MODE_Q_NORMAL_MAP						0x00008511
++#define   NV10TCL_TX_GEN_MODE_Q_REFLECTION_MAP						0x00008512
+ #define  NV10TCL_TX_MATRIX_ENABLE(x)							(0x000003e0+((x)*4))
+ #define  NV10TCL_TX_MATRIX_ENABLE__SIZE							0x00000002
+ #define  NV10TCL_VIEW_MATRIX_ENABLE							0x000003e8
+@@ -2920,14 +2919,38 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ #define  NV10TCL_TX0_MATRIX__SIZE							0x00000010
+ #define  NV10TCL_TX1_MATRIX(x)								(0x00000580+((x)*4))
+ #define  NV10TCL_TX1_MATRIX__SIZE							0x00000010
+-#define  NV10TCL_CLIP_PLANE_A(x)							(0x00000600+((x)*16))
+-#define  NV10TCL_CLIP_PLANE_A__SIZE							0x00000008
+-#define  NV10TCL_CLIP_PLANE_B(x)							(0x00000604+((x)*16))
+-#define  NV10TCL_CLIP_PLANE_B__SIZE							0x00000008
+-#define  NV10TCL_CLIP_PLANE_C(x)							(0x00000608+((x)*16))
+-#define  NV10TCL_CLIP_PLANE_C__SIZE							0x00000008
+-#define  NV10TCL_CLIP_PLANE_D(x)							(0x0000060c+((x)*16))
+-#define  NV10TCL_CLIP_PLANE_D__SIZE							0x00000008
++#define  NV10TCL_TX_GEN_COEFF_S_A(x)							(0x00000600+((x)*64))
++#define  NV10TCL_TX_GEN_COEFF_S_A__SIZE							0x00000002
++#define  NV10TCL_TX_GEN_COEFF_S_B(x)							(0x00000604+((x)*64))
++#define  NV10TCL_TX_GEN_COEFF_S_B__SIZE							0x00000002
++#define  NV10TCL_TX_GEN_COEFF_S_C(x)							(0x00000608+((x)*64))
++#define  NV10TCL_TX_GEN_COEFF_S_C__SIZE							0x00000002
++#define  NV10TCL_TX_GEN_COEFF_S_D(x)							(0x0000060c+((x)*64))
++#define  NV10TCL_TX_GEN_COEFF_S_D__SIZE							0x00000002
++#define  NV10TCL_TX_GEN_COEFF_T_A(x)							(0x00000610+((x)*64))
++#define  NV10TCL_TX_GEN_COEFF_T_A__SIZE							0x00000002
++#define  NV10TCL_TX_GEN_COEFF_T_B(x)							(0x00000614+((x)*64))
++#define  NV10TCL_TX_GEN_COEFF_T_B__SIZE							0x00000002
++#define  NV10TCL_TX_GEN_COEFF_T_C(x)							(0x00000618+((x)*64))
++#define  NV10TCL_TX_GEN_COEFF_T_C__SIZE							0x00000002
++#define  NV10TCL_TX_GEN_COEFF_T_D(x)							(0x0000061c+((x)*64))
++#define  NV10TCL_TX_GEN_COEFF_T_D__SIZE							0x00000002
++#define  NV10TCL_TX_GEN_COEFF_R_A(x)							(0x00000620+((x)*64))
++#define  NV10TCL_TX_GEN_COEFF_R_A__SIZE							0x00000002
++#define  NV10TCL_TX_GEN_COEFF_R_B(x)							(0x00000624+((x)*64))
++#define  NV10TCL_TX_GEN_COEFF_R_B__SIZE							0x00000002
++#define  NV10TCL_TX_GEN_COEFF_R_C(x)							(0x00000628+((x)*64))
++#define  NV10TCL_TX_GEN_COEFF_R_C__SIZE							0x00000002
++#define  NV10TCL_TX_GEN_COEFF_R_D(x)							(0x0000062c+((x)*64))
++#define  NV10TCL_TX_GEN_COEFF_R_D__SIZE							0x00000002
++#define  NV10TCL_TX_GEN_COEFF_Q_A(x)							(0x00000630+((x)*64))
++#define  NV10TCL_TX_GEN_COEFF_Q_A__SIZE							0x00000002
++#define  NV10TCL_TX_GEN_COEFF_Q_B(x)							(0x00000634+((x)*64))
++#define  NV10TCL_TX_GEN_COEFF_Q_B__SIZE							0x00000002
++#define  NV10TCL_TX_GEN_COEFF_Q_C(x)							(0x00000638+((x)*64))
++#define  NV10TCL_TX_GEN_COEFF_Q_C__SIZE							0x00000002
++#define  NV10TCL_TX_GEN_COEFF_Q_D(x)							(0x0000063c+((x)*64))
++#define  NV10TCL_TX_GEN_COEFF_Q_D__SIZE							0x00000002
+ #define  NV10TCL_FOG_EQUATION_CONSTANT							0x00000680
+ #define  NV10TCL_FOG_EQUATION_LINEAR							0x00000684
+ #define  NV10TCL_FOG_EQUATION_QUADRATIC							0x00000688
+@@ -3103,70 +3126,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ #define   NV10TCL_VTXFMT_STRIDE_SHIFT							8
+ #define   NV10TCL_VTXFMT_STRIDE_MASK							0x0000ff00
+ #define   NV10TCL_VTXFMT_POS_HOMOGENEOUS						(1 << 24)
+-#define  NV10TCL_VERTEX_ARRAY_OFFSET_POS						0x00000d00
+-#define  NV10TCL_VERTEX_ARRAY_FORMAT_POS						0x00000d04
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_POS_TYPE_SHIFT					0
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_POS_TYPE_MASK					0x0000000f
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_POS_FIELDS_SHIFT					4
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_POS_FIELDS_MASK					0x000000f0
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_POS_STRIDE_SHIFT					8
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_POS_STRIDE_MASK					0x0000ff00
+-#define  NV10TCL_VERTEX_ARRAY_OFFSET_COL						0x00000d08
+-#define  NV10TCL_VERTEX_ARRAY_FORMAT_COL						0x00000d0c
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_COL_TYPE_SHIFT					0
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_COL_TYPE_MASK					0x0000000f
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_COL_FIELDS_SHIFT					4
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_COL_FIELDS_MASK					0x000000f0
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_COL_STRIDE_SHIFT					8
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_COL_STRIDE_MASK					0x0000ff00
+-#define  NV10TCL_VERTEX_ARRAY_OFFSET_COL2						0x00000d10
+-#define  NV10TCL_VERTEX_ARRAY_FORMAT_COL2						0x00000d14
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_COL2_TYPE_SHIFT					0
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_COL2_TYPE_MASK					0x0000000f
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_COL2_FIELDS_SHIFT					4
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_COL2_FIELDS_MASK					0x000000f0
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_COL2_STRIDE_SHIFT					8
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_COL2_STRIDE_MASK					0x0000ff00
+-#define  NV10TCL_VERTEX_ARRAY_OFFSET_TX0						0x00000d18
+-#define  NV10TCL_VERTEX_ARRAY_FORMAT_TX0						0x00000d1c
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_TX0_TYPE_SHIFT					0
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_TX0_TYPE_MASK					0x0000000f
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_TX0_FIELDS_SHIFT					4
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_TX0_FIELDS_MASK					0x000000f0
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_TX0_STRIDE_SHIFT					8
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_TX0_STRIDE_MASK					0x0000ff00
+-#define  NV10TCL_VERTEX_ARRAY_OFFSET_TX1						0x00000d20
+-#define  NV10TCL_VERTEX_ARRAY_FORMAT_TX1						0x00000d24
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_TX1_TYPE_SHIFT					0
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_TX1_TYPE_MASK					0x0000000f
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_TX1_FIELDS_SHIFT					4
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_TX1_FIELDS_MASK					0x000000f0
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_TX1_STRIDE_SHIFT					8
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_TX1_STRIDE_MASK					0x0000ff00
+-#define  NV10TCL_VERTEX_ARRAY_OFFSET_NOR						0x00000d28
+-#define  NV10TCL_VERTEX_ARRAY_FORMAT_NOR						0x00000d2c
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_NOR_TYPE_SHIFT					0
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_NOR_TYPE_MASK					0x0000000f
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_NOR_FIELDS_SHIFT					4
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_NOR_FIELDS_MASK					0x000000f0
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_NOR_STRIDE_SHIFT					8
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_NOR_STRIDE_MASK					0x0000ff00
+-#define  NV10TCL_VERTEX_ARRAY_OFFSET_WGH						0x00000d30
+-#define  NV10TCL_VERTEX_ARRAY_FORMAT_WGH						0x00000d34
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_WGH_TYPE_SHIFT					0
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_WGH_TYPE_MASK					0x0000000f
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_WGH_FIELDS_SHIFT					4
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_WGH_FIELDS_MASK					0x000000f0
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_WGH_STRIDE_SHIFT					8
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_WGH_STRIDE_MASK					0x0000ff00
+-#define  NV10TCL_VERTEX_ARRAY_OFFSET_FOG						0x00000d38
+-#define  NV10TCL_VERTEX_ARRAY_FORMAT_FOG						0x00000d3c
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_FOG_TYPE_SHIFT					0
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_FOG_TYPE_MASK					0x0000000f
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_FOG_FIELDS_SHIFT					4
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_FOG_FIELDS_MASK					0x000000f0
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_FOG_STRIDE_SHIFT					8
+-#define   NV10TCL_VERTEX_ARRAY_FORMAT_FOG_STRIDE_MASK					0x0000ff00
+ #define  NV10TCL_VERTEX_BEGIN_END							0x00000dfc
+ #define   NV10TCL_VERTEX_BEGIN_END_STOP							0x00000000
+ #define   NV10TCL_VERTEX_BEGIN_END_POINTS						0x00000001
+@@ -4006,38 +3965,38 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ #define    NV20TCL_ENABLED_LIGHTS_7_NONPOSITIONAL					0x00004000
+ #define    NV20TCL_ENABLED_LIGHTS_7_POSITIONAL						0x00008000
+ #define    NV20TCL_ENABLED_LIGHTS_7_DIRECTIONAL						0x0000c000
+-#define  NV20TCL_TX_GEN_S(x)								(0x000003c0+((x)*16))
+-#define  NV20TCL_TX_GEN_S__SIZE								0x00000004
+-#define   NV20TCL_TX_GEN_S_FALSE							0x00000000
+-#define   NV20TCL_TX_GEN_S_EYE_LINEAR							0x00002400
+-#define   NV20TCL_TX_GEN_S_OBJECT_LINEAR						0x00002401
+-#define   NV20TCL_TX_GEN_S_SPHERE_MAP							0x00002402
+-#define   NV20TCL_TX_GEN_S_NORMAL_MAP							0x00008511
+-#define   NV20TCL_TX_GEN_S_REFLECTION_MAP						0x00008512
+-#define  NV20TCL_TX_GEN_T(x)								(0x000003c4+((x)*16))
+-#define  NV20TCL_TX_GEN_T__SIZE								0x00000004
+-#define   NV20TCL_TX_GEN_T_FALSE							0x00000000
+-#define   NV20TCL_TX_GEN_T_EYE_LINEAR							0x00002400
+-#define   NV20TCL_TX_GEN_T_OBJECT_LINEAR						0x00002401
+-#define   NV20TCL_TX_GEN_T_SPHERE_MAP							0x00002402
+-#define   NV20TCL_TX_GEN_T_NORMAL_MAP							0x00008511
+-#define   NV20TCL_TX_GEN_T_REFLECTION_MAP						0x00008512
+-#define  NV20TCL_TX_GEN_R(x)								(0x000003c8+((x)*16))
+-#define  NV20TCL_TX_GEN_R__SIZE								0x00000004
+-#define   NV20TCL_TX_GEN_R_FALSE							0x00000000
+-#define   NV20TCL_TX_GEN_R_EYE_LINEAR							0x00002400
+-#define   NV20TCL_TX_GEN_R_OBJECT_LINEAR						0x00002401
+-#define   NV20TCL_TX_GEN_R_SPHERE_MAP							0x00002402
+-#define   NV20TCL_TX_GEN_R_NORMAL_MAP							0x00008511
+-#define   NV20TCL_TX_GEN_R_REFLECTION_MAP						0x00008512
+-#define  NV20TCL_TX_GEN_Q(x)								(0x000003cc+((x)*16))
+-#define  NV20TCL_TX_GEN_Q__SIZE								0x00000004
+-#define   NV20TCL_TX_GEN_Q_FALSE							0x00000000
+-#define   NV20TCL_TX_GEN_Q_EYE_LINEAR							0x00002400
+-#define   NV20TCL_TX_GEN_Q_OBJECT_LINEAR						0x00002401
+-#define   NV20TCL_TX_GEN_Q_SPHERE_MAP							0x00002402
+-#define   NV20TCL_TX_GEN_Q_NORMAL_MAP							0x00008511
+-#define   NV20TCL_TX_GEN_Q_REFLECTION_MAP						0x00008512
++#define  NV20TCL_TX_GEN_MODE_S(x)							(0x000003c0+((x)*16))
++#define  NV20TCL_TX_GEN_MODE_S__SIZE							0x00000004
++#define   NV20TCL_TX_GEN_MODE_S_FALSE							0x00000000
++#define   NV20TCL_TX_GEN_MODE_S_EYE_LINEAR						0x00002400
++#define   NV20TCL_TX_GEN_MODE_S_OBJECT_LINEAR						0x00002401
++#define   NV20TCL_TX_GEN_MODE_S_SPHERE_MAP						0x00002402
++#define   NV20TCL_TX_GEN_MODE_S_NORMAL_MAP						0x00008511
++#define   NV20TCL_TX_GEN_MODE_S_REFLECTION_MAP						0x00008512
++#define  NV20TCL_TX_GEN_MODE_T(x)							(0x000003c4+((x)*16))
++#define  NV20TCL_TX_GEN_MODE_T__SIZE							0x00000004
++#define   NV20TCL_TX_GEN_MODE_T_FALSE							0x00000000
++#define   NV20TCL_TX_GEN_MODE_T_EYE_LINEAR						0x00002400
++#define   NV20TCL_TX_GEN_MODE_T_OBJECT_LINEAR						0x00002401
++#define   NV20TCL_TX_GEN_MODE_T_SPHERE_MAP						0x00002402
++#define   NV20TCL_TX_GEN_MODE_T_NORMAL_MAP						0x00008511
++#define   NV20TCL_TX_GEN_MODE_T_REFLECTION_MAP						0x00008512
++#define  NV20TCL_TX_GEN_MODE_R(x)							(0x000003c8+((x)*16))
++#define  NV20TCL_TX_GEN_MODE_R__SIZE							0x00000004
++#define   NV20TCL_TX_GEN_MODE_R_FALSE							0x00000000
++#define   NV20TCL_TX_GEN_MODE_R_EYE_LINEAR						0x00002400
++#define   NV20TCL_TX_GEN_MODE_R_OBJECT_LINEAR						0x00002401
++#define   NV20TCL_TX_GEN_MODE_R_SPHERE_MAP						0x00002402
++#define   NV20TCL_TX_GEN_MODE_R_NORMAL_MAP						0x00008511
++#define   NV20TCL_TX_GEN_MODE_R_REFLECTION_MAP						0x00008512
++#define  NV20TCL_TX_GEN_MODE_Q(x)							(0x000003cc+((x)*16))
++#define  NV20TCL_TX_GEN_MODE_Q__SIZE							0x00000004
++#define   NV20TCL_TX_GEN_MODE_Q_FALSE							0x00000000
++#define   NV20TCL_TX_GEN_MODE_Q_EYE_LINEAR						0x00002400
++#define   NV20TCL_TX_GEN_MODE_Q_OBJECT_LINEAR						0x00002401
++#define   NV20TCL_TX_GEN_MODE_Q_SPHERE_MAP						0x00002402
++#define   NV20TCL_TX_GEN_MODE_Q_NORMAL_MAP						0x00008511
++#define   NV20TCL_TX_GEN_MODE_Q_REFLECTION_MAP						0x00008512
+ #define  NV20TCL_TX_MATRIX_ENABLE(x)							(0x00000420+((x)*4))
+ #define  NV20TCL_TX_MATRIX_ENABLE__SIZE							0x00000004
+ #define  NV20TCL_POINT_SIZE								0x0000043c
+@@ -4067,38 +4026,38 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ #define  NV20TCL_TX2_MATRIX__SIZE							0x00000010
+ #define  NV20TCL_TX3_MATRIX(x)								(0x00000780+((x)*4))
+ #define  NV20TCL_TX3_MATRIX__SIZE							0x00000010
+-#define  NV20TCL_TX0_CLIP_PLANE_A(x)							(0x00000840+((x)*16))
+-#define  NV20TCL_TX0_CLIP_PLANE_A__SIZE							0x00000004
+-#define  NV20TCL_TX0_CLIP_PLANE_B(x)							(0x00000844+((x)*16))
+-#define  NV20TCL_TX0_CLIP_PLANE_B__SIZE							0x00000004
+-#define  NV20TCL_TX0_CLIP_PLANE_C(x)							(0x00000848+((x)*16))
+-#define  NV20TCL_TX0_CLIP_PLANE_C__SIZE							0x00000004
+-#define  NV20TCL_TX0_CLIP_PLANE_D(x)							(0x0000084c+((x)*16))
+-#define  NV20TCL_TX0_CLIP_PLANE_D__SIZE							0x00000004
+-#define  NV20TCL_TX1_CLIP_PLANE_A(x)							(0x00000880+((x)*16))
+-#define  NV20TCL_TX1_CLIP_PLANE_A__SIZE							0x00000004
+-#define  NV20TCL_TX1_CLIP_PLANE_B(x)							(0x00000884+((x)*16))
+-#define  NV20TCL_TX1_CLIP_PLANE_B__SIZE							0x00000004
+-#define  NV20TCL_TX1_CLIP_PLANE_C(x)							(0x00000888+((x)*16))
+-#define  NV20TCL_TX1_CLIP_PLANE_C__SIZE							0x00000004
+-#define  NV20TCL_TX1_CLIP_PLANE_D(x)							(0x0000088c+((x)*16))
+-#define  NV20TCL_TX1_CLIP_PLANE_D__SIZE							0x00000004
+-#define  NV20TCL_TX2_CLIP_PLANE_A(x)							(0x000008c0+((x)*16))
+-#define  NV20TCL_TX2_CLIP_PLANE_A__SIZE							0x00000004
+-#define  NV20TCL_TX2_CLIP_PLANE_B(x)							(0x000008c4+((x)*16))
+-#define  NV20TCL_TX2_CLIP_PLANE_B__SIZE							0x00000004
+-#define  NV20TCL_TX2_CLIP_PLANE_C(x)							(0x000008c8+((x)*16))
+-#define  NV20TCL_TX2_CLIP_PLANE_C__SIZE							0x00000004
+-#define  NV20TCL_TX2_CLIP_PLANE_D(x)							(0x000008cc+((x)*16))
+-#define  NV20TCL_TX2_CLIP_PLANE_D__SIZE							0x00000004
+-#define  NV20TCL_TX3_CLIP_PLANE_A(x)							(0x00000900+((x)*16))
+-#define  NV20TCL_TX3_CLIP_PLANE_A__SIZE							0x00000004
+-#define  NV20TCL_TX3_CLIP_PLANE_B(x)							(0x00000904+((x)*16))
+-#define  NV20TCL_TX3_CLIP_PLANE_B__SIZE							0x00000004
+-#define  NV20TCL_TX3_CLIP_PLANE_C(x)							(0x00000908+((x)*16))
+-#define  NV20TCL_TX3_CLIP_PLANE_C__SIZE							0x00000004
+-#define  NV20TCL_TX3_CLIP_PLANE_D(x)							(0x0000090c+((x)*16))
+-#define  NV20TCL_TX3_CLIP_PLANE_D__SIZE							0x00000004
++#define  NV20TCL_TX_GEN_COEFF_S_A(x)							(0x00000840+((x)*64))
++#define  NV20TCL_TX_GEN_COEFF_S_A__SIZE							0x00000004
++#define  NV20TCL_TX_GEN_COEFF_S_B(x)							(0x00000844+((x)*64))
++#define  NV20TCL_TX_GEN_COEFF_S_B__SIZE							0x00000004
++#define  NV20TCL_TX_GEN_COEFF_S_C(x)							(0x00000848+((x)*64))
++#define  NV20TCL_TX_GEN_COEFF_S_C__SIZE							0x00000004
++#define  NV20TCL_TX_GEN_COEFF_S_D(x)							(0x0000084c+((x)*64))
++#define  NV20TCL_TX_GEN_COEFF_S_D__SIZE							0x00000004
++#define  NV20TCL_TX_GEN_COEFF_T_A(x)							(0x00000850+((x)*64))
++#define  NV20TCL_TX_GEN_COEFF_T_A__SIZE							0x00000004
++#define  NV20TCL_TX_GEN_COEFF_T_B(x)							(0x00000854+((x)*64))
++#define  NV20TCL_TX_GEN_COEFF_T_B__SIZE							0x00000004
++#define  NV20TCL_TX_GEN_COEFF_T_C(x)							(0x00000858+((x)*64))
++#define  NV20TCL_TX_GEN_COEFF_T_C__SIZE							0x00000004
++#define  NV20TCL_TX_GEN_COEFF_T_D(x)							(0x0000085c+((x)*64))
++#define  NV20TCL_TX_GEN_COEFF_T_D__SIZE							0x00000004
++#define  NV20TCL_TX_GEN_COEFF_R_A(x)							(0x00000860+((x)*64))
++#define  NV20TCL_TX_GEN_COEFF_R_A__SIZE							0x00000004
++#define  NV20TCL_TX_GEN_COEFF_R_B(x)							(0x00000864+((x)*64))
++#define  NV20TCL_TX_GEN_COEFF_R_B__SIZE							0x00000004
++#define  NV20TCL_TX_GEN_COEFF_R_C(x)							(0x00000868+((x)*64))
++#define  NV20TCL_TX_GEN_COEFF_R_C__SIZE							0x00000004
++#define  NV20TCL_TX_GEN_COEFF_R_D(x)							(0x0000086c+((x)*64))
++#define  NV20TCL_TX_GEN_COEFF_R_D__SIZE							0x00000004
++#define  NV20TCL_TX_GEN_COEFF_Q_A(x)							(0x00000870+((x)*64))
++#define  NV20TCL_TX_GEN_COEFF_Q_A__SIZE							0x00000004
++#define  NV20TCL_TX_GEN_COEFF_Q_B(x)							(0x00000874+((x)*64))
++#define  NV20TCL_TX_GEN_COEFF_Q_B__SIZE							0x00000004
++#define  NV20TCL_TX_GEN_COEFF_Q_C(x)							(0x00000878+((x)*64))
++#define  NV20TCL_TX_GEN_COEFF_Q_C__SIZE							0x00000004
++#define  NV20TCL_TX_GEN_COEFF_Q_D(x)							(0x0000087c+((x)*64))
++#define  NV20TCL_TX_GEN_COEFF_Q_D__SIZE							0x00000004
+ #define  NV20TCL_FOG_EQUATION_CONSTANT							0x000009c0
+ #define  NV20TCL_FOG_EQUATION_LINEAR							0x000009c4
+ #define  NV20TCL_FOG_EQUATION_QUADRATIC							0x000009c8
+@@ -4327,17 +4286,17 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ #define  NV20TCL_LIGHT_BACK_AMBIENT_G__SIZE						0x00000008
+ #define  NV20TCL_LIGHT_BACK_AMBIENT_B(x)						(0x00000c08+((x)*64))
+ #define  NV20TCL_LIGHT_BACK_AMBIENT_B__SIZE						0x00000008
+-#define  NV20TCL_LIGHT_BACK_DIFFUSE_R(x)						(0x00000c0c+((x)*128))
++#define  NV20TCL_LIGHT_BACK_DIFFUSE_R(x)						(0x00000c0c+((x)*64))
+ #define  NV20TCL_LIGHT_BACK_DIFFUSE_R__SIZE						0x00000008
+-#define  NV20TCL_LIGHT_BACK_DIFFUSE_G(x)						(0x00000c10+((x)*128))
++#define  NV20TCL_LIGHT_BACK_DIFFUSE_G(x)						(0x00000c10+((x)*64))
+ #define  NV20TCL_LIGHT_BACK_DIFFUSE_G__SIZE						0x00000008
+-#define  NV20TCL_LIGHT_BACK_DIFFUSE_B(x)						(0x00000c14+((x)*128))
++#define  NV20TCL_LIGHT_BACK_DIFFUSE_B(x)						(0x00000c14+((x)*64))
+ #define  NV20TCL_LIGHT_BACK_DIFFUSE_B__SIZE						0x00000008
+-#define  NV20TCL_LIGHT_BACK_SPECULAR_R(x)						(0x00000c18+((x)*128))
++#define  NV20TCL_LIGHT_BACK_SPECULAR_R(x)						(0x00000c18+((x)*64))
+ #define  NV20TCL_LIGHT_BACK_SPECULAR_R__SIZE						0x00000008
+-#define  NV20TCL_LIGHT_BACK_SPECULAR_G(x)						(0x00000c1c+((x)*128))
++#define  NV20TCL_LIGHT_BACK_SPECULAR_G(x)						(0x00000c1c+((x)*64))
+ #define  NV20TCL_LIGHT_BACK_SPECULAR_G__SIZE						0x00000008
+-#define  NV20TCL_LIGHT_BACK_SPECULAR_B(x)						(0x00000c20+((x)*128))
++#define  NV20TCL_LIGHT_BACK_SPECULAR_B(x)						(0x00000c20+((x)*64))
+ #define  NV20TCL_LIGHT_BACK_SPECULAR_B__SIZE						0x00000008
+ #define  NV20TCL_LIGHT_FRONT_AMBIENT_R(x)						(0x00001000+((x)*128))
+ #define  NV20TCL_LIGHT_FRONT_AMBIENT_R__SIZE						0x00000008
+@@ -6197,8 +6156,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ #define   NV34TCL_VP_CLIP_PLANES_ENABLE_PLANE3						(1 << 13)
+ #define   NV34TCL_VP_CLIP_PLANES_ENABLE_PLANE4						(1 << 17)
+ #define   NV34TCL_VP_CLIP_PLANES_ENABLE_PLANE5						(1 << 21)
+-#define   NV34TCL_VP_CLIP_PLANES_ENABLE_PLANE6						(1 << 25)
+-#define   NV34TCL_VP_CLIP_PLANES_ENABLE_PLANE7						(1 << 29)
+ #define  NV34TCL_POLYGON_STIPPLE_ENABLE							0x0000147c
+ #define  NV34TCL_POLYGON_STIPPLE_PATTERN(x)						(0x00001480+((x)*4))
+ #define  NV34TCL_POLYGON_STIPPLE_PATTERN__SIZE						0x00000020
+@@ -6366,10 +6323,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ #define    NV34TCL_TX_FORMAT_FORMAT_DSDT8_RECT						0x00001700
+ #define    NV34TCL_TX_FORMAT_FORMAT_A8L8						0x00001a00
+ #define    NV34TCL_TX_FORMAT_FORMAT_A8_RECT						0x00001b00
+-#define    NV34TCL_TX_FORMAT_FORMAT_A8_RECT2						0x00001b00
+ #define    NV34TCL_TX_FORMAT_FORMAT_A4R4G4B4_RECT					0x00001d00
+ #define    NV34TCL_TX_FORMAT_FORMAT_R8G8B8_RECT						0x00001e00
+-#define    NV34TCL_TX_FORMAT_FORMAT_L8A8_RECT						0x00002000
+ #define    NV34TCL_TX_FORMAT_FORMAT_A8L8_RECT						0x00002000
+ #define    NV34TCL_TX_FORMAT_FORMAT_DSDT8						0x00002800
+ #define    NV34TCL_TX_FORMAT_FORMAT_HILO16						0x00003300
+@@ -6588,7 +6543,14 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ #define    NV34TCL_POINT_SPRITE_R_MODE_ZERO						0x00000000
+ #define    NV34TCL_POINT_SPRITE_R_MODE_R						0x00000002
+ #define    NV34TCL_POINT_SPRITE_R_MODE_S						0x00000004
+-#define   NV34TCL_POINT_SPRITE_COORD_REPLACE						(1 << 11)
++#define   NV34TCL_POINT_SPRITE_COORD_REPLACE_0						(1 <<  8)
++#define   NV34TCL_POINT_SPRITE_COORD_REPLACE_1						(1 <<  9)
++#define   NV34TCL_POINT_SPRITE_COORD_REPLACE_2						(1 << 10)
++#define   NV34TCL_POINT_SPRITE_COORD_REPLACE_3						(1 << 11)
++#define   NV34TCL_POINT_SPRITE_COORD_REPLACE_4						(1 << 12)
++#define   NV34TCL_POINT_SPRITE_COORD_REPLACE_5						(1 << 13)
++#define   NV34TCL_POINT_SPRITE_COORD_REPLACE_6						(1 << 14)
++#define   NV34TCL_POINT_SPRITE_COORD_REPLACE_7						(1 << 15)
+ #define  NV34TCL_VP_UPLOAD_CONST_ID							0x00001efc
+ #define  NV34TCL_VP_UPLOAD_CONST_X(x)							(0x00001f00+((x)*16))
+ #define  NV34TCL_VP_UPLOAD_CONST_X__SIZE						0x00000004
+@@ -7335,6 +7297,14 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ #define  NV40TCL_MULTISAMPLE_CONTROL							0x00001d7c
+ #define  NV40TCL_CLEAR_VALUE_DEPTH							0x00001d8c
+ #define  NV40TCL_CLEAR_VALUE_COLOR							0x00001d90
++#define   NV40TCL_CLEAR_VALUE_COLOR_B_SHIFT						0
++#define   NV40TCL_CLEAR_VALUE_COLOR_B_MASK						0x000000ff
++#define   NV40TCL_CLEAR_VALUE_COLOR_G_SHIFT						8
++#define   NV40TCL_CLEAR_VALUE_COLOR_G_MASK						0x0000ff00
++#define   NV40TCL_CLEAR_VALUE_COLOR_R_SHIFT						16
++#define   NV40TCL_CLEAR_VALUE_COLOR_R_MASK						0x00ff0000
++#define   NV40TCL_CLEAR_VALUE_COLOR_A_SHIFT						24
++#define   NV40TCL_CLEAR_VALUE_COLOR_A_MASK						0xff000000
+ #define  NV40TCL_CLEAR_BUFFERS								0x00001d94
+ #define   NV40TCL_CLEAR_BUFFERS_COLOR_A							(1 <<  7)
+ #define   NV40TCL_CLEAR_BUFFERS_COLOR_B							(1 <<  6)
+@@ -7354,6 +7324,20 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ #define  NV40TCL_VP_START_FROM_ID							0x00001ea0
+ #define  NV40TCL_POINT_SIZE								0x00001ee0
+ #define  NV40TCL_POINT_SPRITE								0x00001ee8
++#define   NV40TCL_POINT_SPRITE_ENABLE							(1 <<  0)
++#define   NV40TCL_POINT_SPRITE_R_MODE_SHIFT						1
++#define   NV40TCL_POINT_SPRITE_R_MODE_MASK						0x00000006
++#define    NV40TCL_POINT_SPRITE_R_MODE_ZERO						0x00000000
++#define    NV40TCL_POINT_SPRITE_R_MODE_R						0x00000002
++#define    NV40TCL_POINT_SPRITE_R_MODE_S						0x00000004
++#define   NV40TCL_POINT_SPRITE_COORD_REPLACE_0						(1 <<  8)
++#define   NV40TCL_POINT_SPRITE_COORD_REPLACE_1						(1 <<  9)
++#define   NV40TCL_POINT_SPRITE_COORD_REPLACE_2						(1 << 10)
++#define   NV40TCL_POINT_SPRITE_COORD_REPLACE_3						(1 << 11)
++#define   NV40TCL_POINT_SPRITE_COORD_REPLACE_4						(1 << 12)
++#define   NV40TCL_POINT_SPRITE_COORD_REPLACE_5						(1 << 13)
++#define   NV40TCL_POINT_SPRITE_COORD_REPLACE_6						(1 << 14)
++#define   NV40TCL_POINT_SPRITE_COORD_REPLACE_7						(1 << 15)
+ #define  NV40TCL_VP_UPLOAD_CONST_ID							0x00001efc
+ #define  NV40TCL_VP_UPLOAD_CONST_X(x)							(0x00001f00+((x)*16))
+ #define  NV40TCL_VP_UPLOAD_CONST_X__SIZE						0x00000004
+@@ -8768,6 +8752,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ #define   NV50TCL_CULL_FACE_FRONT_AND_BACK						0x00000408
+ #define  NV50TCL_VIEWPORT_TRANSFORM_EN							0x0000192c
+ #define  NV50TCL_VIEW_VOLUME_CLIP_CTRL							0x0000193c
++#define  NV50TCL_VIEWPORT_CLIP_RECTS_EN							0x0000194c
+ #define  NV50TCL_FP_CTRL_UNK196C							0x0000196c
+ #define  NV50TCL_FP_INTERPOLANT_CTRL							0x00001988
+ #define   NV50TCL_FP_INTERPOLANT_CTRL_UMASK_SHIFT					24
+diff --git a/nouveau/nouveau_private.h b/nouveau/nouveau_private.h
+index c08fa38..5a952f7 100644
+--- a/nouveau/nouveau_private.h
++++ b/nouveau/nouveau_private.h
+@@ -118,7 +118,6 @@ struct nouveau_bo_priv {
+ 	void *map;
+ 
+ 	/* Last known information from kernel on buffer status */
+-	int pinned;
+ 	uint64_t offset;
+ 	uint32_t domain;
+ };
+diff --git a/radeon/Makefile.am b/radeon/Makefile.am
+index 29af1df..de78232 100644
+--- a/radeon/Makefile.am
++++ b/radeon/Makefile.am
+@@ -41,7 +41,7 @@ libdrm_radeon_la_SOURCES = \
+ 	radeon_bo.c \
+ 	radeon_cs.c
+ 
+-libdrm_radeonincludedir = ${includedir}/drm
++libdrm_radeonincludedir = ${includedir}/libdrm
+ libdrm_radeoninclude_HEADERS = \
+ 	radeon_bo.h \
+ 	radeon_cs.h \
+diff --git a/radeon/libdrm_radeon.pc.in b/radeon/libdrm_radeon.pc.in
+index ab703e1..68ef0ab 100644
+--- a/radeon/libdrm_radeon.pc.in
++++ b/radeon/libdrm_radeon.pc.in
+@@ -7,4 +7,4 @@ Name: libdrm_radeon
+ Description: Userspace interface to kernel DRM services for radeon
+ Version: @PACKAGE_VERSION@
+ Libs: -L${libdir} -ldrm_radeon
+-Cflags: -I${includedir} -I${includedir}/drm
++Cflags: -I${includedir} -I${includedir}/libdrm
+diff --git a/radeon/radeon_bo_gem.c b/radeon/radeon_bo_gem.c
+index bc8058d..081ccb9 100644
+--- a/radeon/radeon_bo_gem.c
++++ b/radeon/radeon_bo_gem.c
+@@ -39,6 +39,7 @@
+ #include <sys/mman.h>
+ #include <errno.h>
+ #include "xf86drm.h"
++#include "xf86atomic.h"
+ #include "drm.h"
+ #include "radeon_drm.h"
+ #include "radeon_bo.h"
+@@ -49,6 +50,7 @@ struct radeon_bo_gem {
+     struct radeon_bo_int base;
+     uint32_t            name;
+     int                 map_count;
++    atomic_t            reloc_in_cs;
+     void *priv_ptr;
+ };
+ 
+@@ -80,6 +82,7 @@ static struct radeon_bo *bo_open(struct radeon_bo_manager *bom,
+     bo->base.domains = domains;
+     bo->base.flags = flags;
+     bo->base.ptr = NULL;
++    atomic_set(&bo->reloc_in_cs, 0);
+     bo->map_count = 0;
+     if (handle) {
+         struct drm_gem_open open_arg;
+@@ -309,6 +312,12 @@ uint32_t radeon_gem_name_bo(struct radeon_bo *bo)
+     return bo_gem->name;
+ }
+ 
++void *radeon_gem_get_reloc_in_cs(struct radeon_bo *bo)
++{
++    struct radeon_bo_gem *bo_gem = (struct radeon_bo_gem*)bo;
++    return &bo_gem->reloc_in_cs;
++}
++
+ int radeon_gem_get_kernel_name(struct radeon_bo *bo, uint32_t *name)
+ {
+     struct radeon_bo_int *boi = (struct radeon_bo_int *)bo;
+diff --git a/radeon/radeon_bo_gem.h b/radeon/radeon_bo_gem.h
+index c56c58e..0af8610 100644
+--- a/radeon/radeon_bo_gem.h
++++ b/radeon/radeon_bo_gem.h
+@@ -38,6 +38,7 @@ struct radeon_bo_manager *radeon_bo_manager_gem_ctor(int fd);
+ void radeon_bo_manager_gem_dtor(struct radeon_bo_manager *bom);
+ 
+ uint32_t radeon_gem_name_bo(struct radeon_bo *bo);
++void *radeon_gem_get_reloc_in_cs(struct radeon_bo *bo);
+ int radeon_gem_set_domain(struct radeon_bo *bo, uint32_t read_domains, uint32_t write_domain);
+ int radeon_gem_get_kernel_name(struct radeon_bo *bo, uint32_t *name);
+ #endif
+diff --git a/radeon/radeon_cs.c b/radeon/radeon_cs.c
+index cc9be39..d0e922b 100644
+--- a/radeon/radeon_cs.c
++++ b/radeon/radeon_cs.c
+@@ -88,3 +88,9 @@ void radeon_cs_space_set_flush(struct radeon_cs *cs, void (*fn)(void *), void *d
+     csi->space_flush_fn = fn;
+     csi->space_flush_data = data;
+ }
++
++uint32_t radeon_cs_get_id(struct radeon_cs *cs)
++{
++    struct radeon_cs_int *csi = (struct radeon_cs_int *)cs;
++    return csi->id;
++}
+diff --git a/radeon/radeon_cs.h b/radeon/radeon_cs.h
+index 49d5d9a..7f6ee68 100644
+--- a/radeon/radeon_cs.h
++++ b/radeon/radeon_cs.h
+@@ -85,7 +85,7 @@ extern int radeon_cs_write_reloc(struct radeon_cs *cs,
+                                  uint32_t read_domain,
+                                  uint32_t write_domain,
+                                  uint32_t flags);
+-
++extern uint32_t radeon_cs_get_id(struct radeon_cs *cs);
+ /*
+  * add a persistent BO to the list
+  * a persistent BO is one that will be referenced across flushes,
+diff --git a/radeon/radeon_cs_gem.c b/radeon/radeon_cs_gem.c
+index 45a219c..28ef5f6 100644
+--- a/radeon/radeon_cs_gem.c
++++ b/radeon/radeon_cs_gem.c
+@@ -32,6 +32,7 @@
+ #include <assert.h>
+ #include <errno.h>
+ #include <stdlib.h>
++#include <pthread.h>
+ #include <sys/mman.h>
+ #include <sys/ioctl.h>
+ #include "radeon_cs.h"
+@@ -41,6 +42,7 @@
+ #include "radeon_bo_gem.h"
+ #include "drm.h"
+ #include "xf86drm.h"
++#include "xf86atomic.h"
+ #include "radeon_drm.h"
+ 
+ struct radeon_cs_manager_gem {
+@@ -68,6 +70,50 @@ struct cs_gem {
+     struct radeon_bo_int        **relocs_bo;
+ };
+ 
++static pthread_mutex_t id_mutex = PTHREAD_MUTEX_INITIALIZER;
++static uint32_t cs_id_source = 0;
++
++/**
++ * result is undefined if called with ~0
++ */
++static uint32_t get_first_zero(const uint32_t n)
++{
++    /* __builtin_ctz returns number of trailing zeros. */
++    return 1 << __builtin_ctz(~n);
++}
++
++/**
++ * Returns a free id for cs.
++ * If there is no free id we return zero
++ **/
++static uint32_t generate_id(void)
++{
++    uint32_t r = 0;
++    pthread_mutex_lock( &id_mutex );
++    /* check for free ids */
++    if (cs_id_source != ~r) {
++        /* find first zero bit */
++        r = get_first_zero(cs_id_source);
++
++        /* set id as reserved */
++        cs_id_source |= r;
++    }
++    pthread_mutex_unlock( &id_mutex );
++    return r;
++}
++
++/**
++ * Free the id for later reuse
++ **/
++static void free_id(uint32_t id)
++{
++    pthread_mutex_lock( &id_mutex );
++
++    cs_id_source &= ~id;
++
++    pthread_mutex_unlock( &id_mutex );
++}
++
+ static struct radeon_cs_int *cs_gem_create(struct radeon_cs_manager *csm,
+                                        uint32_t ndw)
+ {
+@@ -90,6 +136,7 @@ static struct radeon_cs_int *cs_gem_create(struct radeon_cs_manager *csm,
+     }
+     csg->base.relocs_total_size = 0;
+     csg->base.crelocs = 0;
++    csg->base.id = generate_id();
+     csg->nrelocs = 4096 / (4 * 4) ;
+     csg->relocs_bo = (struct radeon_bo_int**)calloc(1,
+                                                 csg->nrelocs*sizeof(void*));
+@@ -141,38 +188,45 @@ static int cs_gem_write_reloc(struct radeon_cs_int *cs,
+     if (write_domain == RADEON_GEM_DOMAIN_CPU) {
+         return -EINVAL;
+     }
+-    /* check if bo is already referenced */
+-    for(i = 0; i < cs->crelocs; i++) {
+-        idx = i * RELOC_SIZE;
+-        reloc = (struct cs_reloc_gem*)&csg->relocs[idx];
+-        if (reloc->handle == bo->handle) {
+-            /* Check domains must be in read or write. As we check already
+-             * checked that in argument one of the read or write domain was
+-             * set we only need to check that if previous reloc as the read
+-             * domain set then the read_domain should also be set for this
+-             * new relocation.
+-             */
+-            /* the DDX expects to read and write from same pixmap */
+-            if (write_domain && (reloc->read_domain & write_domain)) {
+-                reloc->read_domain = 0;
+-                reloc->write_domain = write_domain;
+-            } else if (read_domain & reloc->write_domain) {
+-                reloc->read_domain = 0;
+-            } else {
+-                if (write_domain != reloc->write_domain)
+-                    return -EINVAL;
+-                if (read_domain != reloc->read_domain)
+-                    return -EINVAL;
++    /* use bit field hash function to determine
++       if this bo is for sure not in this cs.*/
++    if ((atomic_read((atomic_t *)radeon_gem_get_reloc_in_cs(bo)) & cs->id)) {
++        /* check if bo is already referenced.
++	 * Scanning from end to begin reduces cycles with mesa because
++	 * it often relocates same shared dma bo again. */
++        for(i = cs->crelocs; i != 0;) {
++            --i;
++            idx = i * RELOC_SIZE;
++            reloc = (struct cs_reloc_gem*)&csg->relocs[idx];
++            if (reloc->handle == bo->handle) {
++                /* Check domains must be in read or write. As we check already
++                 * checked that in argument one of the read or write domain was
++                 * set we only need to check that if previous reloc as the read
++                 * domain set then the read_domain should also be set for this
++                 * new relocation.
++                 */
++                /* the DDX expects to read and write from same pixmap */
++                if (write_domain && (reloc->read_domain & write_domain)) {
++                    reloc->read_domain = 0;
++                    reloc->write_domain = write_domain;
++                } else if (read_domain & reloc->write_domain) {
++                    reloc->read_domain = 0;
++                } else {
++                    if (write_domain != reloc->write_domain)
++                        return -EINVAL;
++                    if (read_domain != reloc->read_domain)
++                        return -EINVAL;
++                }
++
++                reloc->read_domain |= read_domain;
++                reloc->write_domain |= write_domain;
++                /* update flags */
++                reloc->flags |= (flags & reloc->flags);
++                /* write relocation packet */
++                radeon_cs_write_dword((struct radeon_cs *)cs, 0xc0001000);
++                radeon_cs_write_dword((struct radeon_cs *)cs, idx);
++                return 0;
+             }
+-
+-            reloc->read_domain |= read_domain;
+-            reloc->write_domain |= write_domain;
+-            /* update flags */
+-            reloc->flags |= (flags & reloc->flags);
+-            /* write relocation packet */
+-            radeon_cs_write_dword((struct radeon_cs *)cs, 0xc0001000);
+-            radeon_cs_write_dword((struct radeon_cs *)cs, idx);
+-            return 0;
+         }
+     }
+     /* new relocation */
+@@ -203,6 +257,8 @@ static int cs_gem_write_reloc(struct radeon_cs_int *cs,
+     reloc->flags = flags;
+     csg->chunks[1].length_dw += RELOC_SIZE;
+     radeon_bo_ref(bo);
++    /* bo might be referenced from another context so have to use atomic opertions */
++    atomic_add((atomic_t *)radeon_gem_get_reloc_in_cs(bo), cs->id);
+     cs->relocs_total_size += boi->size;
+     radeon_cs_write_dword((struct radeon_cs *)cs, 0xc0001000);
+     radeon_cs_write_dword((struct radeon_cs *)cs, idx);
+@@ -288,6 +344,8 @@ static int cs_gem_emit(struct radeon_cs_int *cs)
+                             &csg->cs, sizeof(struct drm_radeon_cs));
+     for (i = 0; i < csg->base.crelocs; i++) {
+         csg->relocs_bo[i]->space_accounted = 0;
++        /* bo might be referenced from another context so have to use atomic opertions */
++        atomic_dec((atomic_t *)radeon_gem_get_reloc_in_cs((struct radeon_bo*)csg->relocs_bo[i]), cs->id);
+         radeon_bo_unref((struct radeon_bo *)csg->relocs_bo[i]);
+         csg->relocs_bo[i] = NULL;
+     }
+@@ -302,6 +360,7 @@ static int cs_gem_destroy(struct radeon_cs_int *cs)
+ {
+     struct cs_gem *csg = (struct cs_gem*)cs;
+ 
++    free_id(cs->id);
+     free(csg->relocs_bo);
+     free(cs->relocs);
+     free(cs->packets);
+@@ -317,6 +376,8 @@ static int cs_gem_erase(struct radeon_cs_int *cs)
+     if (csg->relocs_bo) {
+         for (i = 0; i < csg->base.crelocs; i++) {
+             if (csg->relocs_bo[i]) {
++                /* bo might be referenced from another context so have to use atomic opertions */
++                atomic_dec((atomic_t *)radeon_gem_get_reloc_in_cs((struct radeon_bo*)csg->relocs_bo[i]), cs->id);
+                 radeon_bo_unref((struct radeon_bo *)csg->relocs_bo[i]);
+                 csg->relocs_bo[i] = NULL;
+             }
+diff --git a/radeon/radeon_cs_int.h b/radeon/radeon_cs_int.h
+index 8ba76bf..6cee574 100644
+--- a/radeon/radeon_cs_int.h
++++ b/radeon/radeon_cs_int.h
+@@ -28,6 +28,7 @@ struct radeon_cs_int {
+     int                         bo_count;
+     void                        (*space_flush_fn)(void *);
+     void                        *space_flush_data;
++    uint32_t                    id;
+ };
+ 
+ /* cs functions */
+diff --git a/xf86atomic.h b/xf86atomic.h
+new file mode 100644
+index 0000000..854187a
+--- /dev/null
++++ b/xf86atomic.h
+@@ -0,0 +1,99 @@
++/*
++ * Copyright © 2009 Intel Corporation
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a
++ * copy of this software and associated documentation files (the "Software"),
++ * to deal in the Software without restriction, including without limitation
++ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
++ * and/or sell copies of the Software, and to permit persons to whom the
++ * Software is furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice (including the next
++ * paragraph) shall be included in all copies or substantial portions of the
++ * Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
++ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
++ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
++ * IN THE SOFTWARE.
++ *
++ * Authors:
++ *    Chris Wilson <chris@chris-wilson.co.uk>
++ *
++ */
++
++/**
++ * @file xf86atomics.h
++ *
++ * Private definitions for atomic operations
++ */
++
++#ifndef LIBDRM_ATOMICS_H
++#define LIBDRM_ATOMICS_H
++
++#ifdef HAVE_CONFIG_H
++#include "config.h"
++#endif
++
++#if HAVE_LIBDRM_ATOMIC_PRIMITIVES
++
++#define HAS_ATOMIC_OPS 1
++
++typedef struct {
++	int atomic;
++} atomic_t;
++
++# define atomic_read(x) ((x)->atomic)
++# define atomic_set(x, val) ((x)->atomic = (val))
++# define atomic_inc(x) ((void) __sync_fetch_and_add (&(x)->atomic, 1))
++# define atomic_dec_and_test(x) (__sync_fetch_and_add (&(x)->atomic, -1) == 1)
++# define atomic_add(x, v) ((void) __sync_add_and_fetch(&(x)->atomic, (v)))
++# define atomic_dec(x, v) ((void) __sync_sub_and_fetch(&(x)->atomic, (v)))
++# define atomic_cmpxchg(x, oldv, newv) __sync_val_compare_and_swap (&(x)->atomic, oldv, newv)
++
++#endif
++
++#if HAVE_LIB_ATOMIC_OPS
++#include <atomic_ops.h>
++
++#define HAS_ATOMIC_OPS 1
++
++typedef struct {
++	AO_t atomic;
++} atomic_t;
++
++# define atomic_read(x) AO_load_full(&(x)->atomic)
++# define atomic_set(x, val) AO_store_full(&(x)->atomic, (val))
++# define atomic_inc(x) ((void) AO_fetch_and_add1_full(&(x)->atomic))
++# define atomic_add(x, v) ((void) AO_fetch_and_add_full(&(x)->atomic, (v)))
++# define atomic_dec(x, v) ((void) AO_fetch_and_add_full(&(x)->atomic, -(v)))
++# define atomic_dec_and_test(x) (AO_fetch_and_sub1_full(&(x)->atomic) == 1)
++# define atomic_cmpxchg(x, oldv, newv) AO_compare_and_swap_full(&(x)->atomic, oldv, newv)
++
++#endif
++
++#if defined(__sun) && !defined(HAS_ATOMIC_OPS)  /* Solaris & OpenSolaris */
++
++#include <sys/atomic.h>
++#define HAS_ATOMIC_OPS 1
++
++typedef struct { uint_t atomic; } atomic_t;
++
++# define atomic_read(x) (int) ((x)->atomic)
++# define atomic_set(x, val) ((x)->atomic = (uint_t)(val))
++# define atomic_inc(x) (atomic_inc_uint (&(x)->atomic))
++# define atomic_dec_and_test(x) (atomic_dec_uint_nv(&(x)->atomic) == 1)
++# define atomic_add(x, v) (atomic_add_uint(&(x)->atomic, (v)))
++# define atomic_dec(x, v) (atomic_dec_uint(&(x)->atomic, (v)))
++# define atomic_cmpxchg(x, oldv, newv) atomic_cas_uint (&(x)->atomic, oldv, newv)
++
++#endif
++
++#if ! HAS_ATOMIC_OPS
++#error libdrm requires atomic operations, please define them for your CPU/compiler.
++#endif
++
++#endif

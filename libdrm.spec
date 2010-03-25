@@ -1,8 +1,8 @@
-%define gitdate 20091221
+# %define gitdate 20100217
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.4.18
+Version: 2.4.19
 Release: 1%{?dist}
 License: MIT
 Group: System Environment/Libraries
@@ -22,6 +22,8 @@ BuildRequires: libudev-devel
 
 Source2: 91-drm-modeset.rules
 
+# git fixes since 2.4.19
+Patch0: libdrm-2.4.19-git-c1c8bbf.patch
 # hardcode the 666 instead of 660 for device nodes
 Patch3: libdrm-make-dri-perms-okay.patch
 # remove backwards compat not needed on Fedora
@@ -44,12 +46,13 @@ Direct Rendering Manager development package
 %prep
 #%setup -q -n %{name}-%{gitdate}
 %setup -q 
+%patch0 -p1 -b .git-updates
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
 
 %build
 autoreconf -v --install || exit 1
-%configure --enable-udev --enable-nouveau-experimental-api --enable-radeon-experimental-api
+%configure --enable-udev --enable-nouveau-experimental-api --disable-libkms
 make %{?_smp_mflags}
 # make -C tests %{?_smp_mflags}
 
@@ -66,7 +69,7 @@ find $RPM_BUILD_ROOT -type f -name '*.la' | xargs rm -f -- || :
 find $RPM_BUILD_ROOT -type f -name '*_drm.h' | xargs rm -f -- || :
 for i in drm.h drm_mode.h drm_sarea.h r300_reg.h via_3d_reg.h
 do
-rm -f $RPM_BUILD_ROOT/usr/include/drm/$i
+rm -f $RPM_BUILD_ROOT/usr/include/libdrm/$i
 done
 
 %clean
@@ -93,9 +96,9 @@ rm -rf $RPM_BUILD_ROOT
 # FIXME should be in drm/ too
 %{_includedir}/xf86drm.h
 %{_includedir}/xf86drmMode.h
-%{_includedir}/intel_bufmgr.h
-%{_includedir}/drm/radeon*.h
-%{_includedir}/drm/nouveau_drmif.h
+%{_includedir}/libdrm/intel_bufmgr.h
+%{_includedir}/libdrm/radeon*.h
+%{_includedir}/libdrm/nouveau_drmif.h
 %dir %{_includedir}/nouveau
 %{_includedir}/nouveau/nouveau_*.h
 %{_libdir}/libdrm.so
@@ -108,8 +111,14 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 
 %changelog
+* Fri Mar 19 2010 Ben Skeggs <bskeggs@redhat.com> 2.4.19-1
+- upstream release 2.4.19 + fixes up until git c1c8bff
+
 * Fri Feb 19 2010 Ben Skeggs <bskeggs@redhat.com> 2.4.18-1
-- Upstream release 2.4.18
+- upstream release 2.4.18
+
+* Wed Feb 17 2010 Ben Skeggs <bskeggs@redhat.com> 2.4.18-0.1
+- rebase to pre-snapshot of 2.4.18
 
 * Fri Feb 12 2010 Adam Jackson <ajax@redhat.com> 2.4.17-3
 - Own %%{_includedir}/nouveau (#561317)
