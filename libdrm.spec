@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.19
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -67,7 +67,7 @@ install -m 0644 %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d/
 # NOTE: We intentionally don't ship *.la files
 find $RPM_BUILD_ROOT -type f -name '*.la' | xargs rm -f -- || :
 find $RPM_BUILD_ROOT -type f -name '*_drm.h' | xargs rm -f -- || :
-for i in drm.h drm_mode.h drm_sarea.h r300_reg.h via_3d_reg.h
+for i in r300_reg.h via_3d_reg.h
 do
 rm -f $RPM_BUILD_ROOT/usr/include/libdrm/$i
 done
@@ -96,6 +96,9 @@ rm -rf $RPM_BUILD_ROOT
 # FIXME should be in drm/ too
 %{_includedir}/xf86drm.h
 %{_includedir}/xf86drmMode.h
+%{_includedir}/libdrm/drm.h
+%{_includedir}/libdrm/drm_mode.h
+%{_includedir}/libdrm/drm_sarea.h
 %{_includedir}/libdrm/intel_bufmgr.h
 %{_includedir}/libdrm/radeon*.h
 %{_includedir}/libdrm/nouveau_drmif.h
@@ -111,6 +114,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 
 %changelog
+* Fri Mar 26 2010 Dave Airlie <airlied@redhat.com> 2.4.19-2
+- fix up include files now they don't conflict with kernel.
+
 * Fri Mar 19 2010 Ben Skeggs <bskeggs@redhat.com> 2.4.19-1
 - upstream release 2.4.19 + fixes up until git c1c8bff
 
