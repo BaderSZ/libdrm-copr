@@ -2,8 +2,8 @@
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.4.19
-Release: 2%{?dist}
+Version: 2.4.20
+Release: 1%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -22,8 +22,6 @@ BuildRequires: libudev-devel
 
 Source2: 91-drm-modeset.rules
 
-# git fixes since 2.4.19
-Patch0: libdrm-2.4.19-git-c1c8bbf.patch
 # hardcode the 666 instead of 660 for device nodes
 Patch3: libdrm-make-dri-perms-okay.patch
 # remove backwards compat not needed on Fedora
@@ -46,7 +44,6 @@ Direct Rendering Manager development package
 %prep
 #%setup -q -n %{name}-%{gitdate}
 %setup -q 
-%patch0 -p1 -b .git-updates
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
 
@@ -66,7 +63,6 @@ install -m 0644 %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d/
 
 # NOTE: We intentionally don't ship *.la files
 find $RPM_BUILD_ROOT -type f -name '*.la' | xargs rm -f -- || :
-find $RPM_BUILD_ROOT -type f -name '*_drm.h' | xargs rm -f -- || :
 for i in r300_reg.h via_3d_reg.h
 do
 rm -f $RPM_BUILD_ROOT/usr/include/libdrm/$i
@@ -102,6 +98,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/libdrm/intel_bufmgr.h
 %{_includedir}/libdrm/radeon*.h
 %{_includedir}/libdrm/nouveau_drmif.h
+%{_includedir}/libdrm/*_drm.h
 %dir %{_includedir}/nouveau
 %{_includedir}/nouveau/nouveau_*.h
 %{_libdir}/libdrm.so
@@ -114,6 +111,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 
 %changelog
+* Thu Apr 08 2010 Dave Airlie <airlied@redhat.com> 2.4.20-1
+- upstream release - includes all header file fixes
+
 * Fri Mar 26 2010 Dave Airlie <airlied@redhat.com> 2.4.19-2
 - fix up include files now they don't conflict with kernel.
 
