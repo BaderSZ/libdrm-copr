@@ -1,9 +1,9 @@
-%define gitdate 20100529
+%define gitdate 20100612
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.21
-Release: 0.1%{?dist}
+Release: 1%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -116,6 +116,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libkms.pc
 
 %changelog
+* Sat Jun 12 2010 Dave Airlie <airlied@redhat.com> 2.4.21-1
+- new upstream git snapshot
+
 * Sat May 29 2010 Dave Airlie <airlied@redhat.com> 2.4.21-0.1
 - new upstream git snapshot
 
