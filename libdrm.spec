@@ -1,4 +1,4 @@
-%define gitdate 20100612
+# %define gitdate 20100217
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
@@ -7,8 +7,8 @@ Release: 1%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
-#Source0: http://dri.freedesktop.org/libdrm/%{name}-%{version}.tar.bz2
-Source0: %{name}-%{gitdate}.tar.bz2
+Source0: http://dri.freedesktop.org/libdrm/%{name}-%{version}.tar.bz2
+#Source0: %{name}-%{gitdate}.tar.bz2
 Source1: make-git-snapshot.sh
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
@@ -42,14 +42,14 @@ Requires: pkgconfig
 Direct Rendering Manager development package
 
 %prep
-%setup -q -n %{name}-%{gitdate}
-#%setup -q 
+#%setup -q -n %{name}-%{gitdate}
+%setup -q 
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
 
 %build
 autoreconf -v --install || exit 1
-%configure --enable-udev --enable-nouveau-experimental-api --enable-libkms
+%configure --enable-udev --enable-nouveau-experimental-api --disable-libkms
 make %{?_smp_mflags}
 # make -C tests %{?_smp_mflags}
 
@@ -79,8 +79,6 @@ rm -rf $RPM_BUILD_ROOT
 %doc README
 %{_libdir}/libdrm.so.2
 %{_libdir}/libdrm.so.2.4.0
-%{_libdir}/libkms.so.1
-%{_libdir}/libkms.so.1.0.0
 %{_libdir}/libdrm_intel.so.1
 %{_libdir}/libdrm_intel.so.1.0.0
 %{_libdir}/libdrm_radeon.so.1
@@ -94,7 +92,6 @@ rm -rf $RPM_BUILD_ROOT
 # FIXME should be in drm/ too
 %{_includedir}/xf86drm.h
 %{_includedir}/xf86drmMode.h
-%{_includedir}/libkms/libkms.h
 %{_includedir}/libdrm/drm.h
 %{_includedir}/libdrm/drm_mode.h
 %{_includedir}/libdrm/drm_sarea.h
@@ -105,7 +102,6 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{_includedir}/nouveau
 %{_includedir}/nouveau/nouveau_*.h
 %{_libdir}/libdrm.so
-%{_libdir}/libkms.so
 %{_libdir}/libdrm_intel.so
 %{_libdir}/libdrm_radeon.so
 %{_libdir}/libdrm_nouveau.so
@@ -113,14 +109,10 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm_intel.pc
 %{_libdir}/pkgconfig/libdrm_radeon.pc
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
-%{_libdir}/pkgconfig/libkms.pc
 
 %changelog
-* Sat Jun 12 2010 Dave Airlie <airlied@redhat.com> 2.4.21-1
-- new upstream git snapshot
-
-* Sat May 29 2010 Dave Airlie <airlied@redhat.com> 2.4.21-0.1
-- new upstream git snapshot
+* Fri Jun 25 2010 Adam Jackson <ajax@redhat.com> 2.4.21-1
+- libdrm 2.4.21
 
 * Thu Apr 08 2010 Dave Airlie <airlied@redhat.com> 2.4.20-1
 - upstream release - includes all header file fixes
