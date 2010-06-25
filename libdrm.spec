@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.21
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -49,7 +49,7 @@ Direct Rendering Manager development package
 
 %build
 autoreconf -v --install || exit 1
-%configure --enable-udev --enable-nouveau-experimental-api --disable-libkms
+%configure --enable-udev --enable-nouveau-experimental-api --enable-libkms
 make %{?_smp_mflags}
 # make -C tests %{?_smp_mflags}
 
@@ -79,6 +79,8 @@ rm -rf $RPM_BUILD_ROOT
 %doc README
 %{_libdir}/libdrm.so.2
 %{_libdir}/libdrm.so.2.4.0
+%{_libdir}/libkms.so.1
+%{_libdir}/libkms.so.1.0.0
 %{_libdir}/libdrm_intel.so.1
 %{_libdir}/libdrm_intel.so.1.0.0
 %{_libdir}/libdrm_radeon.so.1
@@ -92,6 +94,7 @@ rm -rf $RPM_BUILD_ROOT
 # FIXME should be in drm/ too
 %{_includedir}/xf86drm.h
 %{_includedir}/xf86drmMode.h
+%{_includedir}/libkms/libkms.h
 %{_includedir}/libdrm/drm.h
 %{_includedir}/libdrm/drm_mode.h
 %{_includedir}/libdrm/drm_sarea.h
@@ -102,6 +105,7 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{_includedir}/nouveau
 %{_includedir}/nouveau/nouveau_*.h
 %{_libdir}/libdrm.so
+%{_libdir}/libkms.so
 %{_libdir}/libdrm_intel.so
 %{_libdir}/libdrm_radeon.so
 %{_libdir}/libdrm_nouveau.so
@@ -109,8 +113,12 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdrm_intel.pc
 %{_libdir}/pkgconfig/libdrm_radeon.pc
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
+%{_libdir}/pkgconfig/libkms.pc
 
 %changelog
+* Fri Jun 25 2010 Adam Jackson <ajax@redhat.com> 2.4.21-2
+- re-enable libkms
+
 * Fri Jun 25 2010 Adam Jackson <ajax@redhat.com> 2.4.21-1
 - libdrm 2.4.21
 
