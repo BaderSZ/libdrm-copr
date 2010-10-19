@@ -1,14 +1,14 @@
-# %define gitdate 20100217
+%define gitdate 20101019
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.4.22
-Release: 1%{?dist}
+Version: 2.4.23
+Release: 0.1.%{gitdate}%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
-Source0: http://dri.freedesktop.org/libdrm/%{name}-%{version}.tar.bz2
-#Source0: %{name}-%{gitdate}.tar.bz2
+#Source0: http://dri.freedesktop.org/libdrm/%{name}-%{version}.tar.bz2
+Source0: %{name}-%{gitdate}.tar.bz2
 Source1: make-git-snapshot.sh
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
@@ -19,6 +19,7 @@ BuildRequires: pkgconfig automake autoconf libtool
 BuildRequires: kernel-headers >= 2.6.29-0.145.rc6.fc11
 BuildRequires: libxcb-devel
 BuildRequires: libudev-devel
+BuildRequires: libatomic_ops-devel
 
 Source2: 91-drm-modeset.rules
 
@@ -42,8 +43,8 @@ Requires: pkgconfig
 Direct Rendering Manager development package
 
 %prep
-#%setup -q -n %{name}-%{gitdate}
-%setup -q 
+%setup -q -n %{name}-%{gitdate}
+#setup -q 
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
 
@@ -116,6 +117,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libkms.pc
 
 %changelog
+* Tue Oct 19 2010 Adam Jackson <ajax@redhat.com> 2.4.22-0.1.20101019
+- Today's git snapshot
+
 * Wed Oct 06 2010 Adam Jackson <ajax@redhat.com> 2.4.22-1
 - libdrm 2.4.22
 
