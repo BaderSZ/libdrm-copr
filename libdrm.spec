@@ -1,4 +1,4 @@
-%define gitdate 20101108
+%define gitdate 20101123
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
@@ -117,6 +117,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libkms.pc
 
 %changelog
+* Tue Nov 23 2010 Adam Jackson <ajax@redhat.com> 2.4.23-0.1.20101123
+- Today's git snapshot
+
 * Mon Nov 08 2010 Adam Jackson <ajax@redhat.com> 2.4.23-0.1.20101108
 - Today's git snapshot
 
