@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.23
-Release: 0.1.%{gitdate}%{?dist}
+Release: 0.2.%{gitdate}%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -49,6 +49,7 @@ Direct Rendering Manager development package
 %patch4 -p1 -b .no-bc
 
 %build
+export CFLAGS="$RPM_OPT_FLAGS -fno-omit-frame-pointer"
 autoreconf -v --install || exit 1
 %configure --enable-udev --enable-nouveau-experimental-api --enable-libkms
 make %{?_smp_mflags}
@@ -117,6 +118,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libkms.pc
 
 %changelog
+* Tue Nov 23 2010 Adam Jackson <ajax@redhat.com> 2.4.23-0.2.20101123
+- -fno-omit-frame-pointer for profiling.
+
 * Tue Nov 23 2010 Adam Jackson <ajax@redhat.com> 2.4.23-0.1.20101123
 - Today's git snapshot
 
