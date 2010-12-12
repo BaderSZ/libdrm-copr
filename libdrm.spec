@@ -1,9 +1,9 @@
-%define gitdate 20101123
+%define gitdate 20101212
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.23
-Release: 0.2.%{gitdate}%{?dist}
+Release: 1.%{gitdate}%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -118,8 +118,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libkms.pc
 
 %changelog
-* Tue Nov 23 2010 Adam Jackson <ajax@redhat.com> 2.4.23-0.2.20101123
-- -fno-omit-frame-pointer for profiling.
+* Sun Dec 12 2010 Dave Airlie <airlied@redhat.com> 2.4.23-1.20101212
+- 2.4.23 release snapshot
 
 * Tue Nov 23 2010 Adam Jackson <ajax@redhat.com> 2.4.23-0.1.20101123
 - Today's git snapshot
