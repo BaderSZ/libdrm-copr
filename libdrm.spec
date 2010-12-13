@@ -1,16 +1,15 @@
-%define gitdate 20101212
+#define gitdate 20101212
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.23
-Release: 1.%{gitdate}%{?dist}
+Release: 2%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
-#Source0: http://dri.freedesktop.org/libdrm/%{name}-%{version}.tar.bz2
-Source0: %{name}-%{gitdate}.tar.bz2
+Source0: http://dri.freedesktop.org/libdrm/%{name}-%{version}.tar.bz2
+#Source0: %{name}-%{gitdate}.tar.bz2
 Source1: make-git-snapshot.sh
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 Requires: udev
 Requires: kernel >= 2.6.29.1-52.fc11
@@ -43,8 +42,8 @@ Requires: pkgconfig
 Direct Rendering Manager development package
 
 %prep
-%setup -q -n %{name}-%{gitdate}
-#setup -q 
+#setup -q -n %{name}-%{gitdate}
+%setup -q 
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
 
@@ -118,6 +117,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libkms.pc
 
 %changelog
+* Mon Dec 13 2010 Adam Jackson <ajax@redhat.com> 2.4.23-2
+- libdrm 2.4.23
+
 * Sun Dec 12 2010 Dave Airlie <airlied@redhat.com> 2.4.23-1.20101212
 - 2.4.23 release snapshot
 
