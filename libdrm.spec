@@ -105,6 +105,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/libdrm/*_drm.h
 %dir %{_includedir}/nouveau
 %{_includedir}/nouveau/nouveau_*.h
+%{_includedir}/nouveau/nv*_pushbuf.h
 %{_libdir}/libdrm.so
 %{_libdir}/libkms.so
 %{_libdir}/libdrm_intel.so
