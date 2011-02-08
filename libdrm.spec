@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.24
-Release: 0.1.%{gitdate}%{?dist}
+Release: 0.2.%{gitdate}%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -118,6 +118,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libkms.pc
 
 %changelog
+* Mon Feb 07 2011 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.4.24-0.2.20110106
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_15_Mass_Rebuild
+
 * Thu Jan 06 2011 Ben Skeggs <bskeggs@redhat.com> 2.4.24-0.1.20110106
 - Today's git snapshot
 
