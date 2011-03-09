@@ -1,14 +1,14 @@
-%define gitdate 20110106
+#define gitdate 20110106
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.24
-Release: 0.2.%{gitdate}%{?dist}
+Release: 1%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
-#Source0: http://dri.freedesktop.org/libdrm/%{name}-%{version}.tar.bz2
-Source0: %{name}-%{gitdate}.tar.bz2
+Source0: http://dri.freedesktop.org/libdrm/%{name}-%{version}.tar.bz2
+#Source0: %{name}-%{gitdate}.tar.bz2
 Source1: make-git-snapshot.sh
 
 Requires: udev
@@ -42,13 +42,12 @@ Requires: pkgconfig
 Direct Rendering Manager development package
 
 %prep
-%setup -q -n %{name}-%{gitdate}
-#%setup -q
+#setup -q -n %{name}-%{gitdate}
+%setup -q
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
 
 %build
-export CFLAGS="$RPM_OPT_FLAGS -fno-omit-frame-pointer"
 autoreconf -v --install || exit 1
 %configure --enable-udev --enable-nouveau-experimental-api --enable-libkms
 make %{?_smp_mflags}
@@ -118,6 +117,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libkms.pc
 
 %changelog
+* Wed Mar 09 2011 Adam Jackson <ajax@redhat.com> 2.4.24-1
+- libdrm 2.4.24
+
 * Mon Feb 07 2011 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.4.24-0.2.20110106
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_15_Mass_Rebuild
 
