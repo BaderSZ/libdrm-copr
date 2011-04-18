@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.25
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -26,7 +26,8 @@ Source2: 91-drm-modeset.rules
 Patch3: libdrm-make-dri-perms-okay.patch
 # remove backwards compat not needed on Fedora
 Patch4: libdrm-2.4.0-no-bc.patch
-
+# make rule to print the list of test programs
+Patch5: libdrm-2.4.25-check-programs.patch
 
 %description
 Direct Rendering Manager runtime library
@@ -41,22 +42,35 @@ Requires: pkgconfig
 %description devel
 Direct Rendering Manager development package
 
+%package -n drm-utils
+Summary: Direct Rendering Manager utilities
+Group: Development/Tools
+
+%description -n drm-utils
+Utility programs for the kernel DRM interface.  Will void your warranty.
+
 %prep
 #setup -q -n %{name}-%{gitdate}
 %setup -q
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
+%patch5 -p1 -b .check
 
 %build
 autoreconf -v --install || exit 1
 %configure --enable-udev --enable-nouveau-experimental-api --enable-libkms
 make %{?_smp_mflags}
-# make -C tests %{?_smp_mflags}
+pushd tests
+make %{?smp_mflags} `make check-programs`
+popd
 
 %install
 rm -rf $RPM_BUILD_ROOT
 make install DESTDIR=$RPM_BUILD_ROOT
-# make -C tests install DESTDIR=$RPM_BUILD_ROOT
+pushd tests
+mkdir -p $RPM_BUILD_ROOT%{_bindir}
+install -m 0755 `make check-programs` $RPM_BUILD_ROOT%{_bindir}
+popd
 # SUBDIRS=libdrm
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d/
 install -m 0644 %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d/
@@ -89,6 +103,22 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libdrm_nouveau.so.1.0.0
 %config %{_sysconfdir}/udev/rules.d/91-drm-modeset.rules
 
+%files -n drm-utils
+%defattr(-,root,root,-)
+%{_bindir}/dristat
+%{_bindir}/drmstat
+%{_bindir}/gem_basic
+%{_bindir}/gem_flink
+%{_bindir}/gem_mmap
+%{_bindir}/gem_readwrite
+%{_bindir}/getclient
+%{_bindir}/getstats
+%{_bindir}/getversion
+%{_bindir}/name_from_fd
+%{_bindir}/openclose
+%{_bindir}/setversion
+%{_bindir}/updatedraw
+
 %files devel
 %defattr(-,root,root,-)
 # FIXME should be in drm/ too
@@ -117,6 +147,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libkms.pc
 
 %changelog
+* Mon Apr 18 2011 Adam Jackson <ajax@redhat.com> 2.4.25-2
+- Add subpackage for the drm utilities
+
 * Mon Apr 11 2011 Dave Airlie <airlied@redhat.com> 2.4.25-1
 - libdrm 2.4.25
 
