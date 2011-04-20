@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.25
-Release: 2%{?dist}
+Release: 3%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -69,7 +69,9 @@ rm -rf $RPM_BUILD_ROOT
 make install DESTDIR=$RPM_BUILD_ROOT
 pushd tests
 mkdir -p $RPM_BUILD_ROOT%{_bindir}
-install -m 0755 `make check-programs` $RPM_BUILD_ROOT%{_bindir}
+for foo in $(make check-programs) ; do
+ install -m 0755 .libs/$foo $RPM_BUILD_ROOT%{_bindir}
+done
 popd
 # SUBDIRS=libdrm
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d/
@@ -147,6 +149,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libkms.pc
 
 %changelog
+* Wed Apr 20 2011 Bill Nottingham <notting@redhat.com> 2.4.25-3
+- fix drm-utils subpackage
+
 * Mon Apr 18 2011 Adam Jackson <ajax@redhat.com> 2.4.25-2
 - Add subpackage for the drm utilities
 
