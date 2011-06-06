@@ -19,6 +19,7 @@ BuildRequires: kernel-headers >= 2.6.29-0.145.rc6.fc11
 BuildRequires: libxcb-devel
 BuildRequires: libudev-devel
 BuildRequires: libatomic_ops-devel
+BuildRequires: libpciaccess-devel
 
 Source2: 91-drm-modeset.rules
 
