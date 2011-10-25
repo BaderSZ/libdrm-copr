@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.26
-Release: 2%{?dist}
+Release: 3%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -75,8 +75,8 @@ for foo in $(make check-programs) ; do
 done
 popd
 # SUBDIRS=libdrm
-mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d/
-install -m 0644 %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d/
+mkdir -p $RPM_BUILD_ROOT/lib/udev/rules.d/
+install -m 0644 %{SOURCE2} $RPM_BUILD_ROOT/lib/udev/rules.d/
 
 # NOTE: We intentionally don't ship *.la files
 find $RPM_BUILD_ROOT -type f -name '*.la' | xargs rm -f -- || :
@@ -104,7 +104,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libdrm_radeon.so.1.0.0
 %{_libdir}/libdrm_nouveau.so.1
 %{_libdir}/libdrm_nouveau.so.1.0.0
-%config %{_sysconfdir}/udev/rules.d/91-drm-modeset.rules
+/lib/udev/rules.d/91-drm-modeset.rules
 
 %files -n drm-utils
 %defattr(-,root,root,-)
@@ -150,6 +150,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libkms.pc
 
 %changelog
+* Tue Oct 25 2011 Adam Jackson <ajax@redhat.com> 2.4.26-3
+- Fix udev rule matching and install location (#748205)
+
 * Fri Oct 21 2011 Dave Airlie <airlied@redhat.com> 2.4.26-2
 - fix perms on control node in udev rule
 
