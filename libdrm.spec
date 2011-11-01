@@ -2,8 +2,8 @@
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.4.26
-Release: 4%{?dist}
+Version: 2.4.27
+Release: 1%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -132,7 +132,13 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/libdrm/drm_mode.h
 %{_includedir}/libdrm/drm_sarea.h
 %{_includedir}/libdrm/intel_bufmgr.h
-%{_includedir}/libdrm/radeon*.h
+%{_includedir}/libdrm/intel_debug.h
+%{_includedir}/libdrm/radeon_bo.h
+%{_includedir}/libdrm/radeon_bo_gem.h
+%{_includedir}/libdrm/radeon_bo_int.h
+%{_includedir}/libdrm/radeon_cs.h
+%{_includedir}/libdrm/radeon_cs_gem.h
+%{_includedir}/libdrm/radeon_cs_int.h
 %{_includedir}/libdrm/nouveau_drmif.h
 %{_includedir}/libdrm/*_drm.h
 %dir %{_includedir}/nouveau
@@ -150,6 +156,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libkms.pc
 
 %changelog
+* Tue Nov 01 2011 Adam Jackson <ajax@redhat.com> 2.4.27-1
+- libdrm 2.4.27
+
 * Wed Oct 26 2011 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.4.26-4
 - Rebuilt for glibc bug#747377
 
