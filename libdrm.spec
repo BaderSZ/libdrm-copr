@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.27
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -156,6 +156,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libkms.pc
 
 %changelog
+* Fri Nov 11 2011 Adam Jackson <ajax@redhat.com> 2.4.27-2
+- Fix typo in udev rule
+
 * Tue Nov 01 2011 Adam Jackson <ajax@redhat.com> 2.4.27-1
 - libdrm 2.4.27
 

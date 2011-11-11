@@ -1,1 +1,1 @@
-KERNEL=="controlD[0-9]*", SUBSYTEM=="drm", MODE="0600"
+KERNEL=="controlD[0-9]*", SUBSYSTEM=="drm", MODE="0600"
