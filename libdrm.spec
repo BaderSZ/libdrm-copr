@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.31
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -141,6 +141,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/libdrm/radeon_cs_gem.h
 %{_includedir}/libdrm/radeon_cs_int.h
 %{_includedir}/libdrm/radeon_surface.h
+%{_includedir}/libdrm/r600_pci_ids.h
 %{_includedir}/libdrm/nouveau_drmif.h
 %{_includedir}/libdrm/*_drm.h
 %dir %{_includedir}/nouveau
@@ -158,6 +159,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libkms.pc
 
 %changelog
+* Tue Feb 07 2012 Jerome Glisse <jglisse@redhat.com> 2.4.31-2
+- Fix missing header file
+
 * Tue Feb 07 2012 Jerome Glisse <jglisse@redhat.com> 2.4.31-1
 - upstream 2.4.31 release
 
