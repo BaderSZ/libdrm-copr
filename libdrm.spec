@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.31
-Release: 2%{?dist}
+Release: 3%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -98,8 +98,10 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libdrm.so.2.4.0
 %{_libdir}/libkms.so.1
 %{_libdir}/libkms.so.1.0.0
+%ifarch %{ix86} x86_64 ia64
 %{_libdir}/libdrm_intel.so.1
 %{_libdir}/libdrm_intel.so.1.0.0
+%endif
 %{_libdir}/libdrm_radeon.so.1
 %{_libdir}/libdrm_radeon.so.1.0.0
 %{_libdir}/libdrm_nouveau.so.1
@@ -132,8 +134,10 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/libdrm/drm_fourcc.h
 %{_includedir}/libdrm/drm_mode.h
 %{_includedir}/libdrm/drm_sarea.h
+%ifarch %{ix86} x86_64 ia64
 %{_includedir}/libdrm/intel_bufmgr.h
 %{_includedir}/libdrm/intel_debug.h
+%endif
 %{_includedir}/libdrm/radeon_bo.h
 %{_includedir}/libdrm/radeon_bo_gem.h
 %{_includedir}/libdrm/radeon_bo_int.h
@@ -149,16 +153,23 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/nouveau/nv*_pushbuf.h
 %{_libdir}/libdrm.so
 %{_libdir}/libkms.so
+%ifarch %{ix86} x86_64 ia64
 %{_libdir}/libdrm_intel.so
+%endif
 %{_libdir}/libdrm_radeon.so
 %{_libdir}/libdrm_nouveau.so
 %{_libdir}/pkgconfig/libdrm.pc
+%ifarch %{ix86} x86_64 ia64
 %{_libdir}/pkgconfig/libdrm_intel.pc
+%endif
 %{_libdir}/pkgconfig/libdrm_radeon.pc
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 %{_libdir}/pkgconfig/libkms.pc
 
 %changelog
+* Wed Feb 22 2012 Adam Jackson <ajax@redhat.com> 2.4.31-3
+- Fix build on non-Intel arches
+
 * Tue Feb 07 2012 Jerome Glisse <jglisse@redhat.com> 2.4.31-2
 - Fix missing header file
 
