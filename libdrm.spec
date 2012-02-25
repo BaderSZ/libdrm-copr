@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.31
-Release: 3%{?dist}
+Release: 4%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -66,7 +66,6 @@ make %{?smp_mflags} `make check-programs`
 popd
 
 %install
-rm -rf $RPM_BUILD_ROOT
 make install DESTDIR=$RPM_BUILD_ROOT
 pushd tests
 mkdir -p $RPM_BUILD_ROOT%{_bindir}
@@ -84,9 +83,6 @@ for i in r300_reg.h via_3d_reg.h
 do
 rm -f $RPM_BUILD_ROOT/usr/include/libdrm/$i
 done
-
-%clean
-rm -rf $RPM_BUILD_ROOT
 
 %post -p /sbin/ldconfig
 %postun -p /sbin/ldconfig
@@ -112,10 +108,12 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 %{_bindir}/dristat
 %{_bindir}/drmstat
+%ifarch %{ix86} x86_64 ia64
 %{_bindir}/gem_basic
 %{_bindir}/gem_flink
 %{_bindir}/gem_mmap
 %{_bindir}/gem_readwrite
+%endif
 %{_bindir}/getclient
 %{_bindir}/getstats
 %{_bindir}/getversion
@@ -167,6 +165,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libkms.pc
 
 %changelog
+* Sat Feb 25 2012 Peter Robinson <pbrobinson@fedoraproject.org> 2.4.31-4
+- Add gem_ binaries to x86 only exclusion too
+
 * Wed Feb 22 2012 Adam Jackson <ajax@redhat.com> 2.4.31-3
 - Fix build on non-Intel arches
 
