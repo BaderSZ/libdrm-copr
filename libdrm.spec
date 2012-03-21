@@ -2,8 +2,8 @@
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.4.31
-Release: 4%{?dist}
+Version: 2.4.32
+Release: 1%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -23,6 +23,8 @@ BuildRequires: libpciaccess-devel
 
 Source2: 91-drm-modeset.rules
 
+# sync with git
+Patch0: libdrm-2.4.32-tn-surface.patch
 # hardcode the 666 instead of 660 for device nodes
 Patch3: libdrm-make-dri-perms-okay.patch
 # remove backwards compat not needed on Fedora
@@ -53,6 +55,7 @@ Utility programs for the kernel DRM interface.  Will void your warranty.
 %prep
 #setup -q -n %{name}-%{gitdate}
 %setup -q
+%patch0 -p1 -b .tn
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
 %patch5 -p1 -b .check
@@ -133,6 +136,7 @@ done
 %{_includedir}/libdrm/drm_mode.h
 %{_includedir}/libdrm/drm_sarea.h
 %ifarch %{ix86} x86_64 ia64
+%{_includedir}/libdrm/intel_aub.h
 %{_includedir}/libdrm/intel_bufmgr.h
 %{_includedir}/libdrm/intel_debug.h
 %endif
@@ -165,6 +169,10 @@ done
 %{_libdir}/pkgconfig/libkms.pc
 
 %changelog
+* Wed Mar 21 2012 Adam Jackson <ajax@redhat.com> 2.4.32-1
+- libdrm 2.4.32
+- libdrm-2.4.32-tn-surface.patch: Sync with git.
+
 * Sat Feb 25 2012 Peter Robinson <pbrobinson@fedoraproject.org> 2.4.31-4
 - Add gem_ binaries to x86 only exclusion too
 
