@@ -1,14 +1,14 @@
-#define gitdate 20110106
+%define gitdate 20120424
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.4.33
-Release: 1%{?dist}
+Version: 2.4.34
+Release: 0.1%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
-Source0: http://dri.freedesktop.org/libdrm/%{name}-%{version}.tar.bz2
-#Source0: %{name}-%{gitdate}.tar.bz2
+#Source0: http://dri.freedesktop.org/libdrm/%{name}-%{version}.tar.bz2
+Source0: %{name}-%{gitdate}.tar.bz2
 Source1: make-git-snapshot.sh
 
 Requires: udev
@@ -51,15 +51,15 @@ Group: Development/Tools
 Utility programs for the kernel DRM interface.  Will void your warranty.
 
 %prep
-#setup -q -n %{name}-%{gitdate}
-%setup -q
+%setup -q -n %{name}-%{gitdate}
+#setup -q
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
 %patch5 -p1 -b .check
 
 %build
 autoreconf -v --install || exit 1
-%configure --enable-udev --enable-nouveau-experimental-api --enable-libkms
+%configure --enable-udev --enable-libkms
 make %{?_smp_mflags}
 pushd tests
 make %{?smp_mflags} `make check-programs`
@@ -100,8 +100,8 @@ done
 %endif
 %{_libdir}/libdrm_radeon.so.1
 %{_libdir}/libdrm_radeon.so.1.0.0
-%{_libdir}/libdrm_nouveau.so.1
-%{_libdir}/libdrm_nouveau.so.1.0.0
+%{_libdir}/libdrm_nouveau.so.2
+%{_libdir}/libdrm_nouveau.so.2.0.0
 /lib/udev/rules.d/91-drm-modeset.rules
 
 %files -n drm-utils
@@ -145,11 +145,8 @@ done
 %{_includedir}/libdrm/radeon_cs_int.h
 %{_includedir}/libdrm/radeon_surface.h
 %{_includedir}/libdrm/r600_pci_ids.h
-%{_includedir}/libdrm/nouveau_drmif.h
+%{_includedir}/libdrm/nouveau.h
 %{_includedir}/libdrm/*_drm.h
-%dir %{_includedir}/nouveau
-%{_includedir}/nouveau/nouveau_*.h
-%{_includedir}/nouveau/nv*_pushbuf.h
 %{_libdir}/libdrm.so
 %{_libdir}/libkms.so
 %ifarch %{ix86} x86_64 ia64
@@ -166,6 +163,9 @@ done
 %{_libdir}/pkgconfig/libkms.pc
 
 %changelog
+* Tue Apr 24 2012 Richard Hughes <rhughes@redhat.com> - 2.4.34-0.1.20120424
+- Update to a newer git snapshot
+
 * Sat Mar 31 2012 Dave Airlie <airlied@redhat.com> 2.4.33-1
 - libdrm 2.4.33
 - drop libdrm-2.4.32-tn-surface.patch
