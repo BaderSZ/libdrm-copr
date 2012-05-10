@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.34
-Release: 0.1%{?dist}
+Release: 0.2%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -12,7 +12,6 @@ Source0: %{name}-%{gitdate}.tar.bz2
 Source1: make-git-snapshot.sh
 
 Requires: udev
-Requires: kernel >= 2.6.29.1-52.fc11
 
 BuildRequires: pkgconfig automake autoconf libtool
 BuildRequires: kernel-headers >= 2.6.29-0.145.rc6.fc11
@@ -163,6 +162,9 @@ done
 %{_libdir}/pkgconfig/libkms.pc
 
 %changelog
+* Thu May 10 2012 Adam Jackson <ajax@redhat.com> 2.4.34-0.2
+- Drop ancient kernel Requires.
+
 * Tue Apr 24 2012 Richard Hughes <rhughes@redhat.com> - 2.4.34-0.1.20120424
 - Update to a newer git snapshot
 
