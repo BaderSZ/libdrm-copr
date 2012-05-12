@@ -1,14 +1,14 @@
-%define gitdate 20120424
+#define gitdate 20120424
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.34
-Release: 0.3%{?dist}
+Release: 1%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
-#Source0: http://dri.freedesktop.org/libdrm/%{name}-%{version}.tar.bz2
-Source0: %{name}-%{gitdate}.tar.bz2
+Source0: http://dri.freedesktop.org/libdrm/%{name}-%{version}.tar.bz2
+#Source0: %{name}-%{gitdate}.tar.bz2
 Source1: make-git-snapshot.sh
 
 Requires: udev
@@ -50,8 +50,8 @@ Group: Development/Tools
 Utility programs for the kernel DRM interface.  Will void your warranty.
 
 %prep
-%setup -q -n %{name}-%{gitdate}
-#setup -q
+#%setup -q -n %{name}-%{gitdate}
+%setup -q
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
 %patch5 -p1 -b .check
@@ -180,6 +180,9 @@ done
 %{_libdir}/pkgconfig/libkms.pc
 
 %changelog
+* Sat May 12 2012 Dave Airlie <airlied@redhat.com> 2.4.34-1
+- libdrm 2.4.34
+
 * Fri May 11 2012 Dennis Gilmore <dennis@ausil.us> 2.4.34-0.3
 - enable libdrm_omap on arm arches
 
