@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.34
-Release: 0.2%{?dist}
+Release: 0.3%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -58,7 +58,11 @@ Utility programs for the kernel DRM interface.  Will void your warranty.
 
 %build
 autoreconf -v --install || exit 1
-%configure --enable-udev --enable-libkms
+%configure --enable-udev \
+%ifarch %{arm}
+        --enable-omap-experimental-api \
+%endif
+        --enable-libkms
 make %{?_smp_mflags}
 pushd tests
 make %{?smp_mflags} `make check-programs`
@@ -96,6 +100,10 @@ done
 %ifarch %{ix86} x86_64 ia64
 %{_libdir}/libdrm_intel.so.1
 %{_libdir}/libdrm_intel.so.1.0.0
+%endif
+%ifarch %{arm}
+%{_libdir}/libdrm_omap.so.1
+%{_libdir}/libdrm_omap.so.1.0.0
 %endif
 %{_libdir}/libdrm_radeon.so.1
 %{_libdir}/libdrm_radeon.so.1.0.0
@@ -136,6 +144,10 @@ done
 %{_includedir}/libdrm/intel_bufmgr.h
 %{_includedir}/libdrm/intel_debug.h
 %endif
+%ifarch %{arm}
+%{_includedir}/libdrm/omap_drmif.h
+%{_includedir}/omap/
+%endif
 %{_includedir}/libdrm/radeon_bo.h
 %{_includedir}/libdrm/radeon_bo_gem.h
 %{_includedir}/libdrm/radeon_bo_int.h
@@ -151,17 +163,26 @@ done
 %ifarch %{ix86} x86_64 ia64
 %{_libdir}/libdrm_intel.so
 %endif
+%ifarch %{arm}
+%{_libdir}/libdrm_omap.so
+%endif
 %{_libdir}/libdrm_radeon.so
 %{_libdir}/libdrm_nouveau.so
 %{_libdir}/pkgconfig/libdrm.pc
 %ifarch %{ix86} x86_64 ia64
 %{_libdir}/pkgconfig/libdrm_intel.pc
 %endif
+%ifarch %{arm}
+%{_libdir}/pkgconfig/libdrm_omap.pc
+%endif
 %{_libdir}/pkgconfig/libdrm_radeon.pc
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 %{_libdir}/pkgconfig/libkms.pc
 
 %changelog
+* Fri May 11 2012 Dennis Gilmore <dennis@ausil.us> 2.4.34-0.3
+- enable libdrm_omap on arm arches
+
 * Thu May 10 2012 Adam Jackson <ajax@redhat.com> 2.4.34-0.2
 - Drop ancient kernel Requires.
 
