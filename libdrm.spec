@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.34
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -16,7 +16,11 @@ Requires: udev
 BuildRequires: pkgconfig automake autoconf libtool
 BuildRequires: kernel-headers >= 2.6.29-0.145.rc6.fc11
 BuildRequires: libxcb-devel
+%if 0%{?fedora} > 17 || 0%{?rhel} > 6
+BuildRequires: systemd-devel
+%else
 BuildRequires: libudev-devel
+%endif
 BuildRequires: libatomic_ops-devel
 BuildRequires: libpciaccess-devel
 
@@ -180,6 +184,10 @@ done
 %{_libdir}/pkgconfig/libkms.pc
 
 %changelog
+* Tue Jun 05 2012 Adam Jackson <ajax@redhat.com> 2.4.34-2
+- Rebuild for new libudev
+- Conditional BuildReqs for {libudev,systemd}-devel
+
 * Sat May 12 2012 Dave Airlie <airlied@redhat.com> 2.4.34-1
 - libdrm 2.4.34
 
