@@ -2,8 +2,8 @@
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.4.34
-Release: 2%{?dist}
+Version: 2.4.35
+Release: 1%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -184,6 +184,9 @@ done
 %{_libdir}/pkgconfig/libkms.pc
 
 %changelog
+* Fri Jun 15 2012 Dave Airlie <airlied@redhat.com> 2.4.35-1
+- bump to libdrm 2.4.35
+
 * Tue Jun 05 2012 Adam Jackson <ajax@redhat.com> 2.4.34-2
 - Rebuild for new libudev
 - Conditional BuildReqs for {libudev,systemd}-devel
