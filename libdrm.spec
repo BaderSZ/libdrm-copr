@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.35
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -64,9 +64,8 @@ Utility programs for the kernel DRM interface.  Will void your warranty.
 autoreconf -v --install || exit 1
 %configure --enable-udev \
 %ifarch %{arm}
-        --enable-omap-experimental-api \
+        --enable-omap-experimental-api
 %endif
-        --enable-libkms
 make %{?_smp_mflags}
 pushd tests
 make %{?smp_mflags} `make check-programs`
@@ -99,8 +98,6 @@ done
 %doc README
 %{_libdir}/libdrm.so.2
 %{_libdir}/libdrm.so.2.4.0
-%{_libdir}/libkms.so.1
-%{_libdir}/libkms.so.1.0.0
 %ifarch %{ix86} x86_64 ia64
 %{_libdir}/libdrm_intel.so.1
 %{_libdir}/libdrm_intel.so.1.0.0
@@ -138,7 +135,6 @@ done
 # FIXME should be in drm/ too
 %{_includedir}/xf86drm.h
 %{_includedir}/xf86drmMode.h
-%{_includedir}/libkms/libkms.h
 %{_includedir}/libdrm/drm.h
 %{_includedir}/libdrm/drm_fourcc.h
 %{_includedir}/libdrm/drm_mode.h
@@ -163,7 +159,6 @@ done
 %{_includedir}/libdrm/nouveau.h
 %{_includedir}/libdrm/*_drm.h
 %{_libdir}/libdrm.so
-%{_libdir}/libkms.so
 %ifarch %{ix86} x86_64 ia64
 %{_libdir}/libdrm_intel.so
 %endif
@@ -181,9 +176,11 @@ done
 %endif
 %{_libdir}/pkgconfig/libdrm_radeon.pc
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
-%{_libdir}/pkgconfig/libkms.pc
 
 %changelog
+* Mon Jun 25 2012 Adam Jackson <ajax@redhat.com> 2.4.35-2
+- Drop libkms. Only used by plymouth, and even that's a mistake.
+
 * Fri Jun 15 2012 Dave Airlie <airlied@redhat.com> 2.4.35-1
 - bump to libdrm 2.4.35
 
