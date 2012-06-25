@@ -62,10 +62,11 @@ Utility programs for the kernel DRM interface.  Will void your warranty.
 
 %build
 autoreconf -v --install || exit 1
-%configure --enable-udev \
+%configure \
 %ifarch %{arm}
-        --enable-omap-experimental-api
+        --enable-omap-experimental-api \
 %endif
+	--enable-udev
 make %{?_smp_mflags}
 pushd tests
 make %{?smp_mflags} `make check-programs`
