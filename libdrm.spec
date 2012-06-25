@@ -66,7 +66,7 @@ autoreconf -v --install || exit 1
 %ifarch %{arm}
         --enable-omap-experimental-api \
 %endif
-	--enable-udev
+	--enable-udev --disable-libkms
 make %{?_smp_mflags}
 pushd tests
 make %{?smp_mflags} `make check-programs`
