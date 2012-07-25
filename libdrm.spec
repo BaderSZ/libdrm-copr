@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.37
-Release: 2%{?dist}
+Release: 3%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -34,6 +34,8 @@ Patch4: libdrm-2.4.0-no-bc.patch
 Patch5: libdrm-2.4.25-check-programs.patch
 # backport from upstream
 Patch6: libdrm-2.4.37-i915-hush.patch
+# backport from upstream
+Patch7: libdrm-2.4.37-prime.patch
 
 %description
 Direct Rendering Manager runtime library
@@ -62,6 +64,7 @@ Utility programs for the kernel DRM interface.  Will void your warranty.
 %patch4 -p1 -b .no-bc
 %patch5 -p1 -b .check
 %patch6 -p1 -b .hush
+%patch7 -p1 -b .prime
 
 %build
 autoreconf -v --install || exit 1
@@ -182,6 +185,9 @@ done
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 
 %changelog
+* Wed Jul 25 2012 Dave Airlie <airlied@redhat.com> 2.4.37-3
+- add libdrm prime support for core, intel, nouveau
+
 * Mon Jul 23 2012 Adam Jackson <ajax@redhat.com> 2.4.37-2
 - libdrm-2.4.37-i915-hush.patch: Silence an excessive error message
 
