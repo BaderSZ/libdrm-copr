@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.37
-Release: 3%{?dist}
+Release: 4%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -185,6 +185,9 @@ done
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 
 %changelog
+* Fri Jul 27 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.4.37-4
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
+
 * Wed Jul 25 2012 Dave Airlie <airlied@redhat.com> 2.4.37-3
 - add libdrm prime support for core, intel, nouveau
 
