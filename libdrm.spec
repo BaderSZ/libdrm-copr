@@ -2,8 +2,8 @@
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.4.37
-Release: 4%{?dist}
+Version: 2.4.38
+Release: 1%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -32,10 +32,6 @@ Patch3: libdrm-make-dri-perms-okay.patch
 Patch4: libdrm-2.4.0-no-bc.patch
 # make rule to print the list of test programs
 Patch5: libdrm-2.4.25-check-programs.patch
-# backport from upstream
-Patch6: libdrm-2.4.37-i915-hush.patch
-# backport from upstream
-Patch7: libdrm-2.4.37-prime.patch
 
 %description
 Direct Rendering Manager runtime library
@@ -63,8 +59,6 @@ Utility programs for the kernel DRM interface.  Will void your warranty.
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
 %patch5 -p1 -b .check
-%patch6 -p1 -b .hush
-%patch7 -p1 -b .prime
 
 %build
 autoreconf -v --install || exit 1
@@ -185,6 +179,9 @@ done
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 
 %changelog
+* Sun Aug 12 2012 Dave Airlie <airlied@redhat.com> 2.4.38-1
+- upstream 2.4.38 release
+
 * Fri Jul 27 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.4.37-4
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
 
