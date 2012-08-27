@@ -2,8 +2,8 @@
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.4.38
-Release: 2%{?dist}
+Version: 2.4.39
+Release: 1%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -32,8 +32,6 @@ Patch3: libdrm-make-dri-perms-okay.patch
 Patch4: libdrm-2.4.0-no-bc.patch
 # make rule to print the list of test programs
 Patch5: libdrm-2.4.25-check-programs.patch
-# backport from master radeon prime support
-Patch6: radeon-prime.patch
 
 %description
 Direct Rendering Manager runtime library
@@ -61,7 +59,6 @@ Utility programs for the kernel DRM interface.  Will void your warranty.
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
 %patch5 -p1 -b .check
-%patch6 -p1 -b .radeon-prime
 
 %build
 autoreconf -v --install || exit 1
@@ -182,6 +179,9 @@ done
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 
 %changelog
+* Mon Aug 27 2012 Dave Airlie <airlied@redhat.com> 2.4.39-1
+- upstream 2.4.39 release
+
 * Tue Aug 14 2012 Dave Airlie <airlied@redhat.com> 2.4.38-2
 - add radeon prime support
 
