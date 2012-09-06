@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.39
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -66,7 +66,7 @@ autoreconf -v --install || exit 1
 %ifarch %{arm}
         --enable-omap-experimental-api \
 %endif
-	--enable-udev --disable-libkms
+	--enable-udev
 make %{?_smp_mflags}
 pushd tests
 make %{?smp_mflags} `make check-programs`
@@ -111,6 +111,8 @@ done
 %{_libdir}/libdrm_radeon.so.1.0.1
 %{_libdir}/libdrm_nouveau.so.2
 %{_libdir}/libdrm_nouveau.so.2.0.0
+%{_libdir}/libkms.so.1
+%{_libdir}/libkms.so.1.0.0
 /lib/udev/rules.d/91-drm-modeset.rules
 
 %files -n drm-utils
@@ -159,6 +161,7 @@ done
 %{_includedir}/libdrm/r600_pci_ids.h
 %{_includedir}/libdrm/nouveau.h
 %{_includedir}/libdrm/*_drm.h
+%{_includedir}/libkms
 %{_libdir}/libdrm.so
 %ifarch %{ix86} x86_64 ia64
 %{_libdir}/libdrm_intel.so
@@ -168,6 +171,7 @@ done
 %endif
 %{_libdir}/libdrm_radeon.so
 %{_libdir}/libdrm_nouveau.so
+%{_libdir}/libkms.so
 %{_libdir}/pkgconfig/libdrm.pc
 %ifarch %{ix86} x86_64 ia64
 %{_libdir}/pkgconfig/libdrm_intel.pc
@@ -177,8 +181,13 @@ done
 %endif
 %{_libdir}/pkgconfig/libdrm_radeon.pc
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
+%{_libdir}/pkgconfig/libkms.pc
 
 %changelog
+* Thu Sep 06 2012 Adam Jackson <ajax@redhat.com> 2.4.39-2
+- Re-enable libkms until vmwgfx properly grows dumb bo support.  Please don't
+  use it though.
+
 * Wed Aug 29 2012 Adam Jackson <ajax@redhat.com> 2.4.39-1
 - upstream 2.4.39 release
 
