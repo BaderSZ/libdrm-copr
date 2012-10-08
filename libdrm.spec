@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.39
-Release: 1%{?dist}
+Release: 3%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -65,6 +65,7 @@ autoreconf -v --install || exit 1
 %configure \
 %ifarch %{arm}
         --enable-omap-experimental-api \
+	--enable-exynos-experimental-api \
 %endif
 	--enable-udev --disable-libkms
 make %{?_smp_mflags}
@@ -104,6 +105,8 @@ done
 %{_libdir}/libdrm_intel.so.1.0.0
 %endif
 %ifarch %{arm}
+%{_libdir}/libdrm_exynos.so.1
+%{_libdir}/libdrm_exynos.so.1.0.0
 %{_libdir}/libdrm_omap.so.1
 %{_libdir}/libdrm_omap.so.1.0.0
 %endif
@@ -146,6 +149,8 @@ done
 %{_includedir}/libdrm/intel_debug.h
 %endif
 %ifarch %{arm}
+%{_includedir}/libdrm/exynos_drmif.h
+%{_includedir}/exynos/
 %{_includedir}/libdrm/omap_drmif.h
 %{_includedir}/omap/
 %endif
@@ -164,6 +169,7 @@ done
 %{_libdir}/libdrm_intel.so
 %endif
 %ifarch %{arm}
+%{_libdir}/libdrm_exynos.so
 %{_libdir}/libdrm_omap.so
 %endif
 %{_libdir}/libdrm_radeon.so
@@ -173,12 +179,16 @@ done
 %{_libdir}/pkgconfig/libdrm_intel.pc
 %endif
 %ifarch %{arm}
+%{_libdir}/pkgconfig/libdrm_exynos.pc
 %{_libdir}/pkgconfig/libdrm_omap.pc
 %endif
 %{_libdir}/pkgconfig/libdrm_radeon.pc
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 
 %changelog
+* Mon Oct 08 2012 Adam Jackson <ajax@redhat.com> 2.4.39-3
+- Add exynos to arm
+
 * Mon Aug 27 2012 Dave Airlie <airlied@redhat.com> 2.4.39-1
 - upstream 2.4.39 release
 
