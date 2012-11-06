@@ -2,8 +2,8 @@
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.4.39
-Release: 4%{?dist}
+Version: 2.4.40
+Release: 1%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -191,6 +191,9 @@ done
 %{_libdir}/pkgconfig/libkms.pc
 
 %changelog
+* Tue Nov 06 2012 Dave Airlie <airlied@redhat.com> 2.4.40-1
+- libdrm 2.4.40
+
 * Thu Oct 25 2012 Adam Jackson <ajax@redhat.com> 2.4.39-4
 - Rebuild to appease koji and get libkms on F18 again
 
