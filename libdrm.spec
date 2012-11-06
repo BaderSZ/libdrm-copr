@@ -189,6 +189,7 @@ done
 %{_libdir}/pkgconfig/libdrm_radeon.pc
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 %{_libdir}/pkgconfig/libkms.pc
+%{_mandir}/man3/drm*.3*
 
 %changelog
 * Tue Nov 06 2012 Dave Airlie <airlied@redhat.com> 2.4.40-1
