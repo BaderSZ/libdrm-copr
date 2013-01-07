@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.40
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -32,6 +32,8 @@ Patch3: libdrm-make-dri-perms-okay.patch
 Patch4: libdrm-2.4.0-no-bc.patch
 # make rule to print the list of test programs
 Patch5: libdrm-2.4.25-check-programs.patch
+# nouveau: force single pushbuf memory type to prevent kernel rejections
+Patch6: libdrm-2.4.40-nouveau-pushbuf-type.patch
 
 %description
 Direct Rendering Manager runtime library
@@ -59,6 +61,7 @@ Utility programs for the kernel DRM interface.  Will void your warranty.
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
 %patch5 -p1 -b .check
+%patch6 -p1 -b .nvpbtype
 
 %build
 autoreconf -v --install || exit 1
@@ -192,6 +195,9 @@ done
 %{_mandir}/man3/drm*.3*
 
 %changelog
+* Tue Jan 09 2013 Ben Skeggs <bskeggs@redhat.com> 2.4.40-2
+- nouveau: fix bug causing kernel to reject certain command streams
+
 * Tue Nov 06 2012 Dave Airlie <airlied@redhat.com> 2.4.40-1
 - libdrm 2.4.40
 
