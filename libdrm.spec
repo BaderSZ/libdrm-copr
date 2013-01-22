@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.41
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -144,6 +144,7 @@ done
 # FIXME should be in drm/ too
 %{_includedir}/xf86drm.h
 %{_includedir}/xf86drmMode.h
+%dir %{_includedir}/libdrm
 %{_includedir}/libdrm/drm.h
 %{_includedir}/libdrm/drm_fourcc.h
 %{_includedir}/libdrm/drm_mode.h
@@ -196,6 +197,9 @@ done
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Tue Jan 22 2013 Adam Jackson <ajax@redhat.com> 2.4.41-2
+- Fix directory ownership in -devel (#894468)
+
 * Thu Jan 17 2013 Adam Jackson <ajax@redhat.com> 2.4.41-1
 - libdrm 2.4.41 plus git.  Done as a git snapshot instead of the released
   2.4.41 since the release tarball is missing man/ entirely. 
