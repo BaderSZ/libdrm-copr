@@ -1,9 +1,9 @@
-%define gitdate 20130117
+#define gitdate 20130117
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.4.41
-Release: 2%{?dist}
+Version: 2.4.42
+Release: 1%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -197,6 +197,9 @@ done
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Tue Feb 05 2013 Adam Jackson <ajax@redhat.com> 2.4.42-1
+- libdrm 2.4.42
+
 * Tue Jan 22 2013 Adam Jackson <ajax@redhat.com> 2.4.41-2
 - Fix directory ownership in -devel (#894468)
 
