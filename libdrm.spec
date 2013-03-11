@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.42
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -36,6 +36,8 @@ Patch3: libdrm-make-dri-perms-okay.patch
 Patch4: libdrm-2.4.0-no-bc.patch
 # make rule to print the list of test programs
 Patch5: libdrm-2.4.25-check-programs.patch
+# add qxl header
+Patch6: 0001-qxl-add-header-file.patch
 
 %description
 Direct Rendering Manager runtime library
@@ -62,6 +64,7 @@ Utility programs for the kernel DRM interface.  Will void your warranty.
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
 %patch5 -p1 -b .check
+%patch6 -p1 -b .qxlheader
 
 %build
 autoreconf -v --install || exit 1
@@ -197,6 +200,9 @@ done
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Tue Mar 12 2013 Dave Airlie <airlied@redhat.com> 2.4.42-2
+- add qxl header file
+
 * Tue Feb 05 2013 Adam Jackson <ajax@redhat.com> 2.4.42-1
 - libdrm 2.4.42
 
