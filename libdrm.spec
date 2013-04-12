@@ -2,8 +2,8 @@
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.4.42
-Release: 2%{?dist}
+Version: 2.4.43
+Release: 1%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -200,6 +200,9 @@ done
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Fri Apr 12 2013 Adam Jackson <ajax@redhat.com> 2.4.43-1
+- libdrm 2.4.43
+
 * Tue Mar 12 2013 Dave Airlie <airlied@redhat.com> 2.4.42-2
 - add qxl header file
 
