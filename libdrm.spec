@@ -2,7 +2,7 @@
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.4.43
+Version: 2.4.44
 Release: 1%{?dist}
 License: MIT
 Group: System Environment/Libraries
@@ -200,6 +200,9 @@ done
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Fri Apr 19 2013 Jerome Glisse <jglisse@redhat.com> 2.4.44-1
+- libdrm 2.4.44
+
 * Fri Apr 12 2013 Adam Jackson <ajax@redhat.com> 2.4.43-1
 - libdrm 2.4.43
 
