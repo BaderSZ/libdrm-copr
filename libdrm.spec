@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.44
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -70,8 +70,9 @@ Utility programs for the kernel DRM interface.  Will void your warranty.
 autoreconf -v --install || exit 1
 %configure \
 %ifarch %{arm}
-        --enable-omap-experimental-api \
 	--enable-exynos-experimental-api \
+	--enable-freedreno-experimental-api \
+	--enable-omap-experimental-api \
 %endif
 	--enable-udev
 make %{?_smp_mflags}
@@ -113,6 +114,8 @@ done
 %ifarch %{arm}
 %{_libdir}/libdrm_exynos.so.1
 %{_libdir}/libdrm_exynos.so.1.0.0
+%{_libdir}/libdrm_freedreno.so.1
+%{_libdir}/libdrm_freedreno.so.1.0.0
 %{_libdir}/libdrm_omap.so.1
 %{_libdir}/libdrm_omap.so.1.0.0
 %endif
@@ -159,8 +162,9 @@ done
 %endif
 %ifarch %{arm}
 %{_includedir}/libdrm/exynos_drmif.h
-%{_includedir}/exynos/
 %{_includedir}/libdrm/omap_drmif.h
+%{_includedir}/exynos/
+%{_includedir}/freedreno/
 %{_includedir}/omap/
 %endif
 %{_includedir}/libdrm/radeon_bo.h
@@ -181,6 +185,7 @@ done
 %ifarch %{arm}
 %{_libdir}/libdrm_exynos.so
 %{_libdir}/libdrm_omap.so
+%{_libdir}/libdrm_freedreno.so
 %endif
 %{_libdir}/libdrm_radeon.so
 %{_libdir}/libdrm_nouveau.so
@@ -191,6 +196,7 @@ done
 %endif
 %ifarch %{arm}
 %{_libdir}/pkgconfig/libdrm_exynos.pc
+%{_libdir}/pkgconfig/libdrm_freedreno.pc
 %{_libdir}/pkgconfig/libdrm_omap.pc
 %endif
 %{_libdir}/pkgconfig/libdrm_radeon.pc
@@ -200,6 +206,9 @@ done
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Sun Apr 21 2013 Peter Robinson <pbrobinson@fedoraproject.org> 2.4.44-2
+- enable freedreno support on ARM
+
 * Fri Apr 19 2013 Jerome Glisse <jglisse@redhat.com> 2.4.44-1
 - libdrm 2.4.44
 
