@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.45
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -29,6 +29,10 @@ BuildRequires: libpciaccess-devel
 BuildRequires: libxslt docbook-style-xsl
 
 Source2: 91-drm-modeset.rules
+
+# from git
+Patch1: 0001-intel-Fix-Haswell-GT3-names.patch
+Patch2: 0002-intel-Adding-more-reserved-PCI-IDs-for-Haswell.patch
 
 # hardcode the 666 instead of 660 for device nodes
 Patch3: libdrm-make-dri-perms-okay.patch
@@ -59,6 +63,8 @@ Utility programs for the kernel DRM interface.  Will void your warranty.
 
 %prep
 %setup -q %{?gitdate:-n %{name}-%{gitdate}}
+%patch1 -p1
+%patch2 -p1
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
 %patch5 -p1 -b .check
@@ -203,6 +209,9 @@ done
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Tue Jun 18 2013 Adam Jackson <ajax@redhat.com> 2.4.45-2
+- Sync some Haswell updates from git
+
 * Thu May 16 2013 Dave Airlie <airlied@redhat.com> 2.4.45-1
 - libdrm 2.4.45
 
