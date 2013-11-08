@@ -2,8 +2,8 @@
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.4.46
-Release: 2%{?dist}
+Version: 2.4.47
+Release: 1%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -36,6 +36,8 @@ Patch3: libdrm-make-dri-perms-okay.patch
 Patch4: libdrm-2.4.0-no-bc.patch
 # make rule to print the list of test programs
 Patch5: libdrm-2.4.25-check-programs.patch
+# fix issue with nouveau and gcc-4.8
+Patch6: 0001-nouveau-prevent-undefined-behavior-in-nouveau_pushbu.patch
 
 %description
 Direct Rendering Manager runtime library
@@ -62,6 +64,7 @@ Utility programs for the kernel DRM interface.  Will void your warranty.
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
 %patch5 -p1 -b .check
+%patch6 -p1 -b .nouveau
 
 %build
 autoreconf -v --install || exit 1
@@ -202,7 +205,10 @@ done
 %{_mandir}/man3/drm*.3*
 %{_mandir}/man7/drm*.7*
 
-%changelog
+* Fri Nov 08 2013 Dave Airlie <airlied@redhat.com> 2.4.47-1
+- libdrm 2.4.47
+
+- add fix for nouveau with gcc 4.8
 * Sat Aug 03 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.4.46-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_20_Mass_Rebuild
 
