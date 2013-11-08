@@ -205,6 +205,7 @@ done
 %{_mandir}/man3/drm*.3*
 %{_mandir}/man7/drm*.7*
 
+%changelog
 * Fri Nov 08 2013 Dave Airlie <airlied@redhat.com> 2.4.47-1
 - libdrm 2.4.47
 
