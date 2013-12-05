@@ -2,8 +2,8 @@
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.4.49
-Release: 2%{?dist}
+Version: 2.4.50
+Release: 1%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -29,10 +29,6 @@ BuildRequires: libpciaccess-devel
 BuildRequires: libxslt docbook-style-xsl
 
 Source2: 91-drm-modeset.rules
-
-# backports from master
-Patch0: 0001-radeon-Update-unaligned-offset-for-2D-1D-tiling-tran.patch
-Patch1: 0002-intel-Track-known-prime-buffers-for-re-use.patch
 
 # hardcode the 666 instead of 660 for device nodes
 Patch3: libdrm-make-dri-perms-okay.patch
@@ -63,8 +59,6 @@ Utility programs for the kernel DRM interface.  Will void your warranty.
 
 %prep
 %setup -q %{?gitdate:-n %{name}-%{gitdate}}
-%patch0 -p1 -b .rad
-%patch1 -p1 -b .intel
 %patch3 -p1 -b .forceperms
 %patch4 -p1 -b .no-bc
 %patch5 -p1 -b .check
@@ -209,6 +203,9 @@ done
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Thu Dec 05 2013 Dave Airlie <airlied@redhat.com> 2.4.50-1
+- libdrm 2.4.50
+
 * Mon Dec 02 2013 Dave Airlie <airlied@redhat.com> 2.4.49-2
 - backport two fixes from master
 
