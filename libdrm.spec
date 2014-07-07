@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.54
-Release: 2%{?dist}
+Release: 3%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -68,8 +68,10 @@ autoreconf -v --install || exit 1
 %configure \
 %ifarch %{arm}
 	--enable-exynos-experimental-api \
-	--enable-freedreno-experimental-api \
 	--enable-omap-experimental-api \
+%endif
+%ifarch %{arm} aarch64
+	--enable-freedreno-experimental-api \
 %endif
 	--enable-udev
 make %{?_smp_mflags}
@@ -111,10 +113,12 @@ done
 %ifarch %{arm}
 %{_libdir}/libdrm_exynos.so.1
 %{_libdir}/libdrm_exynos.so.1.0.0
-%{_libdir}/libdrm_freedreno.so.1
-%{_libdir}/libdrm_freedreno.so.1.0.0
 %{_libdir}/libdrm_omap.so.1
 %{_libdir}/libdrm_omap.so.1.0.0
+%endif
+%ifarch %{arm} aarch64
+%{_libdir}/libdrm_freedreno.so.1
+%{_libdir}/libdrm_freedreno.so.1.0.0
 %endif
 %{_libdir}/libdrm_radeon.so.1
 %{_libdir}/libdrm_radeon.so.1.0.1
@@ -161,8 +165,10 @@ done
 %{_includedir}/libdrm/exynos_drmif.h
 %{_includedir}/libdrm/omap_drmif.h
 %{_includedir}/exynos/
-%{_includedir}/freedreno/
 %{_includedir}/omap/
+%endif
+%ifarch %{arm} aarch64
+%{_includedir}/freedreno/
 %endif
 %{_includedir}/libdrm/radeon_bo.h
 %{_includedir}/libdrm/radeon_bo_gem.h
@@ -182,6 +188,8 @@ done
 %ifarch %{arm}
 %{_libdir}/libdrm_exynos.so
 %{_libdir}/libdrm_omap.so
+%endif
+%ifarch %{arm} aarch64
 %{_libdir}/libdrm_freedreno.so
 %endif
 %{_libdir}/libdrm_radeon.so
@@ -193,8 +201,10 @@ done
 %endif
 %ifarch %{arm}
 %{_libdir}/pkgconfig/libdrm_exynos.pc
-%{_libdir}/pkgconfig/libdrm_freedreno.pc
 %{_libdir}/pkgconfig/libdrm_omap.pc
+%endif
+%ifarch %{arm} aarch64
+%{_libdir}/pkgconfig/libdrm_freedreno.pc
 %endif
 %{_libdir}/pkgconfig/libdrm_radeon.pc
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
@@ -203,6 +213,9 @@ done
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Mon Jul  7 2014 Peter Robinson <pbrobinson@fedoraproject.org> 2.4.54-3
+- Build freedreno support on aarch64 too
+
 * Sat Jun 07 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.4.54-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_21_Mass_Rebuild
 
