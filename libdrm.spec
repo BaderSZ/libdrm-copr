@@ -2,8 +2,8 @@
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.4.54
-Release: 3%{?dist}
+Version: 2.4.56
+Release: 1%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -213,6 +213,9 @@ done
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Mon Aug 04 2014 Dave Airlie <airlied@redhat.com> 2.4.56-1
+- libdrm 2.4.56
+
 * Mon Jul  7 2014 Peter Robinson <pbrobinson@fedoraproject.org> 2.4.54-3
 - Build freedreno support on aarch64 too
 
