@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.58
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -27,6 +27,7 @@ BuildRequires: libudev-devel
 BuildRequires: libatomic_ops-devel
 BuildRequires: libpciaccess-devel
 BuildRequires: libxslt docbook-style-xsl
+BuildRequires: valgrind-devel
 
 Source2: 91-drm-modeset.rules
 
@@ -213,6 +214,9 @@ done
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Tue Nov 18 2014 Adam Jackson <ajax@redhat.com> 2.4.58-2
+- BR: valgrind-devel so we get ioctl annotations
+
 * Thu Oct 02 2014 Adam Jackson <ajax@redhat.com> 2.4.58-1
 - libdrm 2.4.58
 
