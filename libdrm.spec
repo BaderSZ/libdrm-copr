@@ -2,8 +2,8 @@
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.4.58
-Release: 3%{?dist}
+Version: 2.4.59
+Release: 1%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -72,9 +72,6 @@ autoreconf -v --install || exit 1
 %ifarch %{arm}
 	--enable-exynos-experimental-api \
 	--enable-omap-experimental-api \
-%endif
-%ifarch %{arm} aarch64
-	--enable-freedreno-experimental-api \
 %endif
 	--enable-udev
 make %{?_smp_mflags}
@@ -216,6 +213,9 @@ done
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Thu Jan 22 2015 Dave Airlie <airlied@redhat.com> 2.4.59-1
+- libdrm 2.4.59
+
 * Wed Nov 19 2014 Dan Horák <dan[at]danny.cz> 2.4.58-3
 - valgrind available only on selected arches
 
