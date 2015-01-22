@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.59
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -72,6 +72,7 @@ autoreconf -v --install || exit 1
 %ifarch %{arm}
 	--enable-exynos-experimental-api \
 	--enable-omap-experimental-api \
+	--enable-tegra-experimental-api \
 %endif
 	--enable-udev
 make %{?_smp_mflags}
@@ -115,6 +116,8 @@ done
 %{_libdir}/libdrm_exynos.so.1.0.0
 %{_libdir}/libdrm_omap.so.1
 %{_libdir}/libdrm_omap.so.1.0.0
+%{_libdir}/libdrm_tegra.so.0
+%{_libdir}/libdrm_tegra.so.0.0.0
 %endif
 %ifarch %{arm} aarch64
 %{_libdir}/libdrm_freedreno.so.1
@@ -164,6 +167,7 @@ done
 %ifarch %{arm}
 %{_includedir}/libdrm/exynos_drmif.h
 %{_includedir}/libdrm/omap_drmif.h
+%{_includedir}/libdrm/tegra.h
 %{_includedir}/exynos/
 %{_includedir}/omap/
 %endif
@@ -188,6 +192,7 @@ done
 %ifarch %{arm}
 %{_libdir}/libdrm_exynos.so
 %{_libdir}/libdrm_omap.so
+%{_libdir}/libdrm_tegra.so
 %endif
 %ifarch %{arm} aarch64
 %{_libdir}/libdrm_freedreno.so
@@ -202,6 +207,7 @@ done
 %ifarch %{arm}
 %{_libdir}/pkgconfig/libdrm_exynos.pc
 %{_libdir}/pkgconfig/libdrm_omap.pc
+%{_libdir}/pkgconfig/libdrm_tegra.pc
 %endif
 %ifarch %{arm} aarch64
 %{_libdir}/pkgconfig/libdrm_freedreno.pc
@@ -213,6 +219,9 @@ done
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Thu Jan 22 2015 Peter Robinson <pbrobinson@fedoraproject.org> 2.4.59-2
+- Enable tegra
+
 * Thu Jan 22 2015 Dave Airlie <airlied@redhat.com> 2.4.59-1
 - libdrm 2.4.59
 
