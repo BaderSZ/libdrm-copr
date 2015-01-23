@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.59
-Release: 3%{?dist}
+Release: 4%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -153,6 +153,7 @@ done
 %{_bindir}/modeprint
 %{_bindir}/vbltest
 %{_bindir}/kmstest
+%exclude %{_bindir}/exynos*
 
 %files devel
 %defattr(-,root,root,-)
@@ -224,6 +225,9 @@ done
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Fri Jan 23 2015 Rob Clark <rclark@redhat.com> 2.4.59-4
+- No we don't actually want to install the exynos tests
+
 * Fri Jan 23 2015 Rob Clark <rclark@redhat.com> 2.4.59-3
 - Add test apps to drm-utils package
 
