@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.59
-Release: 2%{?dist}
+Release: 3%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -74,6 +74,7 @@ autoreconf -v --install || exit 1
 	--enable-omap-experimental-api \
 	--enable-tegra-experimental-api \
 %endif
+	--enable-install-test-programs \
 	--enable-udev
 make %{?_smp_mflags}
 pushd tests
@@ -148,6 +149,10 @@ done
 %{_bindir}/openclose
 %{_bindir}/setversion
 %{_bindir}/updatedraw
+%{_bindir}/modetest
+%{_bindir}/modeprint
+%{_bindir}/vbltest
+%{_bindir}/kmstest
 
 %files devel
 %defattr(-,root,root,-)
@@ -219,6 +224,9 @@ done
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Fri Jan 23 2015 Rob Clark <rclark@redhat.com> 2.4.59-3
+- Add test apps to drm-utils package
+
 * Thu Jan 22 2015 Peter Robinson <pbrobinson@fedoraproject.org> 2.4.59-2
 - Enable tegra
 
