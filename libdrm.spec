@@ -136,12 +136,6 @@ done
 %defattr(-,root,root,-)
 %{_bindir}/dristat
 %{_bindir}/drmstat
-%ifarch %{ix86} x86_64 ia64
-%{_bindir}/gem_basic
-%{_bindir}/gem_flink
-%{_bindir}/gem_mmap
-%{_bindir}/gem_readwrite
-%endif
 %{_bindir}/getclient
 %{_bindir}/getstats
 %{_bindir}/getversion
