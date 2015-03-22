@@ -2,8 +2,8 @@
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.4.59
-Release: 4%{?dist}
+Version: 2.4.60
+Release: 1%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -225,6 +225,9 @@ done
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Mon Mar 23 2015 Dave Airlie <airlied@redhat.com> 2.4.60-1
+- libdrm 2.4.60
+
 * Fri Jan 23 2015 Rob Clark <rclark@redhat.com> 2.4.59-4
 - No we don't actually want to install the exynos tests
 
