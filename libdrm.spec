@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.61
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -148,6 +148,10 @@ done
 %{_bindir}/vbltest
 %{_bindir}/kmstest
 %exclude %{_bindir}/exynos*
+%exclude %{_bindir}/drmsl
+%exclude %{_bindir}/hash
+%exclude %{_bindir}/proptest
+%exclude %{_bindir}/random
 
 %files devel
 %defattr(-,root,root,-)
@@ -219,6 +223,9 @@ done
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Thu May 07 2015 Ben Skeggs <bskeggs@redhat.com> 2.4.61-2
+- fixup patch, don't ship extra tests
+
 * Thu May 07 2015 Ben Skeggs <bskeggs@redhat.com> 2.4.61-1
 - libdrm 2.4.61
 
