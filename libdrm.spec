@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.61
-Release: 2%{?dist}
+Release: 3%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -30,6 +30,7 @@ BuildRequires: libxslt docbook-style-xsl
 %ifarch %{ix86} x86_64 ppc ppc64 ppc64le s390x armv7hl aarch64
 BuildRequires: valgrind-devel
 %endif
+BuildRequires: xorg-x11-util-macros
 
 Source2: 91-drm-modeset.rules
 
@@ -223,6 +224,9 @@ done
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Thu May 07 2015 Ben Skeggs <bskeggs@redhat.com> 2.4.61-3
+- build needs xorg-x11-util-macros now...
+
 * Thu May 07 2015 Ben Skeggs <bskeggs@redhat.com> 2.4.61-2
 - fixup patch, don't ship extra tests
 
