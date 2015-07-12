@@ -2,37 +2,37 @@
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.4.61
-Release: 4%{?dist}
+Version: 2.4.62
+Release: 1%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
+
 %if 0%{?gitdate}
 Source0: %{name}-%{gitdate}.tar.bz2
 %else
 Source0: http://dri.freedesktop.org/libdrm/%{name}-%{version}.tar.bz2
 %endif
 Source1: make-git-snapshot.sh
-
-Requires: udev
+Source2: 91-drm-modeset.rules
 
 BuildRequires: pkgconfig automake autoconf libtool
 BuildRequires: kernel-headers
 BuildRequires: libxcb-devel
 %if 0%{?fedora} > 17 || 0%{?rhel} > 6
 BuildRequires: systemd-devel
+Requires: systemd
 %else
 BuildRequires: libudev-devel
+Requires: udev
 %endif
 BuildRequires: libatomic_ops-devel
 BuildRequires: libpciaccess-devel
 BuildRequires: libxslt docbook-style-xsl
-%ifarch %{ix86} x86_64 ppc ppc64 ppc64le s390x armv7hl aarch64
+%ifnarch s390
 BuildRequires: valgrind-devel
 %endif
 BuildRequires: xorg-x11-util-macros
-
-Source2: 91-drm-modeset.rules
 
 # hardcode the 666 instead of 660 for device nodes
 Patch3: libdrm-make-dri-perms-okay.patch
@@ -77,35 +77,36 @@ autoreconf -v --install || exit 1
 %endif
 	--enable-install-test-programs \
 	--enable-udev
+
 make %{?_smp_mflags}
 pushd tests
 make %{?smp_mflags} `make check-programs`
 popd
 
 %install
-make install DESTDIR=$RPM_BUILD_ROOT
+make install DESTDIR=%{buildroot}
 pushd tests
-mkdir -p $RPM_BUILD_ROOT%{_bindir}
+mkdir -p %{buildroot}%{_bindir}
 for foo in $(make check-programs) ; do
- install -m 0755 .libs/$foo $RPM_BUILD_ROOT%{_bindir}
+ install -m 0755 .libs/$foo %{buildroot}%{_bindir}
 done
 popd
 # SUBDIRS=libdrm
-mkdir -p $RPM_BUILD_ROOT/lib/udev/rules.d/
-install -m 0644 %{SOURCE2} $RPM_BUILD_ROOT/lib/udev/rules.d/
+mkdir -p %{buildroot}/lib/udev/rules.d/
+install -m 0644 %{SOURCE2} %{buildroot}/lib/udev/rules.d/
 
 # NOTE: We intentionally don't ship *.la files
-find $RPM_BUILD_ROOT -type f -name '*.la' | xargs rm -f -- || :
+find %{buildroot} -type f -name "*.la" -delete
+
 for i in r300_reg.h via_3d_reg.h
 do
-rm -f $RPM_BUILD_ROOT/usr/include/libdrm/$i
+rm -f %{buildroot}/usr/include/libdrm/$i
 done
 
 %post -p /sbin/ldconfig
 %postun -p /sbin/ldconfig
 
 %files
-%defattr(-,root,root,-)
 %doc README
 %{_libdir}/libdrm.so.2
 %{_libdir}/libdrm.so.2.4.0
@@ -134,7 +135,6 @@ done
 /lib/udev/rules.d/91-drm-modeset.rules
 
 %files -n drm-utils
-%defattr(-,root,root,-)
 %{_bindir}/dristat
 %{_bindir}/drmstat
 %{_bindir}/getclient
@@ -155,7 +155,6 @@ done
 %exclude %{_bindir}/random
 
 %files devel
-%defattr(-,root,root,-)
 # FIXME should be in drm/ too
 %{_includedir}/xf86drm.h
 %{_includedir}/xf86drmMode.h
@@ -224,6 +223,10 @@ done
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Sun Jul 12 2015 Peter Robinson <pbrobinson@fedoraproject.org> 2.4.62-1
+- libdrm 2.4.62
+- Minor spec cleanups
+
 * Wed Jun 17 2015 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.4.61-4
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_23_Mass_Rebuild
 
