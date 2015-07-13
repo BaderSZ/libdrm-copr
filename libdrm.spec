@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.62
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -70,6 +70,9 @@ Utility programs for the kernel DRM interface.  Will void your warranty.
 %build
 autoreconf -v --install || exit 1
 %configure \
+%ifarch s390
+	--disable-valgrind \
+%endif
 %ifarch %{arm}
 	--enable-exynos-experimental-api \
 	--enable-omap-experimental-api \
@@ -223,6 +226,9 @@ done
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Mon Jul 13 2015 Dan Horák <dan[at]danny.cz> 2.4.62-2
+- valgrind needs explicit disable if not available
+
 * Sun Jul 12 2015 Peter Robinson <pbrobinson@fedoraproject.org> 2.4.62-1
 - libdrm 2.4.62
 - Minor spec cleanups
