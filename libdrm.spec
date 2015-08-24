@@ -208,6 +208,7 @@ done
 %{_libdir}/libdrm_freedreno.so
 %endif
 %{_libdir}/libdrm_radeon.so
+%{_libdir}/libdrm_amdgpu.so
 %{_libdir}/libdrm_nouveau.so
 %{_libdir}/libkms.so
 %{_libdir}/pkgconfig/libdrm.pc
