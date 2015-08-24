@@ -2,8 +2,8 @@
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.4.62
-Release: 2%{?dist}
+Version: 2.4.64
+Release: 1%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -226,6 +226,9 @@ done
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Tue Aug 25 2015 Dave Airlie <airlied@redhat.com> 2.4.64-1
+- libdrm 2.4.64
+
 * Mon Jul 13 2015 Dan Horák <dan[at]danny.cz> 2.4.62-2
 - valgrind needs explicit disable if not available
 
