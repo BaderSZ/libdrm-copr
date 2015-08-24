@@ -131,6 +131,8 @@ done
 %endif
 %{_libdir}/libdrm_radeon.so.1
 %{_libdir}/libdrm_radeon.so.1.0.1
+%{_libdir}/libdrm_amdgpu.so.1
+%{_libdir}/libdrm_amdgpu.so.1.0.0
 %{_libdir}/libdrm_nouveau.so.2
 %{_libdir}/libdrm_nouveau.so.2.0.0
 %{_libdir}/libkms.so.1
@@ -181,6 +183,7 @@ done
 %ifarch %{arm} aarch64
 %{_includedir}/freedreno/
 %endif
+%{_includedir}/libdrm/amdgpu.h
 %{_includedir}/libdrm/radeon_bo.h
 %{_includedir}/libdrm/radeon_bo_gem.h
 %{_includedir}/libdrm/radeon_bo_int.h
@@ -220,6 +223,7 @@ done
 %{_libdir}/pkgconfig/libdrm_freedreno.pc
 %endif
 %{_libdir}/pkgconfig/libdrm_radeon.pc
+%{_libdir}/pkgconfig/libdrm_amdgpu.pc
 %{_libdir}/pkgconfig/libdrm_nouveau.pc
 %{_libdir}/pkgconfig/libkms.pc
 %{_mandir}/man3/drm*.3*
