@@ -91,7 +91,7 @@ make install DESTDIR=%{buildroot}
 pushd tests
 mkdir -p %{buildroot}%{_bindir}
 for foo in $(make check-programs) ; do
- install -m 0755 .libs/$foo %{buildroot}%{_bindir}
+ install -m 0755 $foo %{buildroot}%{_bindir}
 done
 popd
 # SUBDIRS=libdrm
