@@ -2,7 +2,7 @@
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.4.65
+Version: 2.4.66
 Release: 1%{?dist}
 License: MIT
 Group: System Environment/Libraries
@@ -142,6 +142,7 @@ done
 %files -n drm-utils
 %{_bindir}/dristat
 %{_bindir}/drmstat
+%{_bindir}/drmdevice
 %{_bindir}/getclient
 %{_bindir}/getstats
 %{_bindir}/getversion
@@ -153,6 +154,8 @@ done
 %{_bindir}/modeprint
 %{_bindir}/vbltest
 %{_bindir}/kmstest
+%{_bindir}/kms-steal-crtc
+%{_bindir}/kms-universal-planes
 %exclude %{_bindir}/exynos*
 %exclude %{_bindir}/drmsl
 %exclude %{_bindir}/hash
@@ -192,7 +195,7 @@ done
 %{_includedir}/libdrm/radeon_cs_int.h
 %{_includedir}/libdrm/radeon_surface.h
 %{_includedir}/libdrm/r600_pci_ids.h
-%{_includedir}/libdrm/nouveau.h
+%{_includedir}/libdrm/nouveau/
 %{_includedir}/libdrm/*_drm.h
 %{_includedir}/libkms
 %{_libdir}/libdrm.so
@@ -231,6 +234,9 @@ done
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Mon Dec 28 2015 Igor Gnatenko <i.gnatenko.brain@gmail.com> - 2.4.66-1
+- Update to 2.4.66 (RHBZ #1294382)
+
 * Thu Sep 17 2015 Igor Gnatenko <i.gnatenko.brain@gmail.com> - 2.4.65-1
 - Update to 2.4.65 (RHBZ #1263878)
 
