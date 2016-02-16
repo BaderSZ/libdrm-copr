@@ -2,8 +2,8 @@
 
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
-Version: 2.4.66
-Release: 2%{?dist}
+Version: 2.4.67
+Release: 1%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -77,13 +77,14 @@ autoreconf -v --install || exit 1
 	--enable-exynos-experimental-api \
 	--enable-omap-experimental-api \
 	--enable-tegra-experimental-api \
+	--enable-vc4 \
 %endif
 	--enable-install-test-programs \
 	--enable-udev
 
-make %{?_smp_mflags}
+make %{?_smp_mflags} V=1
 pushd tests
-make %{?smp_mflags} `make check-programs`
+make %{?smp_mflags} `make check-programs` V=1
 popd
 
 %install
@@ -180,6 +181,8 @@ done
 %{_includedir}/libdrm/exynos_drmif.h
 %{_includedir}/libdrm/omap_drmif.h
 %{_includedir}/libdrm/tegra.h
+%{_includedir}/libdrm/vc4_packet.h
+%{_includedir}/libdrm/vc4_qpu_defines.h
 %{_includedir}/exynos/
 %{_includedir}/omap/
 %endif
@@ -222,6 +225,7 @@ done
 %{_libdir}/pkgconfig/libdrm_exynos.pc
 %{_libdir}/pkgconfig/libdrm_omap.pc
 %{_libdir}/pkgconfig/libdrm_tegra.pc
+%{_libdir}/pkgconfig/libdrm_vc4.pc
 %endif
 %ifarch %{arm} aarch64
 %{_libdir}/pkgconfig/libdrm_freedreno.pc
@@ -234,6 +238,10 @@ done
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Tue Feb 16 2016 Peter Robinson <pbrobinson@fedoraproject.org> 2.4.67-1
+- Update to 2.4.67
+- Enable VC4
+
 * Thu Feb 04 2016 Fedora Release Engineering <releng@fedoraproject.org> - 2.4.66-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_24_Mass_Rebuild
 
