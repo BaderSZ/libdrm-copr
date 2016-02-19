@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.67
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -92,7 +92,7 @@ make install DESTDIR=%{buildroot}
 pushd tests
 mkdir -p %{buildroot}%{_bindir}
 for foo in $(make check-programs) ; do
- install -m 0755 $foo %{buildroot}%{_bindir}
+ libtool --mode=install install -m 0755 $foo %{buildroot}%{_bindir}
 done
 popd
 # SUBDIRS=libdrm
@@ -238,6 +238,9 @@ done
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Fri Feb 19 2016 Dave Airlie <airlied@redhat.com> 2.4.67-2
+- fix installing drm-utils properly - we were install libtool scripts
+
 * Tue Feb 16 2016 Peter Robinson <pbrobinson@fedoraproject.org> 2.4.67-1
 - Update to 2.4.67
 - Enable VC4
