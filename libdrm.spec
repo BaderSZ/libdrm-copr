@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.67
-Release: 2%{?dist}
+Release: 3%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -73,6 +73,7 @@ autoreconf -v --install || exit 1
 %ifarch s390
 	--disable-valgrind \
 %endif
+	--disable-vc4 \
 %ifarch %{arm}
 	--enable-exynos-experimental-api \
 	--enable-omap-experimental-api \
@@ -238,6 +239,9 @@ done
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Sun Feb 21 2016 Peter Robinson <pbrobinson@fedoraproject.org> 2.4.67-2
+- Fix build on aarch64
+
 * Fri Feb 19 2016 Dave Airlie <airlied@redhat.com> 2.4.67-2
 - fix installing drm-utils properly - we were install libtool scripts
 
