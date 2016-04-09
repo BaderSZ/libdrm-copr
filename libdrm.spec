@@ -3,7 +3,7 @@
 Summary: Direct Rendering Manager runtime library
 Name: libdrm
 Version: 2.4.67
-Release: 3%{?dist}
+Release: 4%{?dist}
 License: MIT
 Group: System Environment/Libraries
 URL: http://dri.sourceforge.net
@@ -74,11 +74,13 @@ autoreconf -v --install || exit 1
 	--disable-valgrind \
 %endif
 	--disable-vc4 \
-%ifarch %{arm}
+%ifarch %{arm} aarch64
 	--enable-exynos-experimental-api \
-	--enable-omap-experimental-api \
 	--enable-tegra-experimental-api \
 	--enable-vc4 \
+%endif
+%ifarch %{arm}
+	--enable-omap-experimental-api \
 %endif
 	--enable-install-test-programs \
 	--enable-udev
@@ -120,16 +122,16 @@ done
 %{_libdir}/libdrm_intel.so.1.0.0
 %endif
 %ifarch %{arm}
-%{_libdir}/libdrm_exynos.so.1
-%{_libdir}/libdrm_exynos.so.1.0.0
 %{_libdir}/libdrm_omap.so.1
 %{_libdir}/libdrm_omap.so.1.0.0
-%{_libdir}/libdrm_tegra.so.0
-%{_libdir}/libdrm_tegra.so.0.0.0
 %endif
 %ifarch %{arm} aarch64
+%{_libdir}/libdrm_exynos.so.1
+%{_libdir}/libdrm_exynos.so.1.0.0
 %{_libdir}/libdrm_freedreno.so.1
 %{_libdir}/libdrm_freedreno.so.1.0.0
+%{_libdir}/libdrm_tegra.so.0
+%{_libdir}/libdrm_tegra.so.0.0.0
 %endif
 %{_libdir}/libdrm_radeon.so.1
 %{_libdir}/libdrm_radeon.so.1.0.1
@@ -179,16 +181,16 @@ done
 %{_includedir}/libdrm/intel_debug.h
 %endif
 %ifarch %{arm}
-%{_includedir}/libdrm/exynos_drmif.h
 %{_includedir}/libdrm/omap_drmif.h
-%{_includedir}/libdrm/tegra.h
-%{_includedir}/libdrm/vc4_packet.h
-%{_includedir}/libdrm/vc4_qpu_defines.h
-%{_includedir}/exynos/
 %{_includedir}/omap/
 %endif
 %ifarch %{arm} aarch64
+%{_includedir}/exynos/
 %{_includedir}/freedreno/
+%{_includedir}/libdrm/exynos_drmif.h
+%{_includedir}/libdrm/tegra.h
+%{_includedir}/libdrm/vc4_packet.h
+%{_includedir}/libdrm/vc4_qpu_defines.h
 %endif
 %{_includedir}/libdrm/amdgpu.h
 %{_includedir}/libdrm/radeon_bo.h
@@ -207,12 +209,12 @@ done
 %{_libdir}/libdrm_intel.so
 %endif
 %ifarch %{arm}
-%{_libdir}/libdrm_exynos.so
 %{_libdir}/libdrm_omap.so
-%{_libdir}/libdrm_tegra.so
 %endif
 %ifarch %{arm} aarch64
+%{_libdir}/libdrm_exynos.so
 %{_libdir}/libdrm_freedreno.so
+%{_libdir}/libdrm_tegra.so
 %endif
 %{_libdir}/libdrm_radeon.so
 %{_libdir}/libdrm_amdgpu.so
@@ -223,13 +225,13 @@ done
 %{_libdir}/pkgconfig/libdrm_intel.pc
 %endif
 %ifarch %{arm}
-%{_libdir}/pkgconfig/libdrm_exynos.pc
 %{_libdir}/pkgconfig/libdrm_omap.pc
-%{_libdir}/pkgconfig/libdrm_tegra.pc
-%{_libdir}/pkgconfig/libdrm_vc4.pc
 %endif
 %ifarch %{arm} aarch64
+%{_libdir}/pkgconfig/libdrm_exynos.pc
 %{_libdir}/pkgconfig/libdrm_freedreno.pc
+%{_libdir}/pkgconfig/libdrm_tegra.pc
+%{_libdir}/pkgconfig/libdrm_vc4.pc
 %endif
 %{_libdir}/pkgconfig/libdrm_radeon.pc
 %{_libdir}/pkgconfig/libdrm_amdgpu.pc
@@ -239,6 +241,9 @@ done
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Sat Apr  9 2016 Peter Robinson <pbrobinson@fedoraproject.org> 2.4.67-3
+- Build some extra bits for aarch64
+
 * Sun Feb 21 2016 Peter Robinson <pbrobinson@fedoraproject.org> 2.4.67-2
 - Fix build on aarch64
 
