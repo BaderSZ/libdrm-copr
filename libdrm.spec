@@ -1,38 +1,30 @@
-#define gitdate 20130117
+Name:           libdrm
+Summary:        Direct Rendering Manager runtime library
+Version:        2.4.68
+Release:        1%{?dist}
+License:        MIT
 
-Summary: Direct Rendering Manager runtime library
-Name: libdrm
-Version: 2.4.67
-Release: 4%{?dist}
-License: MIT
-Group: System Environment/Libraries
-URL: http://dri.sourceforge.net
+URL:            http://dri.sourceforge.net
+Source0:        http://dri.freedesktop.org/libdrm/%{name}-%{version}.tar.bz2
+Source2:        91-drm-modeset.rules
 
-%if 0%{?gitdate}
-Source0: %{name}-%{gitdate}.tar.bz2
-%else
-Source0: http://dri.freedesktop.org/libdrm/%{name}-%{version}.tar.bz2
-%endif
-Source1: make-git-snapshot.sh
-Source2: 91-drm-modeset.rules
-
-BuildRequires: pkgconfig automake autoconf libtool
-BuildRequires: kernel-headers
-BuildRequires: libxcb-devel
+BuildRequires:  pkgconfig automake autoconf libtool
+BuildRequires:  kernel-headers
+BuildRequires:  libxcb-devel
 %if 0%{?fedora} > 17 || 0%{?rhel} > 6
-BuildRequires: systemd-devel
-Requires: systemd
+BuildRequires:  systemd-devel
+Requires:       systemd
 %else
-BuildRequires: libudev-devel
-Requires: udev
+BuildRequires:  libudev-devel
+Requires:       udev
 %endif
-BuildRequires: libatomic_ops-devel
-BuildRequires: libpciaccess-devel
-BuildRequires: libxslt docbook-style-xsl
+BuildRequires:  libatomic_ops-devel
+BuildRequires:  libpciaccess-devel
+BuildRequires:  libxslt docbook-style-xsl
 %ifnarch s390
-BuildRequires: valgrind-devel
+BuildRequires:  valgrind-devel
 %endif
-BuildRequires: xorg-x11-util-macros
+BuildRequires:  xorg-x11-util-macros
 
 # hardcode the 666 instead of 660 for device nodes
 Patch3: libdrm-make-dri-perms-okay.patch
@@ -45,53 +37,48 @@ Patch5: libdrm-2.4.25-check-programs.patch
 Direct Rendering Manager runtime library
 
 %package devel
-Summary: Direct Rendering Manager development package
-Group: Development/Libraries
-Requires: %{name} = %{version}-%{release}
-Requires: kernel-headers >= 2.6.27-0.144.rc0.git2.fc10
-Requires: pkgconfig
+Summary:        Direct Rendering Manager development package
+Requires:       %{name}%{?_isa} = %{version}-%{release}
+Requires:       kernel-headers >= 2.6.27-0.144.rc0.git2.fc10
 
 %description devel
-Direct Rendering Manager development package
+Direct Rendering Manager development package.
 
 %package -n drm-utils
-Summary: Direct Rendering Manager utilities
-Group: Development/Tools
+Summary:        Direct Rendering Manager utilities
+Requires:       %{name}%{?_isa} = %{version}-%{release}
 
 %description -n drm-utils
 Utility programs for the kernel DRM interface.  Will void your warranty.
 
 %prep
-%setup -q %{?gitdate:-n %{name}-%{gitdate}}
-%patch3 -p1 -b .forceperms
-%patch4 -p1 -b .no-bc
-%patch5 -p1 -b .check
+%autosetup -p1
 
 %build
 autoreconf -v --install || exit 1
 %configure \
 %ifarch s390
-	--disable-valgrind \
+    --disable-valgrind \
 %endif
-	--disable-vc4 \
+    --disable-vc4 \
 %ifarch %{arm} aarch64
-	--enable-exynos-experimental-api \
-	--enable-tegra-experimental-api \
-	--enable-vc4 \
+    --enable-exynos-experimental-api \
+    --enable-tegra-experimental-api \
+    --enable-vc4 \
 %endif
 %ifarch %{arm}
-	--enable-omap-experimental-api \
+    --enable-omap-experimental-api \
 %endif
-	--enable-install-test-programs \
-	--enable-udev
+    --enable-install-test-programs \
+    --enable-udev
 
-make %{?_smp_mflags} V=1
+%make_build V=1
 pushd tests
-make %{?smp_mflags} `make check-programs` V=1
+%make_build `make check-programs` V=1
 popd
 
 %install
-make install DESTDIR=%{buildroot}
+%make_install
 pushd tests
 mkdir -p %{buildroot}%{_bindir}
 for foo in $(make check-programs) ; do
@@ -241,6 +228,9 @@ done
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Thu Apr 28 2016 Igor Gnatenko <ignatenko@redhat.com> - 2.4.68-1
+- Update to 2.4.68
+
 * Sat Apr  9 2016 Peter Robinson <pbrobinson@fedoraproject.org> 2.4.67-3
 - Build some extra bits for aarch64
 
