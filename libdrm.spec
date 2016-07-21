@@ -1,6 +1,6 @@
 Name:           libdrm
 Summary:        Direct Rendering Manager runtime library
-Version:        2.4.68
+Version:        2.4.69
 Release:        1%{?dist}
 License:        MIT
 
@@ -228,6 +228,9 @@ done
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Thu Jul 21 2016 Igor Gnatenko <ignatenko@redhat.com> - 2.4.69-1
+- Update to 2.4.69 (RHBZ #1358549)
+
 * Thu Apr 28 2016 Igor Gnatenko <ignatenko@redhat.com> - 2.4.68-1
 - Update to 2.4.68
 
