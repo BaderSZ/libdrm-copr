@@ -1,23 +1,18 @@
 Name:           libdrm
 Summary:        Direct Rendering Manager runtime library
-Version:        2.4.69
+Version:        2.4.70
 Release:        1%{?dist}
 License:        MIT
 
-URL:            http://dri.sourceforge.net
-Source0:        http://dri.freedesktop.org/libdrm/%{name}-%{version}.tar.bz2
+URL:            https://dri.freedesktop.org
+Source0:        %{url}/libdrm/%{name}-%{version}.tar.bz2
 Source2:        91-drm-modeset.rules
 
 BuildRequires:  pkgconfig automake autoconf libtool
 BuildRequires:  kernel-headers
 BuildRequires:  libxcb-devel
-%if 0%{?fedora} > 17 || 0%{?rhel} > 6
 BuildRequires:  systemd-devel
 Requires:       systemd
-%else
-BuildRequires:  libudev-devel
-Requires:       udev
-%endif
 BuildRequires:  libatomic_ops-devel
 BuildRequires:  libpciaccess-devel
 BuildRequires:  libxslt docbook-style-xsl
@@ -55,7 +50,7 @@ Utility programs for the kernel DRM interface.  Will void your warranty.
 %autosetup -p1
 
 %build
-autoreconf -v --install || exit 1
+autoreconf -vfi
 %configure \
 %ifarch s390
     --disable-valgrind \
@@ -92,10 +87,7 @@ install -m 0644 %{SOURCE2} %{buildroot}/lib/udev/rules.d/
 # NOTE: We intentionally don't ship *.la files
 find %{buildroot} -type f -name "*.la" -delete
 
-for i in r300_reg.h via_3d_reg.h
-do
-rm -f %{buildroot}/usr/include/libdrm/$i
-done
+rm -f %{buildroot}%{_includedir}/%{name}/{r300_reg.h,via_3d_reg.h}
 
 %post -p /sbin/ldconfig
 %postun -p /sbin/ldconfig
@@ -228,6 +220,9 @@ done
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Sun Jul 24 2016 Igor Gnatenko <ignatenko@redhat.com> - 2.4.70-1
+- Update to 2.4.70 (RHBZ #1359449)
+
 * Thu Jul 21 2016 Igor Gnatenko <ignatenko@redhat.com> - 2.4.69-1
 - Update to 2.4.69 (RHBZ #1358549)
 
