@@ -1,7 +1,13 @@
+%ifarch %{ix86} x86_64 ppc ppc64 ppc64le s390x armv7hl aarch64
+%bcond_without valgrind
+%else
+%bcond_with valgrind
+%endif
+
 Name:           libdrm
 Summary:        Direct Rendering Manager runtime library
-Version:        2.4.70
-Release:        2%{?dist}
+Version:        2.4.71
+Release:        1%{?dist}
 License:        MIT
 
 URL:            https://dri.freedesktop.org
@@ -16,7 +22,7 @@ Requires:       systemd
 BuildRequires:  libatomic_ops-devel
 BuildRequires:  libpciaccess-devel
 BuildRequires:  libxslt docbook-style-xsl
-%ifnarch s390 %{mips}
+%if %{with valgrind}
 BuildRequires:  valgrind-devel
 %endif
 BuildRequires:  xorg-x11-util-macros
@@ -34,7 +40,7 @@ Direct Rendering Manager runtime library
 %package devel
 Summary:        Direct Rendering Manager development package
 Requires:       %{name}%{?_isa} = %{version}-%{release}
-Requires:       kernel-headers >= 2.6.27-0.144.rc0.git2.fc10
+Requires:       kernel-headers
 
 %description devel
 Direct Rendering Manager development package.
@@ -52,7 +58,7 @@ Utility programs for the kernel DRM interface.  Will void your warranty.
 %build
 autoreconf -vfi
 %configure \
-%ifarch s390 %{mips}
+%if ! %{with valgrind}
     --disable-valgrind \
 %endif
     --disable-vc4 \
@@ -220,6 +226,9 @@ rm -f %{buildroot}%{_includedir}/%{name}/{r300_reg.h,via_3d_reg.h}
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Tue Oct 04 2016 Igor Gnatenko <ignatenko@redhat.com> - 2.4.71-1
+- Update to 2.4.71 (RHBZ #1381543)
+
 * Thu Aug 11 2016 Michal Toman <mtoman@fedoraproject.org> - 2.4.70-2
 - No valgrind on MIPS
 
