@@ -7,7 +7,7 @@
 Name:           libdrm
 Summary:        Direct Rendering Manager runtime library
 Version:        2.4.71
-Release:        1%{?dist}
+Release:        2%{?dist}
 License:        MIT
 
 URL:            https://dri.freedesktop.org
@@ -69,6 +69,7 @@ autoreconf -vfi
 %endif
 %ifarch %{arm}
     --enable-omap-experimental-api \
+    --enable-etnaviv-experimental-api \
 %endif
     --enable-install-test-programs \
     --enable-udev
@@ -109,6 +110,8 @@ rm -f %{buildroot}%{_includedir}/%{name}/{r300_reg.h,via_3d_reg.h}
 %ifarch %{arm}
 %{_libdir}/libdrm_omap.so.1
 %{_libdir}/libdrm_omap.so.1.0.0
+%{_libdir}/libdrm_etnaviv.so.1
+%{_libdir}/libdrm_etnaviv.so.1.0.0
 %endif
 %ifarch %{arm} aarch64
 %{_libdir}/libdrm_exynos.so.1
@@ -146,6 +149,7 @@ rm -f %{buildroot}%{_includedir}/%{name}/{r300_reg.h,via_3d_reg.h}
 %{_bindir}/kms-steal-crtc
 %{_bindir}/kms-universal-planes
 %exclude %{_bindir}/exynos*
+%exclude %{_bindir}/etnaviv*
 %exclude %{_bindir}/drmsl
 %exclude %{_bindir}/hash
 %exclude %{_bindir}/proptest
@@ -167,6 +171,7 @@ rm -f %{buildroot}%{_includedir}/%{name}/{r300_reg.h,via_3d_reg.h}
 %endif
 %ifarch %{arm}
 %{_includedir}/libdrm/omap_drmif.h
+%{_includedir}/libdrm/etnaviv_drmif.h
 %{_includedir}/omap/
 %endif
 %ifarch %{arm} aarch64
@@ -195,6 +200,7 @@ rm -f %{buildroot}%{_includedir}/%{name}/{r300_reg.h,via_3d_reg.h}
 %endif
 %ifarch %{arm}
 %{_libdir}/libdrm_omap.so
+%{_libdir}/libdrm_etnaviv.so
 %endif
 %ifarch %{arm} aarch64
 %{_libdir}/libdrm_exynos.so
@@ -211,6 +217,7 @@ rm -f %{buildroot}%{_includedir}/%{name}/{r300_reg.h,via_3d_reg.h}
 %endif
 %ifarch %{arm}
 %{_libdir}/pkgconfig/libdrm_omap.pc
+%{_libdir}/pkgconfig/libdrm_etnaviv.pc
 %endif
 %ifarch %{arm} aarch64
 %{_libdir}/pkgconfig/libdrm_exynos.pc
@@ -226,6 +233,9 @@ rm -f %{buildroot}%{_includedir}/%{name}/{r300_reg.h,via_3d_reg.h}
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Wed Oct 05 2016 Igor Gnatenko <ignatenko@redhat.com> - 2.4.71-2
+- Enable etnaviv on ARM (RHBZ #1381898, billiboy@mt2015.com)
+
 * Tue Oct 04 2016 Igor Gnatenko <ignatenko@redhat.com> - 2.4.71-1
 - Update to 2.4.71 (RHBZ #1381543)
 
