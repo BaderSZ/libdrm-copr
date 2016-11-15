@@ -6,8 +6,8 @@
 
 Name:           libdrm
 Summary:        Direct Rendering Manager runtime library
-Version:        2.4.71
-Release:        2%{?dist}
+Version:        2.4.73
+Release:        1%{?dist}
 License:        MIT
 
 URL:            https://dri.freedesktop.org
@@ -233,6 +233,9 @@ rm -f %{buildroot}%{_includedir}/%{name}/{r300_reg.h,via_3d_reg.h}
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Tue Nov 15 2016 Igor Gnatenko <ignatenko@redhat.com> - 2.4.73-1
+- Update to 2.4.73 (RHBZ #1394986)
+
 * Wed Oct 05 2016 Igor Gnatenko <ignatenko@redhat.com> - 2.4.71-2
 - Enable etnaviv on ARM (RHBZ #1381898, billiboy@mt2015.com)
 
