@@ -194,6 +194,7 @@ rm -f %{buildroot}%{_includedir}/%{name}/{r300_reg.h,via_3d_reg.h}
 %{_includedir}/libdrm/nouveau/
 %{_includedir}/libdrm/*_drm.h
 %{_includedir}/libkms
+%{_includedir}/libsync.h
 %{_libdir}/libdrm.so
 %ifarch %{ix86} x86_64 ia64
 %{_libdir}/libdrm_intel.so
