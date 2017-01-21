@@ -7,7 +7,7 @@
 Name:           libdrm
 Summary:        Direct Rendering Manager runtime library
 Version:        2.4.74
-Release:        1%{?dist}
+Release:        2%{?dist}
 License:        MIT
 
 URL:            https://dri.freedesktop.org
@@ -63,13 +63,13 @@ autoreconf -vfi
 %endif
     --disable-vc4 \
 %ifarch %{arm} aarch64
+    --enable-etnaviv-experimental-api \
     --enable-exynos-experimental-api \
     --enable-tegra-experimental-api \
     --enable-vc4 \
 %endif
 %ifarch %{arm}
     --enable-omap-experimental-api \
-    --enable-etnaviv-experimental-api \
 %endif
     --enable-install-test-programs \
     --enable-udev
@@ -110,10 +110,10 @@ rm -f %{buildroot}%{_includedir}/%{name}/{r300_reg.h,via_3d_reg.h}
 %ifarch %{arm}
 %{_libdir}/libdrm_omap.so.1
 %{_libdir}/libdrm_omap.so.1.0.0
-%{_libdir}/libdrm_etnaviv.so.1
-%{_libdir}/libdrm_etnaviv.so.1.0.0
 %endif
 %ifarch %{arm} aarch64
+%{_libdir}/libdrm_etnaviv.so.1
+%{_libdir}/libdrm_etnaviv.so.1.0.0
 %{_libdir}/libdrm_exynos.so.1
 %{_libdir}/libdrm_exynos.so.1.0.0
 %{_libdir}/libdrm_freedreno.so.1
@@ -148,9 +148,9 @@ rm -f %{buildroot}%{_includedir}/%{name}/{r300_reg.h,via_3d_reg.h}
 %{_bindir}/kmstest
 %{_bindir}/kms-steal-crtc
 %{_bindir}/kms-universal-planes
-%exclude %{_bindir}/exynos*
-%exclude %{_bindir}/etnaviv*
 %exclude %{_bindir}/drmsl
+%exclude %{_bindir}/etnaviv*
+%exclude %{_bindir}/exynos*
 %exclude %{_bindir}/hash
 %exclude %{_bindir}/proptest
 %exclude %{_bindir}/random
@@ -171,12 +171,12 @@ rm -f %{buildroot}%{_includedir}/%{name}/{r300_reg.h,via_3d_reg.h}
 %endif
 %ifarch %{arm}
 %{_includedir}/libdrm/omap_drmif.h
-%{_includedir}/libdrm/etnaviv_drmif.h
 %{_includedir}/omap/
 %endif
 %ifarch %{arm} aarch64
 %{_includedir}/exynos/
 %{_includedir}/freedreno/
+%{_includedir}/libdrm/etnaviv_drmif.h
 %{_includedir}/libdrm/exynos_drmif.h
 %{_includedir}/libdrm/tegra.h
 %{_includedir}/libdrm/vc4_packet.h
@@ -201,9 +201,9 @@ rm -f %{buildroot}%{_includedir}/%{name}/{r300_reg.h,via_3d_reg.h}
 %endif
 %ifarch %{arm}
 %{_libdir}/libdrm_omap.so
-%{_libdir}/libdrm_etnaviv.so
 %endif
 %ifarch %{arm} aarch64
+%{_libdir}/libdrm_etnaviv.so
 %{_libdir}/libdrm_exynos.so
 %{_libdir}/libdrm_freedreno.so
 %{_libdir}/libdrm_tegra.so
@@ -218,9 +218,9 @@ rm -f %{buildroot}%{_includedir}/%{name}/{r300_reg.h,via_3d_reg.h}
 %endif
 %ifarch %{arm}
 %{_libdir}/pkgconfig/libdrm_omap.pc
-%{_libdir}/pkgconfig/libdrm_etnaviv.pc
 %endif
 %ifarch %{arm} aarch64
+%{_libdir}/pkgconfig/libdrm_etnaviv.pc
 %{_libdir}/pkgconfig/libdrm_exynos.pc
 %{_libdir}/pkgconfig/libdrm_freedreno.pc
 %{_libdir}/pkgconfig/libdrm_tegra.pc
@@ -234,6 +234,9 @@ rm -f %{buildroot}%{_includedir}/%{name}/{r300_reg.h,via_3d_reg.h}
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Sat Jan 21 2017 Peter Robinson <pbrobinson@fedoraproject.org> 2.4.74-2
+- Enable etnaviv support on aarch64 too
+
 * Thu Dec 01 2016 Igor Gnatenko <i.gnatenko.brain@gmail.com> - 2.4.74-1
 - Update to 2.4.74 (RHBZ #1400154)
 
