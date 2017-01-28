@@ -6,8 +6,8 @@
 
 Name:           libdrm
 Summary:        Direct Rendering Manager runtime library
-Version:        2.4.74
-Release:        2%{?dist}
+Version:        2.4.75
+Release:        1%{?dist}
 License:        MIT
 
 URL:            https://dri.freedesktop.org
@@ -132,16 +132,7 @@ rm -f %{buildroot}%{_includedir}/%{name}/{r300_reg.h,via_3d_reg.h}
 /lib/udev/rules.d/91-drm-modeset.rules
 
 %files -n drm-utils
-%{_bindir}/dristat
-%{_bindir}/drmstat
 %{_bindir}/drmdevice
-%{_bindir}/getclient
-%{_bindir}/getstats
-%{_bindir}/getversion
-%{_bindir}/name_from_fd
-%{_bindir}/openclose
-%{_bindir}/setversion
-%{_bindir}/updatedraw
 %{_bindir}/modetest
 %{_bindir}/modeprint
 %{_bindir}/vbltest
@@ -149,8 +140,10 @@ rm -f %{buildroot}%{_includedir}/%{name}/{r300_reg.h,via_3d_reg.h}
 %{_bindir}/kms-steal-crtc
 %{_bindir}/kms-universal-planes
 %exclude %{_bindir}/drmsl
+%ifarch %{arm} aarch64
 %exclude %{_bindir}/etnaviv*
 %exclude %{_bindir}/exynos*
+%endif
 %exclude %{_bindir}/hash
 %exclude %{_bindir}/proptest
 %exclude %{_bindir}/random
@@ -234,6 +227,9 @@ rm -f %{buildroot}%{_includedir}/%{name}/{r300_reg.h,via_3d_reg.h}
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Sat Jan 28 2017 Dave Airlie <airlied@redhat.com> - 2.4.75-1
+- Update to 2.4.75
+
 * Sat Jan 21 2017 Peter Robinson <pbrobinson@fedoraproject.org> 2.4.74-2
 - Enable etnaviv support on aarch64 too
 
