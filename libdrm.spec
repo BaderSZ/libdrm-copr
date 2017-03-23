@@ -77,11 +77,6 @@ autoreconf -vfi
     --enable-install-test-programs \
     --enable-udev
 
-echo this is for right now
-cat configure
-
-exit 1
-
 %make_build V=1
 pushd tests
 %make_build `make check-programs` V=1
