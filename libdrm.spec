@@ -6,8 +6,8 @@
 
 Name:           libdrm
 Summary:        Direct Rendering Manager runtime library
-Version:        2.4.75
-Release:        3%{?dist}
+Version:        2.4.76
+Release:        1%{?dist}
 License:        MIT
 
 URL:            https://dri.freedesktop.org
@@ -26,9 +26,6 @@ BuildRequires:  libxslt docbook-style-xsl
 BuildRequires:  valgrind-devel
 %endif
 BuildRequires:  xorg-x11-util-macros
-
-# sodding autoconf
-Patch0: 0001-configure-Explicitly-check-for-pkg-config-at-the-top.patch
 
 # hardcode the 666 instead of 660 for device nodes
 Patch3: libdrm-make-dri-perms-okay.patch
@@ -230,6 +227,9 @@ rm -f %{buildroot}%{_includedir}/%{name}/{r300_reg.h,via_3d_reg.h}
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Thu Mar 30 2017 Igor Gnatenko <ignatenko@redhat.com> - 2.4.76-1
+- Update to 2.4.76
+
 * Thu Mar 23 2017 Adam Jackson <ajax@redhat.com> - 2.4.75-3
 - Fix pkg-config detection on non-Intel
 
