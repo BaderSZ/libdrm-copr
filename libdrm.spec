@@ -88,8 +88,8 @@ for foo in $(make check-programs) ; do
 done
 popd
 # SUBDIRS=libdrm
-mkdir -p %{buildroot}/lib/udev/rules.d/
-install -m 0644 %{SOURCE2} %{buildroot}/lib/udev/rules.d/
+mkdir -p %{buildroot}/usr/lib/udev/rules.d/
+install -m 0644 %{SOURCE2} %{buildroot}/usr/lib/udev/rules.d/
 
 # NOTE: We intentionally don't ship *.la files
 find %{buildroot} -type f -name "*.la" -delete
