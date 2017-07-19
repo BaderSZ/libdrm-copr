@@ -129,6 +129,7 @@ rm -f %{buildroot}%{_includedir}/%{name}/{r300_reg.h,via_3d_reg.h}
 %{_libdir}/libdrm_nouveau.so.2.0.0
 %{_libdir}/libkms.so.1
 %{_libdir}/libkms.so.1.0.0
+%{_datadir}/libdrm/amdgpu.ids
 %{_udevrulesdir}/91-drm-modeset.rules
 
 %files -n drm-utils
