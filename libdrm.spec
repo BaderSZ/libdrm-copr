@@ -7,7 +7,7 @@
 Name:           libdrm
 Summary:        Direct Rendering Manager runtime library
 Version:        2.4.84
-Release:        1%{?dist}
+Release:        2%{?dist}
 License:        MIT
 
 URL:            https://dri.freedesktop.org
@@ -129,6 +129,7 @@ rm -f %{buildroot}%{_includedir}/%{name}/{r300_reg.h,via_3d_reg.h}
 %{_libdir}/libdrm_nouveau.so.2.0.0
 %{_libdir}/libkms.so.1
 %{_libdir}/libkms.so.1.0.0
+%dir %{_datadir}/libdrm
 %{_datadir}/libdrm/amdgpu.ids
 %{_udevrulesdir}/91-drm-modeset.rules
 
@@ -228,6 +229,9 @@ rm -f %{buildroot}%{_includedir}/%{name}/{r300_reg.h,via_3d_reg.h}
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Tue Oct 17 2017 Ville Skyttä <ville.skytta@iki.fi> - 2.4.84-2
+- Own the %%{_datadir}/libdrm dir
+
 * Fri Oct 13 2017 Dave Airlie <airlied@redhat.com> - 2.4.84-1
 - Update to 2.4.84
 
