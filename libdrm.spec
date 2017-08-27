@@ -84,12 +84,11 @@ popd
 pushd tests
 mkdir -p %{buildroot}%{_bindir}
 for foo in $(make check-programs) ; do
- libtool --mode=install install -m 0755 $foo %{buildroot}%{_bindir}
+ libtool --mode=install install -D -p -m 0755 -t %{buildroot}%{_bindir} $foo
 done
 popd
 # SUBDIRS=libdrm
-mkdir -p %{buildroot}/usr/lib/udev/rules.d/
-install -m 0644 %{SOURCE2} %{buildroot}/usr/lib/udev/rules.d/
+install -D -p -m 0644 -t %{buildroot}%{_udevrulesdir} %{SOURCE2}
 
 # NOTE: We intentionally don't ship *.la files
 find %{buildroot} -type f -name "*.la" -delete
