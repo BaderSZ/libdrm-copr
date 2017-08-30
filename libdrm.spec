@@ -7,7 +7,7 @@
 Name:           libdrm
 Summary:        Direct Rendering Manager runtime library
 Version:        2.4.83
-Release:        1%{?dist}
+Release:        2%{?dist}
 License:        MIT
 
 URL:            https://dri.freedesktop.org
@@ -84,7 +84,7 @@ popd
 pushd tests
 mkdir -p %{buildroot}%{_bindir}
 for foo in $(make check-programs) ; do
- libtool --mode=install install -D -p -m 0755 -t %{buildroot}%{_bindir} $foo
+ libtool --mode=install install -D -p -m 0755 $foo %{buildroot}%{_bindir}
 done
 popd
 # SUBDIRS=libdrm
@@ -227,6 +227,10 @@ rm -f %{buildroot}%{_includedir}/%{name}/{r300_reg.h,via_3d_reg.h}
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Wed Aug 30 2017 Adam Jackson <ajax@redhat.com> - 2.4.83-2
+- Fix the check-programs install line to work with older libtool
+- Seriously, libtool is awful
+
 * Sun Aug 27 2017 Igor Gnatenko <ignatenkobrain@fedoraproject.org> - 2.4.83-1
 - Update to 2.4.83
 
