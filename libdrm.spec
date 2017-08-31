@@ -7,7 +7,7 @@
 Name:           libdrm
 Summary:        Direct Rendering Manager runtime library
 Version:        2.4.83
-Release:        2%{?dist}
+Release:        3%{?dist}
 License:        MIT
 
 URL:            https://dri.freedesktop.org
@@ -88,7 +88,8 @@ for foo in $(make check-programs) ; do
 done
 popd
 # SUBDIRS=libdrm
-install -D -p -m 0644 -t %{buildroot}%{_udevrulesdir} %{SOURCE2}
+mkdir -p %{buildroot}%{_udevrulesdir}
+install -v -D -p -m 0644 %{SOURCE2} %{buildroot}%{_udevrulesdir}
 
 # NOTE: We intentionally don't ship *.la files
 find %{buildroot} -type f -name "*.la" -delete
@@ -227,6 +228,9 @@ rm -f %{buildroot}%{_includedir}/%{name}/{r300_reg.h,via_3d_reg.h}
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Thu Aug 31 2017 Adam Jackson <ajax@redhat.com> - 2.4.83-3
+- Also fix the udev rule install
+
 * Wed Aug 30 2017 Adam Jackson <ajax@redhat.com> - 2.4.83-2
 - Fix the check-programs install line to work with older libtool
 - Seriously, libtool is awful
