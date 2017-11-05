@@ -6,7 +6,7 @@
 
 Name:           libdrm
 Summary:        Direct Rendering Manager runtime library
-Version:        2.4.87
+Version:        2.4.88
 Release:        1%{?dist}
 License:        MIT
 
@@ -229,6 +229,9 @@ rm -f %{buildroot}%{_includedir}/%{name}/{r300_reg.h,via_3d_reg.h}
 %{_mandir}/man7/drm*.7*
 
 %changelog
+* Sun Nov  5 2017 Peter Robinson <pbrobinson@fedoraproject.org> 2.4.88-1
+- Update to 2.4.88
+
 * Thu Nov 02 2017 Igor Gnatenko <ignatenkobrain@fedoraproject.org> - 2.4.87-1
 - Update to 2.4.87
 
