@@ -1,31 +1,85 @@
-%ifarch %{ix86} x86_64 ppc ppc64 ppc64le s390x armv7hl aarch64
+%define bcond_meson() %{lua: do
+  local option = rpm.expand("%{1}")
+  local with = rpm.expand("%{?with_" .. option .. "}")
+  local value = (with ~= '') and "true" or "false"
+  option = option:gsub('_', '-')
+  print(string.format("-D%s=%s", option, value))
+end}
+
+%bcond_without libkms
+%ifarch %{ix86} x86_64
+%bcond_without intel
+%else
+%bcond_with    intel
+%endif
+%bcond_without radeon
+%bcond_without amdgpu
+%bcond_without nouveau
+%bcond_without vmwgfx
+%ifarch %{arm}
+%bcond_without omap
+%else
+%bcond_with    omap
+%endif
+%ifarch %{arm} aarch64
+%bcond_without exynos
+%bcond_without freedreno
+%bcond_without tegra
+%bcond_without vc4
+%bcond_without etnaviv
+%else
+%bcond_with    exynos
+%bcond_with    freedreno
+%bcond_with    tegra
+%bcond_with    vc4
+%bcond_with    etnaviv
+%endif
+%bcond_with    cairo_tests
+%bcond_without man_pages
+%ifarch %{valgrind_arches}
 %bcond_without valgrind
 %else
-%bcond_with valgrind
+%bcond_with    valgrind
 %endif
+%bcond_with    freedreno_kgsl
+%bcond_without install_test_programs
+%bcond_without udev
 
 Name:           libdrm
 Summary:        Direct Rendering Manager runtime library
-Version:        2.4.89
-Release:        3%{?dist}
+Version:        2.4.90
+Release:        1%{?dist}
 License:        MIT
 
 URL:            https://dri.freedesktop.org
 Source0:        %{url}/libdrm/%{name}-%{version}.tar.bz2
 Source2:        91-drm-modeset.rules
 
-BuildRequires:  pkgconfig automake autoconf libtool
-BuildRequires:  kernel-headers
-BuildRequires:  libxcb-devel
-BuildRequires:  systemd-devel
-Requires:       systemd
+# https://lists.freedesktop.org/archives/dri-devel/2018-February/166184.html
+Patch0001:      0001-meson-do-not-use-cairo-valgrind-if-it-was-disabled.patch
+
+BuildRequires:  meson >= 0.43
+BuildRequires:  gcc
 BuildRequires:  libatomic_ops-devel
-BuildRequires:  libpciaccess-devel
-BuildRequires:  libxslt docbook-style-xsl
+BuildRequires:  kernel-headers
+%if %{with intel}
+BuildRequires:  pkgconfig(pciaccess) >= 0.10
+%endif
+#BuildRequires:  pkgconfig(cunit) >= 2.1
+%if %{with cairo_tests}
+BuildRequires:  pkgconfig(cairo)
+%endif
+%if %{with man_pages}
+BuildRequires:  %{_bindir}/xsltproc
+BuildRequires:  %{_bindir}/sed
+BuildRequires:  docbook-style-xsl
+%endif
 %if %{with valgrind}
 BuildRequires:  valgrind-devel
 %endif
-BuildRequires:  xorg-x11-util-macros
+%if %{with udev}
+BuildRequires:  pkgconfig(udev)
+%endif
 
 # hardcode the 666 instead of 660 for device nodes
 Patch3: libdrm-make-dri-perms-okay.patch
@@ -45,56 +99,49 @@ Requires:       kernel-headers
 %description devel
 Direct Rendering Manager development package.
 
+%if %{with install_test_programs}
 %package -n drm-utils
 Summary:        Direct Rendering Manager utilities
 Requires:       %{name}%{?_isa} = %{version}-%{release}
 
 %description -n drm-utils
 Utility programs for the kernel DRM interface.  Will void your warranty.
+%endif
 
 %prep
 %autosetup -p1
 
 %build
-autoreconf -vfi
-%configure \
-%if ! %{with valgrind}
-    --disable-valgrind \
-%endif
-    --disable-vc4 \
-%ifarch %{arm} aarch64
-    --enable-etnaviv-experimental-api \
-    --enable-exynos-experimental-api \
-    --enable-tegra-experimental-api \
-    --enable-vc4 \
-%endif
-%ifarch %{arm}
-    --enable-omap-experimental-api \
-%endif
-    --enable-install-test-programs \
-    --enable-udev
-
-%make_build V=1
-pushd tests
-%make_build `make check-programs` V=1
-popd
+%meson \
+  %{bcond_meson libkms}                \
+  %{bcond_meson intel}                 \
+  %{bcond_meson radeon}                \
+  %{bcond_meson amdgpu}                \
+  %{bcond_meson nouveau}               \
+  %{bcond_meson vmwgfx}                \
+  %{bcond_meson omap}                  \
+  %{bcond_meson exynos}                \
+  %{bcond_meson freedreno}             \
+  %{bcond_meson tegra}                 \
+  %{bcond_meson vc4}                   \
+  %{bcond_meson etnaviv}               \
+  %{bcond_meson cairo_tests}           \
+  %{bcond_meson man_pages}             \
+  %{bcond_meson valgrind}              \
+  %{bcond_meson freedreno_kgsl}        \
+  %{bcond_meson install_test_programs} \
+  %{bcond_meson udev}                  \
+  %{nil}
+%meson_build
 
 %install
-%make_install
-pushd tests
-mkdir -p %{buildroot}%{_bindir}
-for foo in $(make check-programs) ; do
- libtool --mode=install install -D -p -m 0755 $foo %{buildroot}%{_bindir}
-done
-popd
-# SUBDIRS=libdrm
-mkdir -p %{buildroot}%{_udevrulesdir}
-install -v -D -p -m 0644 %{SOURCE2} %{buildroot}%{_udevrulesdir}
-
-# NOTE: We intentionally don't ship *.la files
-find %{buildroot} -type f -name "*.la" -delete
-
-rm -f %{buildroot}%{_includedir}/%{name}/{r300_reg.h,via_3d_reg.h}
+%meson_install
+%if %{with install_test_programs}
+install -Dpm0755 -t %{buildroot}%{_bindir} %{_vpath_builddir}/tests/drmdevice
+%endif
+%if %{with udev}
+install -Dpm0644 -t %{buildroot}%{_udevrulesdir} %{S:2}
+%endif
 
 %ldconfig_scriptlets
 
@@ -102,132 +149,147 @@ rm -f %{buildroot}%{_includedir}/%{name}/{r300_reg.h,via_3d_reg.h}
 %doc README
 %{_libdir}/libdrm.so.2
 %{_libdir}/libdrm.so.2.4.0
-%ifarch %{ix86} x86_64 ia64
+%dir %{_datadir}/libdrm
+%if %{with libkms}
+%{_libdir}/libkms.so.1
+%{_libdir}/libkms.so.1.0.0
+%endif
+%if %{with intel}
 %{_libdir}/libdrm_intel.so.1
 %{_libdir}/libdrm_intel.so.1.0.0
 %endif
-%ifarch %{arm}
+%if %{with radeon}
+%{_libdir}/libdrm_radeon.so.1
+%{_libdir}/libdrm_radeon.so.1.0.1
+%endif
+%if %{with amdgpu}
+%{_libdir}/libdrm_amdgpu.so.1
+%{_libdir}/libdrm_amdgpu.so.1.0.0
+%{_datadir}/libdrm/amdgpu.ids
+%endif
+%if %{with nouveau}
+%{_libdir}/libdrm_nouveau.so.2
+%{_libdir}/libdrm_nouveau.so.2.0.0
+%endif
+%if %{with omap}
 %{_libdir}/libdrm_omap.so.1
 %{_libdir}/libdrm_omap.so.1.0.0
 %endif
-%ifarch %{arm} aarch64
-%{_libdir}/libdrm_etnaviv.so.1
-%{_libdir}/libdrm_etnaviv.so.1.0.0
+%if %{with exynos}
 %{_libdir}/libdrm_exynos.so.1
 %{_libdir}/libdrm_exynos.so.1.0.0
+%endif
+%if %{with freedreno}
 %{_libdir}/libdrm_freedreno.so.1
 %{_libdir}/libdrm_freedreno.so.1.0.0
+%endif
+%if %{with tegra}
 %{_libdir}/libdrm_tegra.so.0
 %{_libdir}/libdrm_tegra.so.0.0.0
 %endif
-%{_libdir}/libdrm_radeon.so.1
-%{_libdir}/libdrm_radeon.so.1.0.1
-%{_libdir}/libdrm_amdgpu.so.1
-%{_libdir}/libdrm_amdgpu.so.1.0.0
-%{_libdir}/libdrm_nouveau.so.2
-%{_libdir}/libdrm_nouveau.so.2.0.0
-%{_libdir}/libkms.so.1
-%{_libdir}/libkms.so.1.0.0
-%dir %{_datadir}/libdrm
-%{_datadir}/libdrm/amdgpu.ids
-%{_udevrulesdir}/91-drm-modeset.rules
-
-%files -n drm-utils
-%{_bindir}/drmdevice
-%{_bindir}/modetest
-%{_bindir}/modeprint
-%{_bindir}/vbltest
-%{_bindir}/kmstest
-%{_bindir}/kms-steal-crtc
-%{_bindir}/kms-universal-planes
-%exclude %{_bindir}/drmsl
-%ifarch %{arm} aarch64
-%exclude %{_bindir}/etnaviv*
-%exclude %{_bindir}/exynos*
+%if %{with etnaviv}
+%{_libdir}/libdrm_etnaviv.so.1
+%{_libdir}/libdrm_etnaviv.so.1.0.0
 %endif
-%exclude %{_bindir}/hash
-%exclude %{_bindir}/proptest
-%exclude %{_bindir}/random
+%if %{with udev}
+%{_udevrulesdir}/91-drm-modeset.rules
+%endif
 
 %files devel
-# FIXME should be in drm/ too
-%{_includedir}/xf86drm.h
-%{_includedir}/xf86drmMode.h
 %dir %{_includedir}/libdrm
 %{_includedir}/libdrm/drm.h
 %{_includedir}/libdrm/drm_fourcc.h
 %{_includedir}/libdrm/drm_mode.h
 %{_includedir}/libdrm/drm_sarea.h
-%ifarch %{ix86} x86_64 ia64
-%{_includedir}/libdrm/intel_aub.h
-%{_includedir}/libdrm/intel_bufmgr.h
-%{_includedir}/libdrm/intel_debug.h
-%endif
-%ifarch %{arm}
-%{_includedir}/libdrm/omap_drmif.h
-%{_includedir}/omap/
-%endif
-%ifarch %{arm} aarch64
-%{_includedir}/exynos/
-%{_includedir}/freedreno/
-%{_includedir}/libdrm/etnaviv_drmif.h
-%{_includedir}/libdrm/exynos_drmif.h
-%{_includedir}/libdrm/tegra.h
-%{_includedir}/libdrm/vc4_packet.h
-%{_includedir}/libdrm/vc4_qpu_defines.h
-%endif
-%{_includedir}/libdrm/amdgpu.h
-%{_includedir}/libdrm/radeon_bo.h
-%{_includedir}/libdrm/radeon_bo_gem.h
-%{_includedir}/libdrm/radeon_bo_int.h
-%{_includedir}/libdrm/radeon_cs.h
-%{_includedir}/libdrm/radeon_cs_gem.h
-%{_includedir}/libdrm/radeon_cs_int.h
-%{_includedir}/libdrm/radeon_surface.h
-%{_includedir}/libdrm/r600_pci_ids.h
-%{_includedir}/libdrm/nouveau/
 %{_includedir}/libdrm/*_drm.h
-%{_includedir}/libkms
-%{_includedir}/libsync.h
 %{_libdir}/libdrm.so
-%ifarch %{ix86} x86_64 ia64
-%{_libdir}/libdrm_intel.so
-%endif
-%ifarch %{arm}
-%{_libdir}/libdrm_omap.so
-%endif
-%ifarch %{arm} aarch64
-%{_libdir}/libdrm_etnaviv.so
-%{_libdir}/libdrm_exynos.so
-%{_libdir}/libdrm_freedreno.so
-%{_libdir}/libdrm_tegra.so
-%endif
-%{_libdir}/libdrm_radeon.so
-%{_libdir}/libdrm_amdgpu.so
-%{_libdir}/libdrm_nouveau.so
-%{_libdir}/libkms.so
 %{_libdir}/pkgconfig/libdrm.pc
-%ifarch %{ix86} x86_64 ia64
+%if %{with libkms}
+%{_includedir}/libkms/
+%{_libdir}/libkms.so
+%{_libdir}/pkgconfig/libkms.pc
+%endif
+%if %{with intel}
+%{_includedir}/libdrm/intel_*.h
+%{_libdir}/libdrm_intel.so
 %{_libdir}/pkgconfig/libdrm_intel.pc
 %endif
-%ifarch %{arm}
+%if %{with radeon}
+%{_includedir}/libdrm/radeon_*.h
+%{_includedir}/libdrm/r600_pci_ids.h
+%{_libdir}/libdrm_radeon.so
+%{_libdir}/pkgconfig/libdrm_radeon.pc
+%endif
+%if %{with amdgpu}
+%{_includedir}/libdrm/amdgpu.h
+%{_libdir}/libdrm_amdgpu.so
+%{_libdir}/pkgconfig/libdrm_amdgpu.pc
+%endif
+%if %{with nouveau}
+%{_includedir}/libdrm/nouveau/
+%{_libdir}/libdrm_nouveau.so
+%{_libdir}/pkgconfig/libdrm_nouveau.pc
+%endif
+%if %{with omap}
+%{_includedir}/libdrm/omap_*.h
+%{_includedir}/omap/
+%{_libdir}/libdrm_omap.so
 %{_libdir}/pkgconfig/libdrm_omap.pc
 %endif
-%ifarch %{arm} aarch64
-%{_libdir}/pkgconfig/libdrm_etnaviv.pc
+%if %{with exynos}
+%{_includedir}/libdrm/exynos_*.h
+%{_includedir}/exynos/
+%{_libdir}/libdrm_exynos.so
 %{_libdir}/pkgconfig/libdrm_exynos.pc
+%endif
+%if %{with freedreno}
+%{_includedir}/freedreno/
+%{_libdir}/libdrm_freedreno.so
 %{_libdir}/pkgconfig/libdrm_freedreno.pc
+%endif
+%if %{with tegra}
+%{_includedir}/libdrm/tegra.h
+%{_libdir}/libdrm_tegra.so
 %{_libdir}/pkgconfig/libdrm_tegra.pc
+%endif
+%if %{with vc4}
+%{_includedir}/libdrm/vc4_*.h
 %{_libdir}/pkgconfig/libdrm_vc4.pc
 %endif
-%{_libdir}/pkgconfig/libdrm_radeon.pc
-%{_libdir}/pkgconfig/libdrm_amdgpu.pc
-%{_libdir}/pkgconfig/libdrm_nouveau.pc
-%{_libdir}/pkgconfig/libkms.pc
+%if %{with etnaviv}
+%{_includedir}/libdrm/etnaviv_*.h
+%{_libdir}/libdrm_etnaviv.so
+%{_libdir}/pkgconfig/libdrm_etnaviv.pc
+%endif
+%{_includedir}/libsync.h
+%{_includedir}/xf86drm.h
+%{_includedir}/xf86drmMode.h
+%if %{with man_pages}
 %{_mandir}/man3/drm*.3*
 %{_mandir}/man7/drm*.7*
+%endif
+
+%if %{with install_test_programs}
+%files -n drm-utils
+%{_bindir}/drmdevice
+%exclude %{_bindir}/etnaviv_*
+%exclude %{_bindir}/exynos_*
+%{_bindir}/kms-steal-crtc
+%{_bindir}/kms-universal-planes
+%if %{with libkms}
+%{_bindir}/kmstest
+%endif
+%{_bindir}/modeprint
+%{_bindir}/modetest
+%{_bindir}/proptest
+%{_bindir}/vbltest
+%endif
 
 %changelog
+* Sun Feb 18 2018 Igor Gnatenko <ignatenkobrain@fedoraproject.org> - 2.4.90-1
+- Update to 2.4.90
+- Switch to meson buildsystem
+
 * Wed Feb 07 2018 Fedora Release Engineering <releng@fedoraproject.org> - 2.4.89-3
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_28_Mass_Rebuild
 

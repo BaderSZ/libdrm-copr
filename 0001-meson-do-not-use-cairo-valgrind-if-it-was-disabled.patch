@@ -1,0 +1,54 @@
+From 1d4f23eeafb0fe97f086f19dd5588503d77dea3f Mon Sep 17 00:00:00 2001
+From: Igor Gnatenko <ignatenko@redhat.com>
+Date: Sun, 18 Feb 2018 13:56:39 +0100
+Subject: [PATCH libdrm] meson: do not use cairo/valgrind if it was disabled
+
+-Dcairo-tests=false currently results into enabling cairo support if it
+was found.
+
+Signed-off-by: Igor Gnatenko <ignatenko@redhat.com>
+---
+ meson.build | 20 ++++++++++++++++----
+ 1 file changed, 16 insertions(+), 4 deletions(-)
+
+diff --git a/meson.build b/meson.build
+index 166559e8..695f89b3 100644
+--- a/meson.build
++++ b/meson.build
+@@ -226,8 +226,20 @@ endforeach
+ 
+ dep_pciaccess = dependency('pciaccess', version : '>= 0.10', required : with_intel)
+ dep_cunit = dependency('cunit', version : '>= 2.1', required : false)
+-dep_cairo = dependency('cairo', required : with_cairo_tests == 'true')
+-dep_valgrind = dependency('valgrind', required : with_valgrind == 'true')
++if with_cairo_tests != 'false'
++  dep_cairo = dependency('cairo', required : with_cairo_tests == 'true')
++  with_cairo_tests = dep_cairo.found()
++else
++  dep_cairo = declare_dependency()
++  with_cairo_tests = false
++endif
++if with_valgrind != 'false'
++  dep_valgrind = dependency('valgrind', required : with_valgrind == 'true')
++  with_valgrind = dep_valgrind.found()
++else
++  dep_valgrind = declare_dependency()
++  with_valgrind = false
++endif
+ 
+ with_man_pages = get_option('man-pages')
+ prog_xslt = find_program('xsltproc', required : with_man_pages == 'true')
+@@ -259,8 +271,8 @@ foreach t : [
+              [with_radeon, 'RADEON'],
+              [with_vc4, 'VC4'],
+              [with_vmwgfx, 'VMWGFX'],
+-             [dep_cairo.found(), 'CAIRO'],
+-             [dep_valgrind.found(), 'VALGRIND'],
++             [with_cairo_tests, 'CAIRO'],
++             [with_valgrind, 'VALGRIND'],
+             ]
+   config.set10('HAVE_@0@'.format(t[1]), t[0])
+ endforeach
+-- 
+2.16.2
+
