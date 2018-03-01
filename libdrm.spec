@@ -48,15 +48,16 @@ end}
 Name:           libdrm
 Summary:        Direct Rendering Manager runtime library
 Version:        2.4.90
-Release:        1%{?dist}
+Release:        2%{?dist}
 License:        MIT
 
 URL:            https://dri.freedesktop.org
 Source0:        %{url}/libdrm/%{name}-%{version}.tar.bz2
 Source2:        91-drm-modeset.rules
 
-# https://lists.freedesktop.org/archives/dri-devel/2018-February/166184.html
-Patch0001:      0001-meson-do-not-use-cairo-valgrind-if-it-was-disabled.patch
+# Backports from upstream
+Patch0001:      0001-amdgpu-Fix-mistake-in-initial-hole-size-calculation.patch
+Patch0002:      0002-meson-do-not-use-cairo-valgrind-if-disabled.patch
 
 BuildRequires:  meson >= 0.43
 BuildRequires:  gcc
@@ -286,6 +287,9 @@ install -Dpm0644 -t %{buildroot}%{_udevrulesdir} %{S:2}
 %endif
 
 %changelog
+* Thu Mar 01 2018 Igor Gnatenko <ignatenkobrain@fedoraproject.org> - 2.4.90-2
+- Backport fix for broken amdgpu
+
 * Sun Feb 18 2018 Igor Gnatenko <ignatenkobrain@fedoraproject.org> - 2.4.90-1
 - Update to 2.4.90
 - Switch to meson buildsystem
