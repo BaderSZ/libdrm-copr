@@ -47,17 +47,13 @@ end}
 
 Name:           libdrm
 Summary:        Direct Rendering Manager runtime library
-Version:        2.4.90
-Release:        2%{?dist}
+Version:        2.4.91
+Release:        1%{?dist}
 License:        MIT
 
 URL:            https://dri.freedesktop.org
 Source0:        %{url}/libdrm/%{name}-%{version}.tar.bz2
 Source2:        91-drm-modeset.rules
-
-# Backports from upstream
-Patch0001:      0001-amdgpu-Fix-mistake-in-initial-hole-size-calculation.patch
-Patch0002:      0002-meson-do-not-use-cairo-valgrind-if-disabled.patch
 
 BuildRequires:  meson >= 0.43
 BuildRequires:  gcc
@@ -83,11 +79,9 @@ BuildRequires:  pkgconfig(udev)
 %endif
 
 # hardcode the 666 instead of 660 for device nodes
-Patch3: libdrm-make-dri-perms-okay.patch
+Patch1001:      libdrm-make-dri-perms-okay.patch
 # remove backwards compat not needed on Fedora
-Patch4: libdrm-2.4.0-no-bc.patch
-# make rule to print the list of test programs
-Patch5: libdrm-2.4.25-check-programs.patch
+Patch1002:      libdrm-2.4.0-no-bc.patch
 
 %description
 Direct Rendering Manager runtime library
@@ -287,6 +281,9 @@ install -Dpm0644 -t %{buildroot}%{_udevrulesdir} %{S:2}
 %endif
 
 %changelog
+* Tue Mar 06 2018 Igor Gnatenko <ignatenkobrain@fedoraproject.org> - 2.4.91-1
+- Update to 2.4.91
+
 * Thu Mar 01 2018 Igor Gnatenko <ignatenkobrain@fedoraproject.org> - 2.4.90-2
 - Backport fix for broken amdgpu
 
