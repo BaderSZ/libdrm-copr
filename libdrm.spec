@@ -47,7 +47,7 @@ end}
 
 Name:           libdrm
 Summary:        Direct Rendering Manager runtime library
-Version:        2.4.94
+Version:        2.4.95
 Release:        1%{?dist}
 License:        MIT
 
@@ -281,6 +281,9 @@ install -Dpm0644 -t %{buildroot}%{_udevrulesdir} %{S:2}
 %endif
 
 %changelog
+* Sun Oct  7 2018 Peter Robinson <pbrobinson@fedoraproject.org> 2.4.95-1
+- Update to 2.4.95
+
 * Tue Sep 18 2018 Peter Robinson <pbrobinson@fedoraproject.org> 2.4.94-1
 - Update to 2.4.94
 
