@@ -48,7 +48,7 @@ end}
 Name:           libdrm
 Summary:        Direct Rendering Manager runtime library
 Version:        2.4.96
-Release:        1%{?dist}
+Release:        2%{?dist}
 License:        MIT
 
 URL:            https://dri.freedesktop.org
@@ -77,6 +77,7 @@ BuildRequires:  valgrind-devel
 %if %{with udev}
 BuildRequires:  pkgconfig(udev)
 %endif
+BuildRequires:  chrpath
 
 # hardcode the 666 instead of 660 for device nodes
 Patch1001:      libdrm-make-dri-perms-okay.patch
@@ -132,6 +133,7 @@ Utility programs for the kernel DRM interface.  Will void your warranty.
 %install
 %meson_install
 %if %{with install_test_programs}
+chrpath -d %{_vpath_builddir}/tests/drmdevice
 install -Dpm0755 -t %{buildroot}%{_bindir} %{_vpath_builddir}/tests/drmdevice
 %endif
 %if %{with udev}
@@ -281,6 +283,9 @@ install -Dpm0644 -t %{buildroot}%{_udevrulesdir} %{S:2}
 %endif
 
 %changelog
+* Mon Nov 19 2018 Adam Jackson <ajax@redhat.com> - 2.4.96-2
+- Strip RPATH from %%{_bindir}/drmdevice
+
 * Sun Oct 28 2018 Peter Robinson <pbrobinson@fedoraproject.org> 2.4.96-1
 - Update to 2.4.96
 
