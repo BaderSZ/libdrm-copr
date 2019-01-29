@@ -53,6 +53,7 @@ License:        MIT
 
 URL:            https://dri.freedesktop.org
 Source0:        %{url}/libdrm/%{name}-%{version}.tar.bz2
+Source1:        README.rst
 Source2:        91-drm-modeset.rules
 
 BuildRequires:  meson >= 0.43
@@ -139,11 +140,13 @@ install -Dpm0755 -t %{buildroot}%{_bindir} %{_vpath_builddir}/tests/drmdevice
 %if %{with udev}
 install -Dpm0644 -t %{buildroot}%{_udevrulesdir} %{S:2}
 %endif
+mkdir -p %{buildroot}%{_docdir}/libdrm
+cp %{SOURCE1} %{buildroot}%{_docdir}/libdrm
 
 %ldconfig_scriptlets
 
 %files
-%doc README
+%doc README.rst
 %{_libdir}/libdrm.so.2
 %{_libdir}/libdrm.so.2.4.0
 %dir %{_datadir}/libdrm
