@@ -47,8 +47,8 @@ end}
 
 Name:           libdrm
 Summary:        Direct Rendering Manager runtime library
-Version:        2.4.96
-Release:        2%{?dist}
+Version:        2.4.97
+Release:        1%{?dist}
 License:        MIT
 
 URL:            https://dri.freedesktop.org
@@ -283,6 +283,9 @@ install -Dpm0644 -t %{buildroot}%{_udevrulesdir} %{S:2}
 %endif
 
 %changelog
+* Tue Jan 29 2019 Dave Airlie <airlied@redhat.com> - 2.4.97-1
+- Update to 2.4.97
+
 * Mon Nov 19 2018 Adam Jackson <ajax@redhat.com> - 2.4.96-2
 - Strip RPATH from %%{_bindir}/drmdevice
 
