@@ -47,8 +47,8 @@ end}
 
 Name:           libdrm
 Summary:        Direct Rendering Manager runtime library
-Version:        2.4.97
-Release:        2%{?dist}
+Version:        2.4.98
+Release:        1%{?dist}
 License:        MIT
 
 URL:            https://dri.freedesktop.org
@@ -286,6 +286,9 @@ cp %{SOURCE1} %{buildroot}%{_docdir}/libdrm
 %endif
 
 %changelog
+* Tue Apr 30 2019 Peter Robinson <pbrobinson@fedoraproject.org> 2.4.98-1
+- Update to 2.4.98
+
 * Fri Feb 01 2019 Fedora Release Engineering <releng@fedoraproject.org> - 2.4.97-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_30_Mass_Rebuild
 
