@@ -47,12 +47,12 @@ end}
 
 Name:           libdrm
 Summary:        Direct Rendering Manager runtime library
-Version:        2.4.100
-Release:        2%{?dist}
+Version:        2.4.101
+Release:        1%{?dist}
 License:        MIT
 
 URL:            https://dri.freedesktop.org
-Source0:        %{url}/libdrm/%{name}-%{version}.tar.bz2
+Source0:        %{url}/libdrm/%{name}-%{version}.tar.xz
 Source1:        README.rst
 Source2:        91-drm-modeset.rules
 
@@ -286,6 +286,9 @@ cp %{SOURCE1} %{buildroot}%{_docdir}/libdrm
 %endif
 
 %changelog
+* Thu May 14 2020 Dave Airlie <airlied@redhat.com> - 2.4.101-1
+- Update to 2.4.101
+
 * Wed Jan 29 2020 Fedora Release Engineering <releng@fedoraproject.org> - 2.4.100-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_32_Mass_Rebuild
 
