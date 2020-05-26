@@ -47,7 +47,7 @@ end}
 
 Name:           libdrm
 Summary:        Direct Rendering Manager runtime library
-Version:        2.4.101
+Version:        2.4.102
 Release:        1%{?dist}
 License:        MIT
 
@@ -286,6 +286,9 @@ cp %{SOURCE1} %{buildroot}%{_docdir}/libdrm
 %endif
 
 %changelog
+* Wed May 27 2020 Dave Airlie <airlied@redhat.com> - 2.4.102-1
+- Update to 2.4.102
+
 * Thu May 14 2020 Dave Airlie <airlied@redhat.com> - 2.4.101-1
 - Update to 2.4.101
 
