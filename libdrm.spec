@@ -47,8 +47,8 @@ end}
 
 Name:           libdrm
 Summary:        Direct Rendering Manager runtime library
-Version:        2.4.103
-Release:        2%{?dist}
+Version:        2.4.105
+Release:        1%{?dist}
 License:        MIT
 
 URL:            https://dri.freedesktop.org
@@ -68,9 +68,7 @@ BuildRequires:  pkgconfig(pciaccess) >= 0.10
 BuildRequires:  pkgconfig(cairo)
 %endif
 %if %{with man_pages}
-BuildRequires:  %{_bindir}/xsltproc
-BuildRequires:  %{_bindir}/sed
-BuildRequires:  docbook-style-xsl
+BuildRequires:  python3-docutils
 %endif
 %if %{with valgrind}
 BuildRequires:  valgrind-devel
@@ -286,6 +284,9 @@ cp %{SOURCE1} %{buildroot}%{_docdir}/libdrm
 %endif
 
 %changelog
+* Fri Apr 16 2021 Pete Walter <pwalter@fedoraproject.org> - 2.4.105-1
+- Update to 2.4.105
+
 * Tue Jan 26 2021 Fedora Release Engineering <releng@fedoraproject.org> - 2.4.103-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_34_Mass_Rebuild
 
