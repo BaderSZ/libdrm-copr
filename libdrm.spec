@@ -47,8 +47,8 @@ end}
 
 Name:           libdrm
 Summary:        Direct Rendering Manager runtime library
-Version:        2.4.107
-Release:        2%{?dist}
+Version:        2.4.109
+Release:        1%{?dist}
 License:        MIT
 
 URL:            https://dri.freedesktop.org
@@ -213,7 +213,7 @@ cp %{SOURCE1} %{buildroot}%{_docdir}/libdrm
 %{_libdir}/pkgconfig/libdrm_intel.pc
 %endif
 %if %{with radeon}
-%{_includedir}/libdrm/radeon_*.h
+%{_includedir}/libdrm/radeon_{bo,cs,surface}*.h
 %{_includedir}/libdrm/r600_pci_ids.h
 %{_libdir}/libdrm_radeon.so
 %{_libdir}/pkgconfig/libdrm_radeon.pc
@@ -269,9 +269,16 @@ cp %{SOURCE1} %{buildroot}%{_docdir}/libdrm
 
 %if %{with install_test_programs}
 %files -n drm-utils
+%if %{with amdgpu}
+%{_bindir}/amdgpu_stress
+%endif
 %{_bindir}/drmdevice
+%if %{with etnaviv}
 %exclude %{_bindir}/etnaviv_*
+%endif
+%if %{with exynos}
 %exclude %{_bindir}/exynos_*
+%endif
 %{_bindir}/kms-steal-crtc
 %{_bindir}/kms-universal-planes
 %if %{with libkms}
@@ -284,6 +291,9 @@ cp %{SOURCE1} %{buildroot}%{_docdir}/libdrm
 %endif
 
 %changelog
+* Mon Nov 29 2021 Adam Jackson <ajax@redhat.com> - 2.4.109-1
+- Update to 2.4.109
+
 * Thu Jul 22 2021 Fedora Release Engineering <releng@fedoraproject.org> - 2.4.107-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_35_Mass_Rebuild
 
